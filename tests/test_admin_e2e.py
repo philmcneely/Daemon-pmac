@@ -49,7 +49,7 @@ class TestAdminRouterE2E:
         def override_get_current_admin_user():
             """Mock admin user for testing"""
             mock_admin = MagicMock()
-            mock_admin.id = 1
+            mock_admin.id = 999  # Use a high ID to avoid conflicts with test data
             mock_admin.username = "admin"
             mock_admin.email = "admin@example.com"
             mock_admin.is_admin = True
@@ -238,23 +238,22 @@ class TestAdminRouterE2E:
 
     def test_get_system_stats_success(self):
         """Test getting system stats successfully"""
-        response = self.client.get("/admin/stats")
+        response = self.client.get("/admin/system")
         assert response.status_code == 200
 
         data = response.json()
         assert "system" in data
-        assert "database" in data
+        assert "application" in data
 
         # Check system metrics structure
         system = data["system"]
-        assert "cpu" in system
-        assert "memory" in system
-        assert "disk" in system
+        assert "python_version" in system
+        assert "memory_total" in system
+        assert "disk_usage" in system
 
-        # Check database metrics structure
-        database = data["database"]
-        assert "total_users" in database
-        assert "total_endpoints" in database
+        # Check application metrics structure
+        application = data["application"]
+        assert "database_size" in application
 
     def test_create_backup_success(self):
         """Test creating backup successfully"""
