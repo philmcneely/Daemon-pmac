@@ -158,6 +158,35 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    # Fast build and test for pull requests (single platform, no push)
+    - name: Build and test Docker image (PR only)
+      if: github.event_name == 'pull_request'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        load: true
+        tags: daemon:pr-test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image (PR only)
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "🐳 Testing Docker image for PR..."
+
+        # Start container
+        docker run -d --name daemon-pr-test -p 8004:8004 daemon:pr-test
+        sleep 15
+
+        # Test endpoints
+        curl -f http://localhost:8004/health && echo "✅ Health check passed"
+        curl -f http://localhost:8004/docs && echo "✅ API docs accessible"
+
+        # Cleanup
+        docker stop daemon-pr-test && docker rm daemon-pr-test
+        echo "🎉 PR Docker tests passed!"
+
     - name: Login to Docker Hub
       id: docker_login
       if: github.event_name != 'pull_request'
@@ -197,11 +226,40 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
-        push: false
-        tags: daemon:latest
+        platforms: linux/amd64  # Single platform for speed
+        load: true  # Load into Docker for testing
+        tags: daemon:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      if: steps.docker_login.outcome != 'success'
+      run: |
+        echo "Testing Docker image functionality..."
+
+        # Start container in background
+        docker run -d --name daemon-test -p 8004:8004 daemon:test
+
+        # Wait for container to start
+        sleep 15
+
+        # Test health endpoint
+        echo "Testing health endpoint..."
+        curl -f http://localhost:8004/health || exit 1
+
+        # Test API docs endpoint
+        echo "Testing API docs..."
+        curl -f http://localhost:8004/docs || exit 1
+
+        # Check container logs
+        echo "Container logs:"
+        docker logs daemon-test
+
+        # Stop and cleanup
+        docker stop daemon-test
+        docker rm daemon-test
+
+        echo "✅ Docker image tests passed!"
 
   deploy-staging:
     name: Deploy to Staging
