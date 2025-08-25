@@ -13,20 +13,20 @@ repos:
       - id: check-added-large-files
       - id: debug-statements
 
-  # Black - Python code formatter (matches CI)
+  # Black - Python code formatter (automatically fixes formatting)
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
       - id: black
         language_version: python3
-        args: [--line-length=88, --check]
+        args: [--line-length=88]
 
-  # isort - Import sorter (matches CI)
+  # isort - Import sorter (automatically fixes imports)
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args: [--profile=black, --check-only]
+        args: [--profile=black]
         exclude: ^app/cli\.py$
 
 # Global settings
