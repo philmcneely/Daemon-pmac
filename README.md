@@ -38,6 +38,12 @@ An **adaptive personal API framework** that seamlessly scales from single-user s
 # Clone and setup
 git clone <your-repo-url>
 cd daemon-pmac
+
+# Create and activate virtual environment (RECOMMENDED)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 
 # Create first user (becomes admin automatically)
@@ -52,27 +58,33 @@ python dev.py
 For development work, use the automated setup script:
 
 ```bash
-# Quick setup with pre-commit hooks
-chmod +x setup-precommit.sh
-./setup-precommit.sh
-```
-
-Or use the full development environment setup:
-
-```bash
-# Automated development environment setup
+# Quick setup with virtual environment and pre-commit hooks
 chmod +x setup-dev.sh
 ./setup-dev.sh
+```
+
+This script will:
+- Create a Python virtual environment (`venv/`)
+- Install all dependencies
+- Set up pre-commit hooks for code quality
+- Initialize database and directories
+
+**VS Code Integration**: Open the project with:
+```bash
+code daemon-pmac.code-workspace
 ```
 
 #### Manual Development Setup
 
 ```bash
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install development dependencies
 pip install -r requirements-dev.txt
 
 # Set up pre-commit hooks (RECOMMENDED)
-pip install pre-commit
 pre-commit install
 
 # Run tests
@@ -231,8 +243,46 @@ PUT /api/v1/privacy/settings
 # Preview privacy filtering
 GET /api/v1/privacy/preview/resume?level=business_card
 ```
+
+## 🚀 Deployment
+
+### Local Development
+
+```bash
+# Using virtual environment (recommended)
+source venv/bin/activate
+python dev.py
+```
+
+### Docker Deployment
+
+```bash
 docker-compose up --build
 ```
+
+### Remote Server (Raspberry Pi/Linux)
+
+```bash
+# Automated setup script (creates venv automatically)
+chmod +x setup-pi.sh
+sudo ./setup-pi.sh
+```
+
+The remote setup script:
+- ✅ **Creates isolated virtual environment** at `/opt/daemon-pmac/venv/`
+- ✅ **Installs all dependencies** in the venv
+- ✅ **Sets up systemd service** using the venv Python
+- ✅ **Configures automatic backups** with venv Python
+- ✅ **No global package pollution**
+
+### CI/CD Pipeline
+
+GitHub Actions automatically:
+- ✅ **Tests** in isolated environments (no venv needed)
+- ✅ **Builds** Docker images
+- ✅ **Deploys** to staging/production using venv on remote servers
+
+**Key Point**: Remote deployments use virtual environments automatically via the setup scripts!
 
 ## Configuration
 
