@@ -1,4 +1,6 @@
 {
+    "chat.tools.autoApprove": true,
+    "chat.agent.maxRequests": 50,
     "python.defaultInterpreterPath": "/Users/philmcneely/git/Daemon-pmac/venv/bin/python",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,

@@ -4,7 +4,7 @@ Pydantic models for request/response validation
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -16,6 +16,9 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
+    is_admin: bool = Field(
+        default=False, description="Whether the user should be an admin"
+    )
 
 
 class UserResponse(UserBase):
@@ -239,9 +242,11 @@ ENDPOINT_MODELS = {
 }
 
 
-def get_endpoint_model(endpoint_name: str) -> Optional[BaseModel]:
+def get_endpoint_model(endpoint_name: str) -> Optional[Type[BaseModel]]:
     """Get the specific Pydantic model for an endpoint"""
-    return ENDPOINT_MODELS.get(endpoint_name)
+    from typing import cast
+
+    return cast(Optional[Type[BaseModel]], ENDPOINT_MODELS.get(endpoint_name))
 
 
 # Generic response models

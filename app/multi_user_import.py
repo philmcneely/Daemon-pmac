@@ -279,7 +279,7 @@ def import_all_users_data(
             "error": f"Base directory not found: {base_directory}",
         }
 
-    results = {
+    results: Dict[str, Any] = {
         "success": True,
         "base_directory": base_directory,
         "users_processed": [],

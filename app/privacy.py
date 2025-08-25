@@ -4,7 +4,7 @@ Privacy filtering and data protection utilities
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from sqlalchemy.orm import Session
 
@@ -152,12 +152,83 @@ class PrivacyFilter:
         return self._recursive_filter_fields(professional_data, professional_excludes)
 
     def public_filter(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Full public filtering with all safety measures"""
-        return self._apply_sensitive_patterns(data)
+        """Apply public-level filtering based on user privacy settings"""
+        settings = self.privacy_settings
+        if settings is None:
+            # No privacy settings found, apply minimal filtering
+            return self._apply_sensitive_patterns(data)
+
+        filtered_data = dict(data)
+
+        # Business card mode override
+        if settings.business_card_mode:
+            return self.create_business_card_view(data)
+
+        # Contact info filtering
+        if not settings.show_contact_info and "contact" in filtered_data:
+            contact = filtered_data["contact"].copy()
+            # Keep only essential business contact
+            essential = {}
+            if "email" in contact and not any(
+                word in contact["email"].lower()
+                for word in ["personal", "private", "home"]
+            ):
+                essential["email"] = contact["email"]
+            if "website" in contact:
+                essential["website"] = contact["website"]
+            if "linkedin" in contact:
+                essential["linkedin"] = contact["linkedin"]
+            if "github" in contact:
+                essential["github"] = contact["github"]
+            filtered_data["contact"] = essential
+
+        # Location filtering
+        if not settings.show_location:
+            filtered_data = self._recursive_filter_fields(
+                filtered_data, {"location", "address", "city", "state", "country"}
+            )
+
+        # Company info filtering
+        if not settings.show_current_company and "experience" in filtered_data:
+            if (
+                isinstance(filtered_data["experience"], list)
+                and filtered_data["experience"]
+            ):
+                # Remove current company details but keep role/responsibilities
+                for job in filtered_data["experience"]:
+                    if job.get("end_date") in [None, "Present", "Current"]:
+                        job.pop("company", None)
+
+        # Salary/compensation filtering
+        if not settings.show_salary_range:
+            filtered_data = self._recursive_filter_fields(
+                filtered_data, {"salary", "wage", "compensation", "pay", "income"}
+            )
+
+        # Education details filtering
+        if not settings.show_education_details and "education" in filtered_data:
+            # Keep basic education info but remove sensitive details
+            if isinstance(filtered_data["education"], list):
+                for edu in filtered_data["education"]:
+                    edu.pop("gpa", None)
+                    edu.pop("honors", None)
+                    edu.pop("activities", None)
+
+        # Apply custom privacy rules
+        if settings.custom_privacy_rules:
+            # Cast SQLAlchemy Column to dict for mypy
+            custom_rules = cast(Dict[str, Any], settings.custom_privacy_rules)
+            filtered_data = self._apply_custom_rules(filtered_data, custom_rules)
+
+        return self._apply_sensitive_patterns(filtered_data)
 
     def _apply_user_privacy_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Apply user-specific privacy settings"""
         settings = self.privacy_settings
+        if settings is None:
+            # No privacy settings found, apply minimal filtering
+            return self._apply_sensitive_patterns(data)
+
         filtered_data = dict(data)
 
         # Business card mode override
@@ -215,9 +286,9 @@ class PrivacyFilter:
 
         # Apply custom rules
         if settings.custom_privacy_rules:
-            filtered_data = self._apply_custom_rules(
-                filtered_data, settings.custom_privacy_rules
-            )
+            # Cast SQLAlchemy Column to dict for mypy
+            custom_rules = cast(Dict[str, Any], settings.custom_privacy_rules)
+            filtered_data = self._apply_custom_rules(filtered_data, custom_rules)
 
         # Apply base sensitive pattern filtering
         return self._apply_sensitive_patterns(filtered_data)
@@ -301,7 +372,7 @@ class PrivacyFilter:
             "auth",
         }
 
-        def is_sensitive_value(value):
+        def is_sensitive_value(value: Any) -> bool:
             if isinstance(value, str):
                 # Phone patterns - more precise
                 phone_cleaned = re.sub(r"[^\d]", "", value)  # Remove all non-digits
@@ -319,7 +390,7 @@ class PrivacyFilter:
                     return True
             return False
 
-        def recursive_filter(obj, path=""):
+        def recursive_filter(obj: Any, path: str = "") -> Any:
             if isinstance(obj, dict):
                 filtered = {}
                 for key, value in obj.items():
@@ -350,14 +421,16 @@ class PrivacyFilter:
             else:
                 return None if is_sensitive_value(obj) else obj
 
-        return recursive_filter(data)
+        filtered_result = recursive_filter(data)
+        # Ensure we return a dict as promised by the function signature
+        return filtered_result if isinstance(filtered_result, dict) else {}
 
     def _recursive_filter_fields(
         self, data: Dict[str, Any], exclude_fields: set
     ) -> Dict[str, Any]:
         """Recursively filter out specific field names"""
 
-        def filter_recursive(obj):
+        def filter_recursive(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {
                     k: filter_recursive(v)
@@ -369,7 +442,9 @@ class PrivacyFilter:
             else:
                 return obj
 
-        return filter_recursive(data)
+        filtered_result = filter_recursive(data)
+        # Ensure we return a dict as promised by the function signature
+        return filtered_result if isinstance(filtered_result, dict) else {}
 
     def _apply_custom_rules(
         self, data: Dict[str, Any], custom_rules: Dict[str, Any]
@@ -378,7 +453,7 @@ class PrivacyFilter:
         # Custom rules format: {"field_path": "action"}
         # Example: {"contact.phone": "hide", "experience.0.salary": "redact"}
 
-        def apply_rule_to_path(obj, path_parts, action):
+        def apply_rule_to_path(obj: Any, path_parts: List[str], action: str) -> Any:
             if not path_parts:
                 return obj
 

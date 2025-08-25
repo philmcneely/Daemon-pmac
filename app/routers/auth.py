@@ -2,8 +2,8 @@
 Authentication routes
 """
 
-from datetime import timedelta
-from typing import List
+from datetime import datetime, timedelta
+from typing import List, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -29,7 +29,7 @@ async def login(
 ):
     """Login and get access token"""
     user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+    if not user or not isinstance(user, User):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -45,12 +45,12 @@ async def login(
     # Update last login timestamp
     from datetime import datetime, timezone
 
-    user.last_login = datetime.now(timezone.utc)
+    setattr(user, "last_login", datetime.now(timezone.utc))
     db.commit()
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": cast(str, user.username)}, expires_delta=access_token_expires
     )
 
     return {
@@ -115,12 +115,12 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
 
     return UserResponse(
-        id=new_user.id,
-        username=new_user.username,
-        email=new_user.email,
-        is_active=new_user.is_active,
-        is_admin=new_user.is_admin,
-        created_at=new_user.created_at,
+        id=cast(int, new_user.id),
+        username=cast(str, new_user.username),
+        email=cast(str, new_user.email),
+        is_active=cast(bool, new_user.is_active),
+        is_admin=cast(bool, new_user.is_admin),
+        created_at=cast(datetime, new_user.created_at),
     )
 
 
@@ -178,12 +178,12 @@ async def create_user_admin(
     db.commit()
 
     return UserResponse(
-        id=new_user.id,
-        username=new_user.username,
-        email=new_user.email,
-        is_active=new_user.is_active,
-        is_admin=new_user.is_admin,
-        created_at=new_user.created_at,
+        id=cast(int, new_user.id),
+        username=cast(str, new_user.username),
+        email=cast(str, new_user.email),
+        is_active=cast(bool, new_user.is_active),
+        is_admin=cast(bool, new_user.is_admin),
+        created_at=cast(datetime, new_user.created_at),
     )
 
 
@@ -195,12 +195,12 @@ async def list_users(
     users = db.query(User).all()
     return [
         UserResponse(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            is_active=user.is_active,
-            is_admin=user.is_admin,
-            created_at=user.created_at,
+            id=cast(int, user.id),
+            username=cast(str, user.username),
+            email=cast(str, user.email),
+            is_active=cast(bool, user.is_active),
+            is_admin=cast(bool, user.is_admin),
+            created_at=cast(datetime, user.created_at),
         )
         for user in users
     ]
@@ -221,12 +221,12 @@ async def get_user_by_username(
         )
 
     return UserResponse(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        is_active=user.is_active,
-        is_admin=user.is_admin,
-        created_at=user.created_at,
+        id=cast(int, user.id),
+        username=cast(str, user.username),
+        email=cast(str, user.email),
+        is_active=cast(bool, user.is_active),
+        is_admin=cast(bool, user.is_admin),
+        created_at=cast(datetime, user.created_at),
     )
 
 
@@ -238,7 +238,7 @@ async def change_password(
     db: Session = Depends(get_db),
 ):
     """Change user password"""
-    if not authenticate_user(db, current_user.username, old_password):
+    if not authenticate_user(db, cast(str, current_user.username), old_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password"
         )
@@ -251,7 +251,7 @@ async def change_password(
         )
 
     # Update password
-    current_user.hashed_password = get_password_hash(new_password)
+    setattr(current_user, "hashed_password", get_password_hash(new_password))
     db.commit()
 
     return {"message": "Password updated successfully"}

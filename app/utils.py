@@ -10,7 +10,7 @@ import re
 import shutil
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import psutil
 from sqlalchemy.orm import Session
@@ -283,7 +283,7 @@ def import_endpoint_data(
             for i, row in enumerate(csv_reader):
                 try:
                     # Convert string values back to appropriate types
-                    processed_row = {}
+                    processed_row: Dict[str, Any] = {}
                     for key, value in row.items():
                         if value == "":
                             processed_row[key] = None
@@ -383,7 +383,7 @@ def health_check() -> Dict[str, Any]:
     """Perform a health check of the system"""
     from .database import engine
 
-    health = {
+    health: Dict[str, Any] = {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "checks": {},
@@ -466,11 +466,12 @@ def get_uptime() -> float:
 
 def format_bytes(bytes_value: int) -> str:
     """Format bytes into human readable format"""
+    value: float = float(bytes_value)
     for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if bytes_value < 1024.0:
-            return f"{bytes_value:.1f} {unit}"
-        bytes_value /= 1024.0
-    return f"{bytes_value:.1f} PB"
+        if value < 1024.0:
+            return f"{value:.1f} {unit}"
+        value /= 1024.0
+    return f"{value:.1f} PB"
 
 
 def sanitize_filename(filename: str) -> str:
@@ -585,7 +586,7 @@ def sanitize_data_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively sanitize a dictionary of data
     """
-    sanitized = {}
+    sanitized: Dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, dict):
             sanitized[key] = sanitize_data_dict(value)
@@ -854,24 +855,25 @@ def should_rate_limit(client_id: str, limit: int = 100, window: int = 60) -> boo
     # In production, you'd want to use Redis or similar
     import time
     from collections import defaultdict
+    from typing import cast
 
     if not hasattr(should_rate_limit, "requests"):
-        should_rate_limit.requests = defaultdict(list)
+        cast(Any, should_rate_limit).requests = defaultdict(list)
 
     now = time.time()
     window_seconds = window * 60
 
     # Clean old requests
-    should_rate_limit.requests[client_id] = [
+    cast(Any, should_rate_limit).requests[client_id] = [
         req_time
-        for req_time in should_rate_limit.requests[client_id]
+        for req_time in cast(Any, should_rate_limit).requests[client_id]
         if now - req_time < window_seconds
     ]
 
     # Check if limit exceeded
-    if len(should_rate_limit.requests[client_id]) >= limit:
+    if len(cast(Any, should_rate_limit).requests[client_id]) >= limit:
         return True
 
     # Add current request
-    should_rate_limit.requests[client_id].append(now)
+    cast(Any, should_rate_limit).requests[client_id].append(now)
     return False

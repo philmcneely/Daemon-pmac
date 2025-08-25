@@ -151,7 +151,7 @@ def import_resume_to_database(
         # If replacing, deactivate existing entries
         if replace_existing and existing_entries:
             for entry in existing_entries:
-                entry.is_active = False
+                setattr(entry, "is_active", False)
 
         # Create new resume entry
         resume_entry = DataEntry(

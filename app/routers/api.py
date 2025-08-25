@@ -4,7 +4,7 @@ Core API routes for daemon endpoints
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_
@@ -65,7 +65,7 @@ def log_audit_action(
         old_values=old_values,
         new_values=new_values,
         user_id=user.id if user else None,
-        ip_address=request.client.host if request else None,
+        ip_address=request.client.host if request and request.client else None,
         user_agent=request.headers.get("user-agent") if request else None,
     )
     db.add(audit_log)
@@ -218,7 +218,7 @@ async def create_endpoint(
         db,
         "CREATE",
         "endpoints",
-        endpoint.id,
+        cast(int, endpoint.id),
         current_user,
         None,
         endpoint_data.model_dump(by_alias=True),
@@ -439,7 +439,7 @@ async def get_endpoint_data(
 
                 privacy_filter = get_privacy_filter(db, entry_user)
                 filtered_entry = privacy_filter.filter_data(
-                    entry.data, privacy_level=privacy_level
+                    cast(Dict[str, Any], entry.data), privacy_level=privacy_level
                 )
                 # Apply additional sensitive data masking
                 filtered_entry["data"] = mask_sensitive_data(
@@ -454,7 +454,7 @@ async def get_endpoint_data(
 
                     privacy_filter = get_privacy_filter(db)
                     filtered_entry = privacy_filter.filter_data(
-                        entry.data,
+                        cast(Dict[str, Any], entry.data),
                         privacy_level=privacy_level,
                         is_authenticated=current_user is not None,
                     )
@@ -464,7 +464,7 @@ async def get_endpoint_data(
                 else:
                     # Still apply basic masking even without privacy filter
                     masked_data = mask_sensitive_data(
-                        entry.data, privacy_level or "public_full"
+                        cast(Dict[str, Any], entry.data), privacy_level or "public_full"
                     )
                     filtered_data.append(masked_data)
         return filtered_data
@@ -473,7 +473,9 @@ async def get_endpoint_data(
         # for sensitive data
         basic_filtered_data = []
         for entry in data_entries:
-            masked_data = mask_sensitive_data(entry.data, "public_full")
+            masked_data = mask_sensitive_data(
+                cast(Dict[str, Any], entry.data), "public_full"
+            )
             basic_filtered_data.append(masked_data)
         return basic_filtered_data
 
@@ -631,7 +633,7 @@ async def add_endpoint_data(
         db,
         "CREATE",
         "data_entries",
-        data_entry.id,
+        cast(int, data_entry.id),
         current_user,
         None,
         sanitized_data,
@@ -690,7 +692,7 @@ async def update_endpoint_data(
         )
 
     # Store old data for audit
-    old_data = data_entry.data.copy()
+    old_data = cast(Dict[str, Any], data_entry.data).copy()
 
     # Sanitize and validate new data
     sanitized_data = sanitize_data_dict(data)
@@ -706,7 +708,7 @@ async def update_endpoint_data(
             )
 
     # Update data entry
-    data_entry.data = sanitized_data
+    data_entry.data = cast(Any, sanitized_data)
     db.commit()
 
     # Log audit action
@@ -714,7 +716,7 @@ async def update_endpoint_data(
         db,
         "UPDATE",
         "data_entries",
-        data_entry.id,
+        cast(int, data_entry.id),
         current_user,
         old_data,
         sanitized_data,
@@ -772,10 +774,10 @@ async def delete_endpoint_data(
         )
 
     # Store data for audit
-    old_data = data_entry.data.copy()
+    old_data = cast(Dict[str, Any], data_entry.data).copy()
 
     # Soft delete by setting is_active to False
-    data_entry.is_active = False
+    setattr(data_entry, "is_active", False)
     db.commit()
 
     # Log audit action
@@ -783,7 +785,7 @@ async def delete_endpoint_data(
         db,
         "DELETE",
         "data_entries",
-        data_entry.id,
+        cast(int, data_entry.id),
         current_user,
         old_data,
         None,
@@ -990,7 +992,9 @@ async def get_specific_user_data_universal(
 
     for entry in data_entries:
         filtered_entry = privacy_filter.filter_data(
-            entry.data, privacy_level=level, is_authenticated=False
+            cast(Dict[str, Any], entry.data),
+            privacy_level=level,
+            is_authenticated=False,
         )
         if filtered_entry:
             # Apply additional sensitive data masking
@@ -1195,9 +1199,20 @@ def filter_sensitive_data(
         )
     else:
         # Fallback to basic filtering if no user context
+        if db is None:
+            # Return data with minimal pattern-based filtering when no db available
+            return {
+                k: v
+                for k, v in data.items()
+                if not any(
+                    pattern in k.lower()
+                    for pattern in ["password", "secret", "token", "key"]
+                )
+            }
+
         from ..privacy import PrivacyFilter
 
-        basic_filter = PrivacyFilter(None, None)
+        basic_filter = PrivacyFilter(db, None)
         return basic_filter._apply_sensitive_patterns(data)
 
 
@@ -1332,14 +1347,18 @@ async def preview_privacy_filtering(
     return {
         "original": data_entry.data,
         "filtered": privacy_filter.filter_data(
-            data_entry.data, privacy_level=level, is_authenticated=False
+            cast(Dict[str, Any], data_entry.data),
+            privacy_level=level,
+            is_authenticated=False,
         ),
         "privacy_level": level,
         "fields_removed": len(str(data_entry.data))
         - len(
             str(
                 privacy_filter.filter_data(
-                    data_entry.data, privacy_level=level, is_authenticated=False
+                    cast(Dict[str, Any], data_entry.data),
+                    privacy_level=level,
+                    is_authenticated=False,
                 )
             )
         ),
@@ -1414,7 +1433,7 @@ async def import_single_file(
     from ..multi_user_import import import_user_file
 
     # Use provided username or current user's username
-    target_username = username if username else current_user.username
+    target_username = username if username else cast(str, current_user.username)
 
     # Only admins can import for other users
     if target_username != current_user.username and not current_user.is_admin:

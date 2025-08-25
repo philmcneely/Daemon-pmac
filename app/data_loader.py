@@ -33,7 +33,7 @@ def discover_data_files(data_dir: Optional[str] = None) -> Dict[str, List[str]]:
         return {}
 
     # Pattern: {endpoint_name}.json or {endpoint_name}_*.json
-    discovered = {}
+    discovered: Dict[str, List[str]] = {}
 
     for file_path in glob.glob(os.path.join(data_dir, "*.json")):
         filename = os.path.basename(file_path)
@@ -207,7 +207,7 @@ def import_endpoint_data_to_database(
         replaced_count = 0
         if replace_existing and existing_entries:
             for entry in existing_entries:
-                entry.is_active = False
+                setattr(entry, "is_active", False)
                 replaced_count += 1
 
         # Import new data
@@ -270,8 +270,8 @@ def import_all_discovered_data(
             "errors": [],
         }
 
-    imported_endpoints = {}
-    errors = []
+    imported_endpoints: Dict[str, Any] = {}
+    errors: List[Dict[str, Any]] = []
     total_imported = 0
 
     for endpoint_name, file_paths in discovered_files.items():
@@ -335,7 +335,7 @@ def get_data_import_status(data_dir: Optional[str] = None) -> Dict[str, Any]:
     db = next(get_db())
 
     try:
-        status = {
+        status: Dict[str, Any] = {
             "data_directory": data_dir or DEFAULT_DATA_DIR,
             "directory_exists": os.path.exists(data_dir or DEFAULT_DATA_DIR),
             "discovered_files": {},

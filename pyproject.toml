@@ -110,6 +110,7 @@ asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.9"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -122,6 +123,17 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+show_error_codes = true
+exclude = [
+    "tests/",
+    "scripts/",
+    "backups/",
+    "data/",
+    "logs/",
+    "venv/",
+    ".venv/",
+    "app/cli.py",
+]
 
 [[tool.mypy.overrides]]
 module = [
@@ -129,5 +141,16 @@ module = [
     "jose.*",
     "slowapi.*",
     "prometheus_client.*",
+    "psutil.*",
+    "uvicorn.*",
+    "alembic.*",
+    "click.*",
+    "rich.*",
+    "structlog.*",
+    "httpx.*",
+    "pytest.*",
+    "aiosqlite.*",
+    "cryptography.*",
+    "bcrypt.*",
 ]
 ignore_missing_imports = true

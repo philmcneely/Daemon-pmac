@@ -5,7 +5,7 @@ Management routes for admin operations
 import os
 import shutil
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -54,7 +54,7 @@ async def toggle_user_status(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot deactivate yourself"
         )
 
-    user.is_active = not user.is_active
+    setattr(user, "is_active", not user.is_active)
     db.commit()
 
     return {"message": f"User {'activated' if user.is_active else 'deactivated'}"}
@@ -73,7 +73,7 @@ async def toggle_admin_status(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    user.is_admin = not user.is_admin
+    setattr(user, "is_admin", not user.is_admin)
     db.commit()
 
     return {"message": f"User admin status {'granted' if user.is_admin else 'revoked'}"}
@@ -122,11 +122,11 @@ async def create_api_key(
     db.refresh(api_key_obj)
 
     return ApiKeyResponse(
-        id=api_key_obj.id,
-        name=api_key_obj.name,
+        id=cast(int, api_key_obj.id),
+        name=cast(str, api_key_obj.name),
         key=api_key,  # Only returned on creation
-        expires_at=api_key_obj.expires_at,
-        created_at=api_key_obj.created_at,
+        expires_at=cast(Optional[datetime], api_key_obj.expires_at),
+        created_at=cast(datetime, api_key_obj.created_at),
     )
 
 
@@ -172,7 +172,7 @@ async def toggle_endpoint_status(
             status_code=status.HTTP_404_NOT_FOUND, detail="Endpoint not found"
         )
 
-    endpoint.is_active = not endpoint.is_active
+    setattr(endpoint, "is_active", not endpoint.is_active)
     db.commit()
 
     # Clear OpenAPI schema cache to refresh endpoint dropdowns
@@ -318,7 +318,7 @@ async def list_backups(current_user: User = Depends(get_current_admin_user)):
             )
 
     # Sort by creation date (newest first)
-    backups.sort(key=lambda x: x["created_at"], reverse=True)
+    backups.sort(key=lambda x: cast(datetime, x["created_at"]), reverse=True)
 
     return {"backups": backups}
 
@@ -365,8 +365,8 @@ async def restore_backup(
 async def get_audit_log(
     page: int = 1,
     size: int = 50,
-    action: str = None,
-    table_name: str = None,
+    action: Optional[str] = None,
+    table_name: Optional[str] = None,
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):

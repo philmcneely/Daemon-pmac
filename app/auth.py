@@ -7,7 +7,7 @@ import ipaddress
 import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -59,7 +59,7 @@ def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
-        username: str = payload.get("sub")
+        username: Optional[str] = payload.get("sub")
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
@@ -73,7 +73,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Union[User, 
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, cast(str, user.hashed_password)):
         return False
     return user
 
@@ -95,7 +95,7 @@ def get_current_user(
         raise credentials_exception
 
     # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    setattr(user, "last_login", datetime.now(timezone.utc))
     db.commit()
 
     return user
@@ -146,7 +146,7 @@ def verify_api_key(db: Session, api_key: str) -> Optional[User]:
         return None
 
     # Update last used
-    api_key_obj.last_used = datetime.now(timezone.utc)
+    setattr(api_key_obj, "last_used", datetime.now(timezone.utc))
     db.commit()
 
     return api_key_obj.user
@@ -185,8 +185,8 @@ def is_ip_allowed(ip_address: str) -> bool:
 
 def check_ip_access(request: Request):
     """Middleware to check IP access"""
-    client_ip = request.client.host
-    if not is_ip_allowed(client_ip):
+    client_ip = request.client.host if request.client else None
+    if not client_ip or not is_ip_allowed(client_ip):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied from this IP address",
@@ -208,7 +208,9 @@ def add_security_headers(response):
 
 
 # Rate limiting decorator
-def rate_limit(max_requests: int = None, window_seconds: int = None):
+def rate_limit(
+    max_requests: Optional[int] = None, window_seconds: Optional[int] = None
+):
     """Rate limiting decorator"""
 
     def decorator(func):

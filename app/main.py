@@ -8,6 +8,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -207,7 +208,7 @@ Core personal data endpoints:
 
 # Add rate limiting
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, cast(Any, _rate_limit_exceeded_handler))
 
 # Middleware
 app.add_middleware(
@@ -458,7 +459,7 @@ def custom_openapi():
 
 
 # Set the custom OpenAPI generator
-app.openapi = custom_openapi
+setattr(app, "openapi", custom_openapi)
 
 
 # Root endpoint
