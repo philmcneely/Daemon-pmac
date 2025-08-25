@@ -175,7 +175,8 @@ async def toggle_endpoint_status(
     endpoint.is_active = not endpoint.is_active
     db.commit()
 
-    # Clear OpenAPI schema cache to refresh endpoint dropdowns (since active status affects available endpoints)
+    # Clear OpenAPI schema cache to refresh endpoint dropdowns
+    # (since active status affects available endpoints)
     from .. import main
 
     if hasattr(main.app, "openapi_schema"):
@@ -441,7 +442,9 @@ async def get_system_info(current_user: User = Depends(get_current_admin_user)):
             "database_size": db_size,
             "backup_dir": settings.backup_dir,
             "backup_enabled": settings.backup_enabled,
-            "rate_limit": f"{settings.rate_limit_requests}/{settings.rate_limit_window}s",
+            "rate_limit": (
+                f"{settings.rate_limit_requests}/" f"{settings.rate_limit_window}s"
+            ),
         },
         "timestamp": datetime.now(timezone.utc),
     }

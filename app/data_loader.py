@@ -195,7 +195,10 @@ def import_endpoint_data_to_database(
         if existing_entries and not replace_existing:
             return {
                 "success": False,
-                "error": f"Data already exists for '{endpoint_name}'. Use replace_existing=True to overwrite.",
+                "error": (
+                    f"Data already exists for '{endpoint_name}'. "
+                    "Use replace_existing=True to overwrite."
+                ),
                 "file_path": file_path,
                 "existing_entries": len(existing_entries),
             }

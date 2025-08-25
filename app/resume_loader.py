@@ -122,7 +122,9 @@ def import_resume_to_database(
         if not resume_endpoint:
             return {
                 "success": False,
-                "error": f"Resume endpoint '{RESUME_ENDPOINT_NAME}' not found or inactive",
+                "error": (
+                    f"Resume endpoint '{RESUME_ENDPOINT_NAME}' " "not found or inactive"
+                ),
                 "file_path": load_result["file_path"],
             }
 
@@ -138,7 +140,10 @@ def import_resume_to_database(
         if existing_entries and not replace_existing:
             return {
                 "success": False,
-                "error": f"Resume data already exists. Use replace_existing=True to overwrite.",
+                "error": (
+                    "Resume data already exists. "
+                    "Use replace_existing=True to overwrite."
+                ),
                 "file_path": load_result["file_path"],
                 "existing_entries": len(existing_entries),
             }

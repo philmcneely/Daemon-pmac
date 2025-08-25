@@ -244,7 +244,8 @@ async def create_endpoint(
     **Get data from any endpoint with privacy filtering**
 
     This endpoint works with all dynamic endpoints in the system:
-    - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies, problems, looking_for, about
+    - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies,
+      problems, looking_for, about
     - **Custom endpoints**: Any endpoints you create via `/api/v1/endpoints`
 
     ### 🔄 Adaptive Behavior
@@ -324,7 +325,9 @@ async def create_endpoint(
                                 {
                                     "id": 1,
                                     "title": "AI-Powered Code Review",
-                                    "description": "Automated code review using machine learning",
+                                    "description": (
+                                        "Automated code review using machine learning"
+                                    ),
                                     "category": "technology",
                                     "status": "concept",
                                 }
@@ -466,7 +469,8 @@ async def get_endpoint_data(
                     filtered_data.append(masked_data)
         return filtered_data
     else:
-        # No explicit privacy filtering requested, but still apply basic masking for sensitive data
+        # No explicit privacy filtering requested, but still apply basic masking
+        # for sensitive data
         basic_filtered_data = []
         for entry in data_entries:
             masked_data = mask_sensitive_data(entry.data, "public_full")
@@ -482,7 +486,8 @@ async def get_endpoint_data(
     **Add new data to any endpoint (authentication required)**
 
     This endpoint allows you to add data to any endpoint in the system:
-    - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies, problems, looking_for, about
+    - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies,
+      problems, looking_for, about
     - **Custom endpoints**: Any endpoints you create
 
     ### 🔄 Adaptive Behavior
@@ -493,10 +498,14 @@ async def get_endpoint_data(
     ### 📝 Data Validation
 
     Each endpoint has its own schema validation:
-    - **resume**: Requires `name` and `title`, supports contact, experience, education, skills, etc.
-    - **skills**: Requires `name`, supports category, level (beginner/intermediate/advanced/expert), years_experience
-    - **ideas**: Requires `title` and `description`, supports category, status
-    - **favorite_books**: Requires `title` and `author`, supports rating (1-5), review, genres
+    - **resume**: Requires `name` and `title`, supports contact, experience,
+      education, skills, etc.
+    - **skills**: Requires `name`, supports category, level
+      (beginner/intermediate/advanced/expert), years_experience
+    - **ideas**: Requires `title` and `description`, supports category,
+      status
+    - **favorite_books**: Requires `title` and `author`, supports rating
+      (1-5), review, genres
     - **hobbies**: Supports name, category, description, years_active
     - **problems**: Supports title, description, category, status
     - **looking_for**: Supports title, description, category, urgency
@@ -543,7 +552,9 @@ async def get_endpoint_data(
                                 "message": "Data added to ideas",
                                 "data": {
                                     "title": "AI Code Review Tool",
-                                    "description": "Automated code review using machine learning",
+                                    "description": (
+                                        "Automated code review using machine learning"
+                                    ),
                                     "category": "technology",
                                 },
                             },
@@ -850,7 +861,8 @@ async def bulk_add_endpoint_data(
     }
 
 
-# User-specific public data access (legacy route - use /{endpoint_name}/users/{username} instead)
+# User-specific public data access (legacy route)
+# Use /{endpoint_name}/users/{username} instead
 @router.get("/users/{username}/{endpoint_name}", response_model=List[Dict[str, Any]])
 async def get_user_public_data_legacy(
     username: str,
@@ -1026,7 +1038,8 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
     description="""
     **Get comprehensive system information and endpoint routing patterns**
 
-    This endpoint helps you understand how the API currently operates based on the number of users.
+    This endpoint helps you understand how the API currently operates based
+    on the number of users.
 
     ### 🔄 Adaptive Routing Information
 
@@ -1086,7 +1099,9 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                                 "available_endpoints": [
                                     {
                                         "name": "resume",
-                                        "description": "Professional resume and work history",
+                                        "description": (
+                                            "Professional resume and work history"
+                                        ),
                                     },
                                     {
                                         "name": "skills",
@@ -1106,7 +1121,9 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                                 "mode": "multi_user",
                                 "total_users": 3,
                                 "users": ["admin", "john", "jane"],
-                                "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
+                                "endpoint_pattern": (
+                                    "/api/v1/{endpoint_name}/users/{username}"
+                                ),
                                 "example_urls": [
                                     "/api/v1/resume/users/john",
                                     "/api/v1/skills/users/jane",
@@ -1115,7 +1132,9 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                                 "available_endpoints": [
                                     {
                                         "name": "resume",
-                                        "description": "Professional resume and work history",
+                                        "description": (
+                                            "Professional resume and work history"
+                                        ),
                                     },
                                     {
                                         "name": "skills",
@@ -1431,7 +1450,8 @@ async def setup_new_user_with_data(
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Complete user setup: create user, directory, and import initial data (admin only)"""
+    """Complete user setup: create user, directory, and import initial data
+    (admin only)"""
     from ..database import UserPrivacySettings
     from ..multi_user_import import (
         create_user_data_directory,

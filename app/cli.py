@@ -2,6 +2,21 @@
 Command Line Interface for Daemon-pmac
 """
 
+from app.utils import (
+    cleanup_old_backups,
+    create_backup,
+    export_endpoint_data,
+    import_endpoint_data,
+)
+from app.database import (
+    Endpoint,
+    SessionLocal,
+    User,
+    create_default_endpoints,
+    init_db,
+)
+from app.config import settings
+from app.auth import get_password_hash
 import os
 import sys
 from datetime import datetime
@@ -10,22 +25,6 @@ import click
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from app.auth import get_password_hash
-from app.config import settings
-from app.database import (
-    Endpoint,
-    SessionLocal,
-    User,
-    create_default_endpoints,
-    init_db,
-)
-from app.utils import (
-    cleanup_old_backups,
-    create_backup,
-    export_endpoint_data,
-    import_endpoint_data,
-)
 
 
 @click.group()
@@ -587,7 +586,8 @@ def import_data(endpoint_name, input_file, format):
             click.echo("\nErrors:")
             for error in result["errors"][:5]:  # Show first 5 errors
                 click.echo(
-                    f"  - Item {error['index']}: {error.get('error', error.get('errors', []))}"
+                    f"  - Item {error['index']}: "
+                    f"{error.get('error', error.get('errors', []))}"
                 )
 
         db.close()
@@ -785,7 +785,8 @@ def import_all_data(base_dir: str, replace: bool):
 
             for user_result in result["users_processed"]:
                 click.echo(
-                    f"  - {user_result['username']}: {user_result['total_entries']} entries"
+                    f"  - {user_result['username']}: "
+                    f"{user_result['total_entries']} entries"
                 )
 
             if result["errors"]:

@@ -122,11 +122,13 @@ def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> List[s
         if field_type == "string" and isinstance(value, str):
             if "min_length" in field_schema and len(value) < field_schema["min_length"]:
                 errors.append(
-                    f"Field '{field_name}' must be at least {field_schema['min_length']} characters"
+                    f"Field '{field_name}' must be at least "
+                    f"{field_schema['min_length']} characters"
                 )
             if "max_length" in field_schema and len(value) > field_schema["max_length"]:
                 errors.append(
-                    f"Field '{field_name}' must be at most {field_schema['max_length']} characters"
+                    f"Field '{field_name}' must be at most "
+                    f"{field_schema['max_length']} characters"
                 )
 
         # Number range validation
@@ -622,8 +624,10 @@ def mask_sensitive_data(
     # Sensitive patterns to detect in any string value
     sensitive_patterns = {
         "ssn": r"\b\d{3}-\d{2}-\d{4}\b",  # SSN pattern
-        "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",  # Credit card pattern
-        "api_key": r"\b[a-zA-Z0-9]{32,}\b",  # Long alphanumeric strings (potential API keys)
+        # Credit card pattern
+        "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
+        # Long alphanumeric strings (potential API keys)
+        "api_key": r"\b[a-zA-Z0-9]{32,}\b",
         "private_key": r"-----BEGIN [A-Z ]+PRIVATE KEY-----",  # Private key headers
         "secret": r"secret[a-zA-Z0-9]{6,}|sk_[a-zA-Z0-9_]+",  # API secret patterns
     }
@@ -654,7 +658,8 @@ def mask_sensitive_data(
                     for sensitive_field in fields_to_mask
                 )
                 # Debug: print what we're checking
-                # print(f"Checking key '{key}' against fields {fields_to_mask}, should_mask: {should_mask}")
+                # print(f"Checking key '{key}' against fields {fields_to_mask}, "
+                #       f"should_mask: {should_mask}")
                 if should_mask:
                     # Different masking based on field type
                     if "password" in key.lower() or "secret" in key.lower():

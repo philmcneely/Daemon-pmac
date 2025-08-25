@@ -8,12 +8,13 @@ import os
 import sys
 from pathlib import Path
 
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import declarative_base
+
 # Add the app directory to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import declarative_base
 
 # Direct database setup to avoid importing the full app
 DATABASE_URL = "sqlite:///daemon.db"
@@ -114,7 +115,8 @@ def insert_default_privacy_rules():
             # Address information - professional level
             (
                 "address",
-                r"\d+\s+[A-Za-z0-9\s,.-]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln)",
+                r"\d+\s+[A-Za-z0-9\s,.-]+\s+(Street|St|Avenue|Ave|Road|Rd|"
+                r"Drive|Dr|Lane|Ln)",
                 "professional",
             ),
             ("zip_code", r"\b\d{5}(-\d{4})?\b", "professional"),
@@ -126,7 +128,10 @@ def insert_default_privacy_rules():
             ("date_of_birth", r"\b\d{1,2}/\d{1,2}/\d{4}\b", "professional"),
             (
                 "dob_alt",
-                r"\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b",
+                (
+                    r"\b(January|February|March|April|May|June|July|August|"
+                    r"September|October|November|December)\s+\d{1,2},?\s+\d{4}\b"
+                ),
                 "professional",
             ),
         ]
@@ -172,14 +177,17 @@ def create_default_privacy_settings_for_existing_users():
             return
 
         print(
-            f"Creating default privacy settings for {len(users_without_settings)} users..."
+            f"Creating default privacy settings for "
+            f"{len(users_without_settings)} users..."
         )
 
         for user_id, username in users_without_settings:
             conn.execute(
                 text(
                     """
-            INSERT INTO user_privacy_settings (user_id, privacy_level, show_contact_info, ai_assistant_access, business_card_mode)
+            INSERT INTO user_privacy_settings
+            (user_id, privacy_level, show_contact_info, ai_assistant_access,
+             business_card_mode)
             VALUES (:user_id, 'public_full', TRUE, TRUE, FALSE)
             """
                 ),

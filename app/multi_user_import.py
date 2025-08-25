@@ -24,7 +24,8 @@ def import_user_data_from_directory(
 
     Args:
         username: Username to import data for
-        data_directory: Path to user's data directory (defaults to data/private/{username})
+        data_directory: Path to user's data directory
+            (defaults to data/private/{username})
         db: Database session (optional)
         replace_existing: Whether to replace existing data entries
 
@@ -304,7 +305,10 @@ def import_all_users_data(
                 results["errors"].append(
                     {
                         "username": username,
-                        "error": f"User '{username}' not found in database. Create user first.",
+                        "error": (
+                            f"User '{username}' not found in database. "
+                            "Create user first."
+                        ),
                     }
                 )
                 continue
