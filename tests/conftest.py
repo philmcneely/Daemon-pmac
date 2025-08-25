@@ -134,12 +134,101 @@ def client(temp_db):
     app.dependency_overrides.clear()
 
 
+# ===== Database Cleanup Fixtures =====
+
+
+@pytest.fixture(autouse=True)
+def clean_e2e_database(request):
+    """Clean the E2E database before each test if using E2E fixtures"""
+    # Only clean if this test is using E2E fixtures
+    if any(
+        fixture in request.fixturenames
+        for fixture in ["client", "test_db_session", "admin_user", "regular_user"]
+    ):
+        # Get the shared database path
+        db_path = os.environ.get("DATABASE_URL", "sqlite:///test.db").replace(
+            "sqlite:///", ""
+        )
+        if os.path.exists(db_path):
+            engine = create_engine(f"sqlite:///{db_path}")
+            SessionLocal = sessionmaker(bind=engine)
+            session = SessionLocal()
+            try:
+                # Use SQLAlchemy models for safer deletion
+                from app.database import (
+                    ApiKey,
+                    AuditLog,
+                    DataEntry,
+                    DataPrivacyRule,
+                    User,
+                    UserPrivacySettings,
+                )
+
+                # Delete in correct order (respecting foreign keys)
+                session.query(UserPrivacySettings).delete()
+                session.query(DataPrivacyRule).delete()
+                session.query(AuditLog).delete()
+                session.query(DataEntry).delete()
+                session.query(ApiKey).delete()
+                session.query(User).delete()
+                session.commit()
+            except Exception:
+                session.rollback()
+            finally:
+                session.close()
+
+
+@pytest.fixture(autouse=True)
+def clean_unit_database(request, unit_db):
+    """Clean the unit test database before each test if using unit fixtures"""
+    # Only clean if this test is using unit fixtures
+    if any(
+        fixture in request.fixturenames
+        for fixture in [
+            "unit_client",
+            "unit_db_session",
+            "unit_admin_user",
+            "unit_regular_user",
+        ]
+    ):
+        TestingSessionLocal = unit_db
+        session = TestingSessionLocal()
+        try:
+            # Use SQLAlchemy models for safer deletion
+            from app.database import (
+                ApiKey,
+                AuditLog,
+                DataEntry,
+                DataPrivacyRule,
+                User,
+                UserPrivacySettings,
+            )
+
+            # Delete in correct order (respecting foreign keys)
+            session.query(UserPrivacySettings).delete()
+            session.query(DataPrivacyRule).delete()
+            session.query(AuditLog).delete()
+            session.query(DataEntry).delete()
+            session.query(ApiKey).delete()
+            session.query(User).delete()
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+
+
 # ===== User Fixtures (Work with both E2E and Unit tests) =====
 
 
 @pytest.fixture
 def admin_user(test_db_session):
     """Create an admin user for testing (E2E)"""
+    # Check if admin user already exists
+    existing_user = test_db_session.query(User).filter_by(username="admin").first()
+    if existing_user:
+        return existing_user
+
     user = User(
         username="admin",
         email="admin@test.com",
@@ -155,6 +244,11 @@ def admin_user(test_db_session):
 @pytest.fixture
 def regular_user(test_db_session):
     """Create a regular user for testing (E2E)"""
+    # Check if regular user already exists
+    existing_user = test_db_session.query(User).filter_by(username="user").first()
+    if existing_user:
+        return existing_user
+
     user = User(
         username="user",
         email="user@test.com",
@@ -170,6 +264,11 @@ def regular_user(test_db_session):
 @pytest.fixture
 def unit_admin_user(unit_db_session):
     """Create an admin user for unit testing"""
+    # Check if admin user already exists
+    existing_user = unit_db_session.query(User).filter_by(username="admin").first()
+    if existing_user:
+        return existing_user
+
     user = User(
         username="admin",
         email="admin@test.com",
@@ -185,6 +284,11 @@ def unit_admin_user(unit_db_session):
 @pytest.fixture
 def unit_regular_user(unit_db_session):
     """Create a regular user for unit testing"""
+    # Check if regular user already exists
+    existing_user = unit_db_session.query(User).filter_by(username="user").first()
+    if existing_user:
+        return existing_user
+
     user = User(
         username="user",
         email="user@test.com",
