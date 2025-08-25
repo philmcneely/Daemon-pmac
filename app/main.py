@@ -332,8 +332,8 @@ def custom_openapi():
                         # Add enum constraint with available endpoints
                         param["schema"]["enum"] = available_endpoints
                         param["description"] = (
-                            f"Endpoint name (available: {
-                                ', '.join(available_endpoints)})"
+                            f"Endpoint name (available: "
+                            f"{', '.join(available_endpoints)})"
                         )
 
     # Add example endpoints in the description

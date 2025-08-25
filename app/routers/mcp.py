@@ -199,6 +199,11 @@ async def call_mcp_tool(
                 },
             }
 
+    except HTTPException as e:
+        return {
+            "jsonrpc": "2.0",
+            "error": {"code": -32603, "message": e.detail},
+        }
     except Exception as e:
         return {
             "jsonrpc": "2.0",
