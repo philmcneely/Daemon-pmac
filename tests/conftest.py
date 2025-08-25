@@ -155,6 +155,7 @@ def clean_e2e_database(request, e2e_db):
                 AuditLog,
                 DataEntry,
                 DataPrivacyRule,
+                Endpoint,
                 User,
                 UserPrivacySettings,
             )
@@ -165,6 +166,7 @@ def clean_e2e_database(request, e2e_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
+            session.query(Endpoint).delete()
             session.query(User).delete()
             session.commit()
         except Exception:
@@ -187,6 +189,7 @@ def clean_e2e_database(request, e2e_db):
                 AuditLog,
                 DataEntry,
                 DataPrivacyRule,
+                Endpoint,
                 User,
                 UserPrivacySettings,
             )
@@ -197,6 +200,7 @@ def clean_e2e_database(request, e2e_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
+            session.query(Endpoint).delete()
             session.query(User).delete()
             session.commit()
         except Exception:
@@ -227,6 +231,7 @@ def clean_unit_database(request, unit_db):
                 AuditLog,
                 DataEntry,
                 DataPrivacyRule,
+                Endpoint,
                 User,
                 UserPrivacySettings,
             )
@@ -237,6 +242,7 @@ def clean_unit_database(request, unit_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
+            session.query(Endpoint).delete()
             session.query(User).delete()
             session.commit()
         except Exception:
