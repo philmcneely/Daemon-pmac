@@ -44,7 +44,13 @@ jobs:
     - name: Create test database
       run: |
         mkdir -p data
-        touch daemon.db
+        python -c "
+        from app.database import engine, Base, create_default_endpoints, SessionLocal
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        create_default_endpoints(db)
+        db.close()
+        "
 
     - name: Run tests with coverage
       run: |
@@ -91,7 +97,7 @@ jobs:
       run: isort --check-only --diff app/ tests/
 
     - name: Run flake8 (linting)
-      run: flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+      run: flake8 app/ tests/
 
     - name: Run mypy (type checking)
       run: mypy app/ --ignore-missing-imports --no-strict-optional

@@ -216,13 +216,18 @@ def test_system_metrics():
     metrics = get_system_metrics()
 
     assert isinstance(metrics, dict)
-    assert "cpu_percent" in metrics
-    assert "memory_percent" in metrics
-    assert "disk_usage" in metrics
+    assert "cpu" in metrics
+    assert "memory" in metrics
+    assert "disk" in metrics
+    assert "database" in metrics
 
-    # Validate metric ranges
-    assert 0 <= metrics["cpu_percent"] <= 100
-    assert 0 <= metrics["memory_percent"] <= 100
+    # Validate metric structure and ranges
+    assert "percent" in metrics["cpu"]
+    assert "percent" in metrics["memory"]
+    assert "percent" in metrics["disk"]
+    assert 0 <= metrics["cpu"]["percent"] <= 100
+    assert 0 <= metrics["memory"]["percent"] <= 100
+    assert 0 <= metrics["disk"]["percent"] <= 100
 
 
 def test_privacy_helpers():
@@ -265,11 +270,21 @@ def test_rate_limiting_helpers():
 
     # Rate limiting should start as False
     assert should_rate_limit(client_id, limit=10, window=60) == False
+
+
+def test_format_bytes():
+    """Test byte formatting utility"""
+    from app.utils import format_bytes
+
     assert format_bytes(500) == "500.0 B"
+    assert format_bytes(1024) == "1.0 KB"
+    assert format_bytes(1024 * 1024) == "1.0 MB"
 
 
 def test_sanitize_filename():
     """Test filename sanitization"""
+    from app.utils import sanitize_filename
+
     assert sanitize_filename("test file.txt") == "test_file.txt"
     assert sanitize_filename("test<>file") == "test__file"
     assert sanitize_filename("test:file") == "test_file"
@@ -288,6 +303,7 @@ def test_health_check():
 def test_export_import_json(test_db_session):
     """Test JSON export and import"""
     from app.database import DataEntry, Endpoint
+    from app.utils import export_endpoint_data, import_endpoint_data
 
     # Create test endpoint
     endpoint = Endpoint(
@@ -318,6 +334,7 @@ def test_export_import_json(test_db_session):
 def test_export_csv(test_db_session):
     """Test CSV export"""
     from app.database import DataEntry, Endpoint
+    from app.utils import export_endpoint_data
 
     # Create test endpoint
     endpoint = Endpoint(
@@ -345,5 +362,7 @@ def test_export_csv(test_db_session):
 
 def test_import_invalid_endpoint(test_db_session):
     """Test importing to nonexistent endpoint"""
+    from app.utils import import_endpoint_data
+
     with pytest.raises(ValueError, match="not found"):
         import_endpoint_data(test_db_session, "nonexistent", "{}", "json")

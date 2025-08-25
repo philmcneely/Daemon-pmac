@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import DataEntry, Endpoint, get_db
-from ..schemas import MCPToolCallRequest, MCPToolCallResponse, MCPToolResponse
+from ..schemas import (
+    MCPJSONRPCRequest,
+    MCPToolCallRequest,
+    MCPToolCallResponse,
+    MCPToolResponse,
+)
 
 router = APIRouter(prefix="/mcp", tags=["Model Context Protocol"])
 
@@ -72,14 +77,20 @@ def get_mcp_tools(db: Session) -> List[Dict[str, Any]]:
 
 
 @router.post("/tools/list")
-async def list_mcp_tools(db: Session = Depends(get_db)) -> Dict[str, Any]:
+async def list_mcp_tools(
+    request: MCPJSONRPCRequest, db: Session = Depends(get_db)
+) -> Dict[str, Any]:
     """List available MCP tools"""
     if not settings.mcp_enabled:
         raise HTTPException(status_code=404, detail="MCP support is disabled")
 
     tools = get_mcp_tools(db)
 
-    return {"jsonrpc": "2.0", "result": {"tools": tools}}
+    response = {"jsonrpc": "2.0", "result": {"tools": tools}}
+    if request.id is not None:
+        response["id"] = request.id
+
+    return response
 
 
 @router.post("/tools/call")
@@ -95,10 +106,7 @@ async def call_mcp_tool(
 
     # Remove prefix to get endpoint name
     if not tool_name.startswith(settings.mcp_tools_prefix):
-        return {
-            "jsonrpc": "2.0",
-            "error": {"code": -32602, "message": f"Invalid tool name: {tool_name}"},
-        }
+        raise HTTPException(status_code=404, detail=f"Invalid tool name: {tool_name}")
 
     endpoint_name = tool_name[len(settings.mcp_tools_prefix) :]
 
@@ -145,16 +153,18 @@ async def call_mcp_tool(
             )
 
             if not endpoint:
-                return {
-                    "jsonrpc": "2.0",
-                    "error": {
-                        "code": -32602,
-                        "message": f"Endpoint '{endpoint_name}' not found or not public",
-                    },
-                }
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Endpoint '{endpoint_name}' not found or not public",
+                )
 
             # Get parameters
-            limit = min(arguments.get("limit", 10), 100)
+            limit = arguments.get("limit", 10)
+            if limit < 1:
+                raise HTTPException(
+                    status_code=400, detail="Limit must be a positive integer"
+                )
+            limit = min(limit, 100)
             active_only = arguments.get("active_only", True)
 
             # Query data

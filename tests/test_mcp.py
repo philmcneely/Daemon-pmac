@@ -87,7 +87,10 @@ def test_mcp_tool_call_invalid_tool(client):
     response = client.post(
         "/mcp/tools/call", json={"name": "daemon_nonexistent", "arguments": {}}
     )
-    assert response.status_code == 404
+    assert response.status_code == 200  # MCP returns 200 with JSON-RPC error
+    data = response.json()
+    assert "error" in data
+    assert data["error"]["code"] == -32603  # Internal error code
 
 
 def test_mcp_tool_call_invalid_arguments(client):
@@ -97,7 +100,10 @@ def test_mcp_tool_call_invalid_arguments(client):
         json={"name": "daemon_ideas", "arguments": {"limit": -1}},
         # Invalid limit
     )
-    assert response.status_code == 400
+    assert response.status_code == 200  # MCP returns 200 with JSON-RPC error
+    data = response.json()
+    assert "error" in data
+    assert "Limit must be a positive integer" in data["error"]["message"]
 
 
 def test_mcp_tool_specific_endpoint(client, auth_headers, sample_book_data):
@@ -110,8 +116,9 @@ def test_mcp_tool_specific_endpoint(client, auth_headers, sample_book_data):
     )
     assert response.status_code == 200
     data = response.json()
-    assert "result" in data
-    assert "content" in data["result"]
+    assert "content" in data  # REST endpoint returns result directly
+    assert "is_error" in data
+    assert data["is_error"] == False
 
 
 def test_mcp_jsonrpc_compliance(client):

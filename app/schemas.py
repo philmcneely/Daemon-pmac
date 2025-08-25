@@ -126,6 +126,13 @@ class MCPToolResponse(BaseModel):
     input_schema: Dict[str, Any]
 
 
+class MCPJSONRPCRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    method: str
+    id: Optional[str] = None
+    params: Optional[Dict[str, Any]] = None
+
+
 class MCPToolCallRequest(BaseModel):
     name: str
     arguments: Dict[str, Any]

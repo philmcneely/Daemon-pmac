@@ -701,3 +701,138 @@ def validate_url(url: str) -> bool:
             return False
 
     return True
+
+
+def validate_endpoint_name(name: str) -> bool:
+    """Validate endpoint name format"""
+    if not name or not isinstance(name, str):
+        return False
+
+    # Must start with a letter or underscore
+    if not re.match(r"^[a-zA-Z_]", name):
+        return False
+
+    # Can only contain letters, numbers, and underscores
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
+        return False
+
+    return True
+
+
+def sanitize_data_entry(data: Any) -> Any:
+    """Sanitize data entry by removing dangerous content"""
+    import html
+
+    if isinstance(data, str):
+        # Remove HTML tags and escape entities
+        sanitized = re.sub(r"<[^>]*>", "", data)
+        sanitized = html.escape(sanitized)
+        return sanitized
+    elif isinstance(data, dict):
+        return {key: sanitize_data_entry(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_data_entry(item) for item in data]
+    else:
+        return data
+
+
+def get_backup_files_to_delete(
+    backup_files: List[str], retention_days: int = 30
+) -> List[str]:
+    """Get list of backup files that should be deleted based on retention policy"""
+    from datetime import datetime, timedelta
+
+    cutoff_date = datetime.now() - timedelta(days=retention_days)
+    files_to_delete = []
+
+    for file_path in backup_files:
+        try:
+            # Extract timestamp from filename pattern: daemon_backup_YYYYMMDD_HHMMSS.db
+            filename = os.path.basename(file_path)
+            if filename.startswith("daemon_backup_") and filename.endswith(".db"):
+                timestamp_str = filename[14:-3]  # Remove prefix and suffix
+                file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+
+                if file_date < cutoff_date:
+                    files_to_delete.append(file_path)
+        except (ValueError, IndexError):
+            # Skip files that don't match expected pattern
+            continue
+
+    return files_to_delete
+
+
+def is_sensitive_field(field_name: str) -> bool:
+    """Check if a field name indicates sensitive data"""
+    sensitive_fields = {
+        "password",
+        "passwd",
+        "pwd",
+        "secret",
+        "token",
+        "key",
+        "api_key",
+        "email",
+        "mail",
+        "address",
+        "phone",
+        "ssn",
+        "social",
+        "credit",
+        "card",
+        "cvv",
+        "pin",
+        "oauth",
+        "auth",
+        "session",
+        "cookie",
+    }
+
+    field_lower = field_name.lower()
+    return any(sensitive in field_lower for sensitive in sensitive_fields)
+
+
+def get_client_identifier(request) -> str:
+    """Get a unique identifier for the client making the request"""
+    # Try to get real IP from headers (for proxied requests)
+    forwarded_for = getattr(request.headers, "x-forwarded-for", None)
+    if forwarded_for:
+        # Take the first IP in the chain
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = getattr(request.client, "host", "unknown")
+
+    # Include user agent for more specific identification
+    user_agent = getattr(request.headers, "user-agent", "")
+    return f"{client_ip}:{hash(user_agent) % 10000}"
+
+
+def should_rate_limit(
+    client_id: str, max_requests: int = 100, window_minutes: int = 60
+) -> bool:
+    """Check if a client should be rate limited"""
+    # This is a simple in-memory rate limiter for testing
+    # In production, you'd want to use Redis or similar
+    import time
+    from collections import defaultdict
+
+    if not hasattr(should_rate_limit, "requests"):
+        should_rate_limit.requests = defaultdict(list)
+
+    now = time.time()
+    window_seconds = window_minutes * 60
+
+    # Clean old requests
+    should_rate_limit.requests[client_id] = [
+        req_time
+        for req_time in should_rate_limit.requests[client_id]
+        if now - req_time < window_seconds
+    ]
+
+    # Check if limit exceeded
+    if len(should_rate_limit.requests[client_id]) >= max_requests:
+        return True
+
+    # Add current request
+    should_rate_limit.requests[client_id].append(now)
+    return False
