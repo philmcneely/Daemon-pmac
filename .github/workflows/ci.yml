@@ -100,7 +100,7 @@ jobs:
       run: flake8 app/ tests/
 
     - name: Run mypy (type checking)
-      run: mypy app/ --ignore-missing-imports --no-strict-optional
+      run: mypy app/ --config-file=mypy-ci.ini
 
     - name: Run bandit (security linting)
       run: bandit -r app/ -f json -o bandit-report.json || true
