@@ -20,11 +20,11 @@ COPY . .
 # Create directories
 RUN mkdir -p backups logs
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash daemon && \
-    chown -R daemon:daemon /app
+# Create non-root user (use appuser to avoid conflict with existing daemon user)
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
 
-USER daemon
+USER appuser
 
 # Expose port
 EXPOSE 8004
