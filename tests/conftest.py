@@ -4,11 +4,13 @@ Test configuration and fixtures
 
 import os
 import tempfile
+from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # Set test environment variables before importing app
 os.environ.setdefault("SECRET_KEY", "test_secret_key_for_testing_only")
@@ -18,10 +20,12 @@ from app.auth import get_password_hash
 from app.database import Base, User, create_default_endpoints, get_db
 from app.main import app
 
+# ===== E2E Test Fixtures (Shared SQLite Database) =====
 
-@pytest.fixture
-def temp_db():
-    """Create a temporary database for testing"""
+
+@pytest.fixture(scope="session")
+def e2e_db():
+    """Create a shared SQLite database for E2E tests (session-scoped)"""
     db_fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(db_fd)
 
@@ -41,6 +45,67 @@ def temp_db():
 
     # Cleanup
     os.unlink(db_path)
+
+
+@pytest.fixture
+def temp_db(e2e_db):
+    """Legacy fixture for E2E tests - points to shared database"""
+    return e2e_db
+
+
+# ===== Unit Test Fixtures (In-Memory Database) =====
+
+
+@pytest.fixture
+def unit_db():
+    """Create an in-memory database for unit tests"""
+    # Use in-memory SQLite database with thread-safe configuration
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+
+    # Create default endpoints
+    db = TestingSessionLocal()
+    create_default_endpoints(db)
+    db.close()
+
+    yield TestingSessionLocal
+
+
+@pytest.fixture
+def unit_db_session(unit_db):
+    """Get a unit test database session (in-memory)"""
+    TestingSessionLocal = unit_db
+    session = TestingSessionLocal()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def unit_client(unit_db):
+    """Create a test client with in-memory database for unit tests"""
+    TestingSessionLocal = unit_db
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()
+
+
+# ===== Legacy E2E Fixtures =====
 
 
 @pytest.fixture
@@ -70,9 +135,12 @@ def client(temp_db):
     app.dependency_overrides.clear()
 
 
+# ===== User Fixtures (Work with both E2E and Unit tests) =====
+
+
 @pytest.fixture
 def admin_user(test_db_session):
-    """Create an admin user for testing"""
+    """Create an admin user for testing (E2E)"""
     user = User(
         username="admin",
         email="admin@test.com",
@@ -87,7 +155,7 @@ def admin_user(test_db_session):
 
 @pytest.fixture
 def regular_user(test_db_session):
-    """Create a regular user for testing"""
+    """Create a regular user for testing (E2E)"""
     user = User(
         username="user",
         email="user@test.com",
@@ -101,8 +169,38 @@ def regular_user(test_db_session):
 
 
 @pytest.fixture
+def unit_admin_user(unit_db_session):
+    """Create an admin user for unit testing"""
+    user = User(
+        username="admin",
+        email="admin@test.com",
+        hashed_password=get_password_hash("testpassword"),
+        is_admin=True,
+    )
+    unit_db_session.add(user)
+    unit_db_session.commit()
+    unit_db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def unit_regular_user(unit_db_session):
+    """Create a regular user for unit testing"""
+    user = User(
+        username="user",
+        email="user@test.com",
+        hashed_password=get_password_hash("testpassword"),
+        is_admin=False,
+    )
+    unit_db_session.add(user)
+    unit_db_session.commit()
+    unit_db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
 def auth_headers(client, admin_user):
-    """Get authentication headers for admin user"""
+    """Get authentication headers for admin user (E2E)"""
     response = client.post(
         "/auth/login", data={"username": "admin", "password": "testpassword"}
     )
@@ -112,8 +210,28 @@ def auth_headers(client, admin_user):
 
 @pytest.fixture
 def regular_user_headers(client, regular_user):
-    """Get authentication headers for regular user"""
+    """Get authentication headers for regular user (E2E)"""
     response = client.post(
+        "/auth/login", data={"username": "user", "password": "testpassword"}
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def unit_auth_headers(unit_client, unit_admin_user):
+    """Get authentication headers for admin user (Unit)"""
+    response = unit_client.post(
+        "/auth/login", data={"username": "admin", "password": "testpassword"}
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def unit_regular_user_headers(unit_client, unit_regular_user):
+    """Get authentication headers for regular user (Unit)"""
+    response = unit_client.post(
         "/auth/login", data={"username": "user", "password": "testpassword"}
     )
     token = response.json()["access_token"]

@@ -27,14 +27,16 @@ class TestLoadResumeFromFile:
         result = load_resume_from_file("/nonexistent/resume.json")
 
         assert result["success"] is False
-        assert "Failed to load resume file" in result["error"]
+        assert "Resume file not found" in result["error"]
         assert result["file_path"] == "/nonexistent/resume.json"
 
     def test_load_resume_valid_json(self):
         """Test loading valid resume JSON"""
         resume_data = {
-            "personal": {
-                "name": "Test User",
+            "name": "Test User",
+            "title": "Software Developer",
+            "summary": "Experienced developer",
+            "contact": {
                 "email": "test@example.com",
                 "phone": "555-1234",
             },
@@ -59,7 +61,8 @@ class TestLoadResumeFromFile:
 
             assert result["success"] is True
             assert "data" in result
-            assert result["data"]["personal"]["name"] == "Test User"
+            assert result["data"]["name"] == "Test User"
+            assert result["data"]["title"] == "Software Developer"
             assert len(result["data"]["experience"]) == 1
             assert result["file_path"] == temp_path
         finally:
@@ -109,18 +112,19 @@ class TestLoadResumeFromFile:
 class TestImportResumeToDatabase:
     """Test importing resume data to database"""
 
-    def test_import_resume_file_load_failure(self, test_db_session):
+    def test_import_resume_file_load_failure(self, unit_db_session):
         """Test import when file loading fails"""
         result = import_resume_to_database("/nonexistent/file.json")
 
         assert result["success"] is False
-        assert "Failed to load resume file" in result["error"]
+        assert "Resume file not found" in result["error"]
 
-    def test_import_resume_no_endpoint(self, test_db_session):
+    def test_import_resume_no_endpoint(self, unit_db_session):
         """Test import when resume endpoint doesn't exist"""
         # Create a valid resume file
         resume_data = {
-            "personal": {"name": "Test User"},
+            "name": "Test User",
+            "title": "Software Developer",
             "experience": [],
             "education": [],
         }
@@ -134,7 +138,7 @@ class TestImportResumeToDatabase:
             with patch("app.resume_loader.get_db") as mock_get_db:
                 mock_db = MagicMock()
                 mock_db.query.return_value.filter.return_value.first.return_value = None
-                mock_get_db.return_value = mock_db
+                mock_get_db.return_value = iter([mock_db])
 
                 result = import_resume_to_database(temp_path)
 
@@ -143,30 +147,29 @@ class TestImportResumeToDatabase:
         finally:
             os.unlink(temp_path)
 
-    def test_import_resume_with_existing_data(self, test_db_session):
+    def test_import_resume_with_existing_data(self, unit_db_session):
         """Test import with existing resume data"""
         from app.database import DataEntry, Endpoint
 
-        # Create resume endpoint
-        resume_endpoint = Endpoint(
-            name=RESUME_ENDPOINT_NAME,
-            description="Resume data",
-            schema={"personal": {"type": "object"}},
+        # Get existing resume endpoint (created by default fixtures)
+        resume_endpoint = (
+            unit_db_session.query(Endpoint)
+            .filter(Endpoint.name == RESUME_ENDPOINT_NAME)
+            .first()
         )
-        test_db_session.add(resume_endpoint)
-        test_db_session.commit()
-        test_db_session.refresh(resume_endpoint)
 
         # Add existing resume data
         existing_entry = DataEntry(
-            endpoint_id=resume_endpoint.id, data={"personal": {"name": "Old Resume"}}
+            endpoint_id=resume_endpoint.id,
+            data={"name": "Old Resume", "title": "Old Title"},
         )
-        test_db_session.add(existing_entry)
-        test_db_session.commit()
+        unit_db_session.add(existing_entry)
+        unit_db_session.commit()
 
         # Create new resume file
         resume_data = {
-            "personal": {"name": "New Resume"},
+            "name": "New Resume",
+            "title": "Software Developer",
             "experience": [],
             "education": [],
         }
@@ -178,32 +181,31 @@ class TestImportResumeToDatabase:
         try:
             # Import without replacing
             with patch("app.resume_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = test_db_session
+                mock_get_db.return_value = iter([unit_db_session])
 
                 result = import_resume_to_database(temp_path, replace_existing=False)
 
                 assert result["success"] is False
-                assert "existing resume data" in result["error"]
+                assert "Resume data already exists" in result["error"]
         finally:
             os.unlink(temp_path)
 
-    def test_import_resume_with_replace(self, test_db_session):
+    def test_import_resume_with_replace(self, unit_db_session):
         """Test import with replace_existing=True"""
         from app.database import DataEntry, Endpoint
 
-        # Create resume endpoint
-        resume_endpoint = Endpoint(
-            name=RESUME_ENDPOINT_NAME,
-            description="Resume data",
-            schema={"personal": {"type": "object"}},
+        # Get existing resume endpoint (created by default fixtures)
+        resume_endpoint = (
+            unit_db_session.query(Endpoint)
+            .filter(Endpoint.name == RESUME_ENDPOINT_NAME)
+            .first()
         )
-        test_db_session.add(resume_endpoint)
-        test_db_session.commit()
-        test_db_session.refresh(resume_endpoint)
 
         # Create new resume file
         resume_data = {
-            "personal": {"name": "New Resume", "email": "new@example.com"},
+            "name": "New Resume",
+            "title": "Software Developer",
+            "contact": {"email": "new@example.com"},
             "experience": [{"company": "New Corp"}],
             "education": [],
         }
@@ -214,13 +216,13 @@ class TestImportResumeToDatabase:
 
         try:
             with patch("app.resume_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = test_db_session
+                mock_get_db.return_value = iter([unit_db_session])
 
                 result = import_resume_to_database(temp_path, replace_existing=True)
 
                 assert result["success"] is True
                 assert "data" in result
-                assert result["data"]["personal"]["name"] == "New Resume"
+                assert result["data"]["name"] == "New Resume"
         finally:
             os.unlink(temp_path)
 
@@ -291,67 +293,68 @@ class TestCheckResumeFileExists:
 class TestGetResumeFromDatabase:
     """Test retrieving resume from database"""
 
-    def test_get_resume_no_endpoint(self, test_db_session):
+    def test_get_resume_no_endpoint(self, unit_db_session):
         """Test getting resume when endpoint doesn't exist"""
+        from app.database import Endpoint
+
+        # Delete the resume endpoint to simulate it not existing
+        resume_endpoint = (
+            unit_db_session.query(Endpoint)
+            .filter(Endpoint.name == RESUME_ENDPOINT_NAME)
+            .first()
+        )
+        if resume_endpoint:
+            unit_db_session.delete(resume_endpoint)
+            unit_db_session.commit()
+
         with patch("app.resume_loader.get_db") as mock_get_db:
-            mock_db = MagicMock()
-            mock_db.query.return_value.filter.return_value.first.return_value = None
-            mock_get_db.return_value = mock_db
+            mock_get_db.return_value = iter([unit_db_session])
 
             result = get_resume_from_database()
 
             assert result["success"] is False
             assert "not found" in result["error"]
 
-    def test_get_resume_no_data(self, test_db_session):
+    def test_get_resume_no_data(self, unit_db_session):
         """Test getting resume when no data exists"""
-        from app.database import Endpoint
-
-        # Create resume endpoint but no data
-        resume_endpoint = Endpoint(name=RESUME_ENDPOINT_NAME, description="Resume data")
-        test_db_session.add(resume_endpoint)
-        test_db_session.commit()
-
         with patch("app.resume_loader.get_db") as mock_get_db:
-            mock_db = MagicMock()
-            mock_db.query.return_value.filter.return_value.first.return_value = (
-                resume_endpoint
-            )
-            mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = (
-                None
-            )
-            mock_get_db.return_value = mock_db
+            mock_get_db.return_value = iter([unit_db_session])
 
             result = get_resume_from_database()
 
-            assert result["success"] is False
-            assert "No resume data" in result["error"]
+            assert result["success"] is True
+            assert result["data"] == []
+            assert result["count"] == 0
+            assert "No resume data found" in result["message"]
 
-    def test_get_resume_with_data(self, test_db_session):
+    def test_get_resume_with_data(self, unit_db_session):
         """Test getting resume with existing data"""
         from app.database import DataEntry, Endpoint
 
-        # Create resume endpoint and data
-        resume_endpoint = Endpoint(name=RESUME_ENDPOINT_NAME, description="Resume data")
-        test_db_session.add(resume_endpoint)
-        test_db_session.commit()
-        test_db_session.refresh(resume_endpoint)
+        # Get existing resume endpoint (created by default fixtures)
+        resume_endpoint = (
+            unit_db_session.query(Endpoint)
+            .filter(Endpoint.name == RESUME_ENDPOINT_NAME)
+            .first()
+        )
 
         resume_data = {
-            "personal": {"name": "Test User"},
+            "name": "Test User",
+            "title": "Software Developer",
             "experience": [{"company": "Test Corp"}],
         }
 
         resume_entry = DataEntry(endpoint_id=resume_endpoint.id, data=resume_data)
-        test_db_session.add(resume_entry)
-        test_db_session.commit()
+        unit_db_session.add(resume_entry)
+        unit_db_session.commit()
 
         with patch("app.resume_loader.get_db") as mock_get_db:
-            mock_get_db.return_value = test_db_session
+            mock_get_db.return_value = iter([unit_db_session])
 
             result = get_resume_from_database()
 
             assert result["success"] is True
             assert "data" in result
-            assert result["data"]["personal"]["name"] == "Test User"
-            assert len(result["data"]["experience"]) == 1
+            assert len(result["data"]) == 1
+            assert result["data"][0]["name"] == "Test User"
+            assert len(result["data"][0]["experience"]) == 1
