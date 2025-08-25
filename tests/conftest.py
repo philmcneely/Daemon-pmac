@@ -166,9 +166,29 @@ def clean_e2e_database(request, e2e_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
-            session.query(Endpoint).delete()
+            # Only delete custom endpoints, preserve default ones
+            default_endpoint_names = [
+                "resume",
+                "about",
+                "ideas",
+                "skills",
+                "favorite_books",
+                "problems",
+                "hobbies",
+                "looking_for",
+            ]
+            custom_endpoints = session.query(Endpoint).filter(
+                ~Endpoint.name.in_(default_endpoint_names)
+            )
+            for endpoint in custom_endpoints:
+                session.delete(endpoint)
             session.query(User).delete()
             session.commit()
+
+            # Ensure default endpoints exist
+            from app.database import create_default_endpoints
+
+            create_default_endpoints(session)
         except Exception:
             session.rollback()
         finally:
@@ -200,9 +220,29 @@ def clean_e2e_database(request, e2e_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
-            session.query(Endpoint).delete()
+            # Only delete custom endpoints, preserve default ones
+            default_endpoint_names = [
+                "resume",
+                "about",
+                "ideas",
+                "skills",
+                "favorite_books",
+                "problems",
+                "hobbies",
+                "looking_for",
+            ]
+            custom_endpoints = session.query(Endpoint).filter(
+                ~Endpoint.name.in_(default_endpoint_names)
+            )
+            for endpoint in custom_endpoints:
+                session.delete(endpoint)
             session.query(User).delete()
             session.commit()
+
+            # Ensure default endpoints exist
+            from app.database import create_default_endpoints
+
+            create_default_endpoints(session)
         except Exception:
             session.rollback()
         finally:
@@ -242,9 +282,29 @@ def clean_unit_database(request, unit_db):
             session.query(AuditLog).delete()
             session.query(DataEntry).delete()
             session.query(ApiKey).delete()
-            session.query(Endpoint).delete()
+            # Only delete custom endpoints, preserve default ones
+            default_endpoint_names = [
+                "resume",
+                "about",
+                "ideas",
+                "skills",
+                "favorite_books",
+                "problems",
+                "hobbies",
+                "looking_for",
+            ]
+            custom_endpoints = session.query(Endpoint).filter(
+                ~Endpoint.name.in_(default_endpoint_names)
+            )
+            for endpoint in custom_endpoints:
+                session.delete(endpoint)
             session.query(User).delete()
             session.commit()
+
+            # Ensure default endpoints exist
+            from app.database import create_default_endpoints
+
+            create_default_endpoints(session)
         except Exception:
             session.rollback()
         finally:
