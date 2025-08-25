@@ -9,9 +9,8 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -23,7 +22,7 @@ from .database import SessionLocal, create_default_endpoints, init_db
 
 # Import routers
 from .routers import admin, api, auth, mcp
-from .schemas import ErrorResponse, HealthResponse
+from .schemas import HealthResponse
 from .utils import cleanup_old_backups, create_backup, get_uptime, health_check
 
 # Setup logging
@@ -70,7 +69,8 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Initial backup failed: {e}")
 
-        # Schedule daily backups (simplified - in production use proper scheduler)
+        # Schedule daily backups (simplified - in production use proper
+        # scheduler)
         asyncio.create_task(daily_backup_task())
 
     logger.info("Application startup complete")
@@ -91,7 +91,10 @@ async def daily_backup_task():
             # Create backup
             if settings.backup_enabled:
                 backup_info = create_backup()
-                logger.info(f"Scheduled backup created: {backup_info.filename}")
+                logger.info(
+                    f"Scheduled backup created: {
+                        backup_info.filename}"
+                )
 
                 # Cleanup old backups
                 cleanup_old_backups()
@@ -271,7 +274,7 @@ def get_available_endpoints():
 
         db = SessionLocal()
         try:
-            endpoints = db.query(Endpoint).filter(Endpoint.is_active == True).all()
+            endpoints = db.query(Endpoint).filter(Endpoint.is_active).all()
             return [ep.name for ep in endpoints]
         finally:
             db.close()
@@ -332,7 +335,8 @@ def custom_openapi():
                         # Add enum constraint with available endpoints
                         param["schema"]["enum"] = available_endpoints
                         param["description"] = (
-                            f"Endpoint name (available: {', '.join(available_endpoints)})"
+                            f"Endpoint name (available: {
+                                ', '.join(available_endpoints)})"
                         )
 
     # Add example endpoints in the description
@@ -524,11 +528,11 @@ async def metrics():
         db = SessionLocal()
 
         total_entries = db.query(DataEntry).count()
-        active_entries = db.query(DataEntry).filter(DataEntry.is_active == True).count()
+        active_entries = db.query(DataEntry).filter(DataEntry.is_active).count()
         total_endpoints = db.query(Endpoint).count()
-        active_endpoints = db.query(Endpoint).filter(Endpoint.is_active == True).count()
+        active_endpoints = db.query(Endpoint).filter(Endpoint.is_active).count()
         total_users = db.query(User).count()
-        active_users = db.query(User).filter(User.is_active == True).count()
+        active_users = db.query(User).filter(User.is_active).count()
 
         db.close()
 
@@ -588,7 +592,8 @@ async def not_found_handler(request: Request, exc):
         status_code=404,
         content={
             "error": "Not Found",
-            "detail": f"The requested resource was not found: {request.url.path}",
+            "detail": f"The requested resource was not found: {
+                request.url.path}",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     )

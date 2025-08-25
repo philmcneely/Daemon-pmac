@@ -94,6 +94,11 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
+skip_gitignore = true
+extend_skip = [".venv", "venv", "env", "app/cli.py"]
+src_paths = ["app", "scripts", "tests"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known_first_party = ["app"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

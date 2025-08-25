@@ -114,7 +114,8 @@ def get_current_admin_user(
     """Get the current admin user"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
         )
     return current_user
 
@@ -132,7 +133,7 @@ def verify_api_key(db: Session, api_key: str) -> Optional[User]:
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
     api_key_obj = (
         db.query(ApiKey)
-        .filter(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
+        .filter(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True))
         .first()
     )
 
@@ -140,7 +141,8 @@ def verify_api_key(db: Session, api_key: str) -> Optional[User]:
         return None
 
     # Check expiration
-    if api_key_obj.expires_at and api_key_obj.expires_at < datetime.now(timezone.utc):
+    current_time = datetime.now(timezone.utc)
+    if api_key_obj.expires_at and api_key_obj.expires_at < current_time:
         return None
 
     # Update last used

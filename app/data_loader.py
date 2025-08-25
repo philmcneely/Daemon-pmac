@@ -6,13 +6,9 @@ Extends the resume loader to handle any endpoint with JSON data files
 import glob
 import json
 import os
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
-
-from .config import settings
-from .database import DataEntry, Endpoint, User, get_db
+from .database import DataEntry, Endpoint, get_db
 from .schemas import ENDPOINT_MODELS
 
 # Default data directory
@@ -43,7 +39,8 @@ def discover_data_files(data_dir: Optional[str] = None) -> Dict[str, List[str]]:
         filename = os.path.basename(file_path)
         name_part = filename.split(".")[0]  # Remove .json
 
-        # Handle patterns like "ideas.json", "ideas_personal.json", "resume_pmac.json"
+        # Handle patterns like "ideas.json", "ideas_personal.json",
+        # "resume_pmac.json"
         if "_" in name_part:
             endpoint_name = name_part.split("_")[0]
         else:
@@ -92,7 +89,8 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
         else:
             return {
                 "success": False,
-                "error": f"Invalid data format. Expected object or array, got {type(raw_data)}",
+                "error": f"Invalid data format. Expected object or array, got {
+                    type(raw_data)}",
                 "file_path": file_path,
             }
 
@@ -126,7 +124,8 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
             "data": validated_items,
             "count": len(validated_items),
             "file_path": file_path,
-            "message": f"Loaded {len(validated_items)} items for {endpoint_name}",
+            "message": f"Loaded {
+                len(validated_items)} items for {endpoint_name}",
         }
 
     except json.JSONDecodeError as e:
@@ -175,7 +174,7 @@ def import_endpoint_data_to_database(
         # Find endpoint
         endpoint = (
             db.query(Endpoint)
-            .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+            .filter(Endpoint.name == endpoint_name, Endpoint.is_active)
             .first()
         )
 
@@ -189,7 +188,7 @@ def import_endpoint_data_to_database(
         # Check for existing data
         existing_entries = (
             db.query(DataEntry)
-            .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active == True)
+            .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active)
             .all()
         )
 
@@ -227,7 +226,8 @@ def import_endpoint_data_to_database(
             "imported_count": len(created_entries),
             "replaced_count": replaced_count,
             "entry_ids": created_entries,
-            "message": f"Successfully imported {len(created_entries)} items to {endpoint_name}",
+            "message": f"Successfully imported {
+                len(created_entries)} items to {endpoint_name}",
         }
 
     except Exception as e:
@@ -313,7 +313,8 @@ def import_all_discovered_data(
         "imported_endpoints": imported_endpoints,
         "total_imported": total_imported,
         "errors": errors,
-        "message": f"Imported {total_imported} total items across {len(imported_endpoints)} endpoints",
+        "message": f"Imported {total_imported} total items across {
+            len(imported_endpoints)} endpoints",
     }
 
 
@@ -342,7 +343,7 @@ def get_data_import_status(data_dir: Optional[str] = None) -> Dict[str, Any]:
             # Check if endpoint exists in database
             endpoint = (
                 db.query(Endpoint)
-                .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+                .filter(Endpoint.name == endpoint_name, Endpoint.is_active)
                 .first()
             )
 
@@ -353,7 +354,7 @@ def get_data_import_status(data_dir: Optional[str] = None) -> Dict[str, Any]:
                     db.query(DataEntry)
                     .filter(
                         DataEntry.endpoint_id == endpoint.id,
-                        DataEntry.is_active == True,
+                        DataEntry.is_active,
                     )
                     .count()
                 )

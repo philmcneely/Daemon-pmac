@@ -2,20 +2,24 @@
 Command Line Interface for Daemon-pmac
 """
 
-import json
 import os
 import sys
 from datetime import datetime
 
 import click
-from sqlalchemy.orm import Session
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.auth import get_password_hash
 from app.config import settings
-from app.database import Endpoint, SessionLocal, User, create_default_endpoints, init_db
+from app.database import (
+    Endpoint,
+    SessionLocal,
+    User,
+    create_default_endpoints,
+    init_db,
+)
 from app.utils import (
     cleanup_old_backups,
     create_backup,
@@ -41,12 +45,15 @@ def resume():
 def check(file):
     """Check if resume file exists and is valid"""
     try:
-        from app.resume_loader import check_resume_file_exists, load_resume_from_file
+        from app.resume_loader import (
+            check_resume_file_exists,
+            load_resume_from_file,
+        )
 
         # Check file existence
         file_info = check_resume_file_exists(file)
 
-        click.echo(f"Resume File Status:")
+        click.echo("Resume File Status:")
         click.echo(f"  Path: {file_info['file_path']}")
         click.echo(f"  Exists: {'✓' if file_info['exists'] else '✗'}")
         click.echo(f"  Readable: {'✓' if file_info['readable'] else '✗'}")
@@ -57,7 +64,10 @@ def check(file):
                 from datetime import datetime
 
                 modified_time = datetime.fromtimestamp(file_info["last_modified"])
-                click.echo(f"  Modified: {modified_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                click.echo(
+                    f"  Modified: {
+                        modified_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
 
             # Try to load and validate
             click.echo("\nValidating resume data...")
@@ -75,7 +85,10 @@ def check(file):
                     f"  Education entries: {len(resume_data.get('education', []))}"
                 )
             else:
-                click.echo(f"✗ Resume data validation failed: {load_result['error']}")
+                click.echo(
+                    f"✗ Resume data validation failed: {
+                        load_result['error']}"
+                )
 
     except Exception as e:
         click.echo(f"✗ Error checking resume: {e}")
@@ -114,11 +127,17 @@ def import_file(file, replace, user):
             click.echo(f"  File: {result['file_path']}")
             click.echo(f"  Entry ID: {result['entry_id']}")
             if result.get("replaced_entries", 0) > 0:
-                click.echo(f"  Replaced {result['replaced_entries']} existing entries")
+                click.echo(
+                    f"  Replaced {
+                        result['replaced_entries']} existing entries"
+                )
         else:
             click.echo(f"✗ Import failed: {result['error']}")
             if "existing_entries" in result:
-                click.echo(f"  Found {result['existing_entries']} existing entries")
+                click.echo(
+                    f"  Found {
+                        result['existing_entries']} existing entries"
+                )
                 click.echo("  Use --replace flag to overwrite existing data")
             sys.exit(1)
 
@@ -144,7 +163,11 @@ def show():
                 click.echo(f"Found {result['count']} resume entries:")
                 for i, entry_info in enumerate(result.get("entries", [])):
                     click.echo(
-                        f"  Entry {i+1}: ID {entry_info['id']}, Created: {entry_info['created_at']}"
+                        f"  Entry {
+                            i +
+                            1}: ID {
+                            entry_info['id']}, Created: {
+                            entry_info['created_at']}"
                     )
 
                 # Show basic info from first entry
@@ -159,7 +182,12 @@ def show():
                     click.echo(
                         f"  Education: {len(resume.get('education', []))} entries"
                     )
-                    click.echo(f"  Last Updated: {resume.get('updated_at', 'N/A')}")
+                    click.echo(
+                        f"  Last Updated: {
+                            resume.get(
+                                'updated_at',
+                                'N/A')}"
+                    )
         else:
             click.echo(f"✗ Failed to get resume: {result['error']}")
 
@@ -274,7 +302,12 @@ def list():
             return
 
         click.echo(
-            f"{'ID':<5} {'Username':<20} {'Email':<30} {'Active':<8} {'Admin':<8}"
+            f"{
+                'ID':<5} {
+                'Username':<20} {
+                'Email':<30} {
+                    'Active':<8} {
+                        'Admin':<8}"
         )
         click.echo("-" * 80)
 
@@ -356,7 +389,12 @@ def list():
             return
 
         click.echo(
-            f"{'ID':<5} {'Name':<20} {'Description':<40} {'Active':<8} {'Public':<8}"
+            f"{
+                'ID':<5} {
+                'Name':<20} {
+                'Description':<40} {
+                    'Active':<8} {
+                        'Public':<8}"
         )
         click.echo("-" * 90)
 
@@ -567,7 +605,7 @@ def serve(host, port, reload):
     try:
         import uvicorn
 
-        from app.main import app
+        from app.main import app  # noqa: F401
 
         click.echo(f"Starting Daemon-pmac server on {host}:{port}")
         if reload:
@@ -603,7 +641,10 @@ def status():
                 "critical": "✗",
                 "unknown": "?",
             }.get(check_result["status"], "?")
-            click.echo(f"  {status_icon} {check_name}: {check_result['message']}")
+            click.echo(
+                f"  {status_icon} {check_name}: {
+                    check_result['message']}"
+            )
 
         # System metrics
         click.echo("\nSystem Metrics:")
@@ -693,11 +734,17 @@ def create_user(
 
             if result["success"]:
                 click.echo(
-                    f"✓ Imported {result['total_entries']} data entries from {len(result['imported_files'])} files"
+                    f"✓ Imported {
+                        result['total_entries']} data entries from {
+                        len(
+                            result['imported_files'])} files"
                 )
             else:
                 click.echo(
-                    f"⚠ Data import failed: {result.get('error', 'Unknown error')}"
+                    f"⚠ Data import failed: {
+                        result.get(
+                            'error',
+                            'Unknown error')}"
                 )
 
         click.echo(f"\n🎉 User setup complete!")
@@ -731,7 +778,8 @@ def import_all_data(base_dir: str, replace: bool):
 
         if result["success"]:
             click.echo(
-                f"✓ Successfully imported data for {result['total_users']} users"
+                f"✓ Successfully imported data for {
+                    result['total_users']} users"
             )
             click.echo(f"✓ Total entries imported: {result['total_entries']}")
 
@@ -775,7 +823,10 @@ def import_user_data_cli(username: str, data_dir: str, replace: bool):
 
             for file_info in result["imported_files"]:
                 click.echo(
-                    f"  - {file_info['endpoint']}: {file_info['entries']} entries from {file_info['file']}"
+                    f"  - {
+                        file_info['endpoint']}: {
+                        file_info['entries']} entries from {
+                        file_info['file']}"
                 )
 
             if result["errors"]:

@@ -52,7 +52,7 @@ def test_register_success(client):
     data = response.json()
     assert data["username"] == "firstuser"
     assert data["email"] == "first@test.com"
-    assert data["is_admin"] == True  # First user should be admin
+    assert data["is_admin"]  # First user should be admin
 
 
 def test_register_duplicate_username(client, admin_user):
@@ -115,13 +115,14 @@ def test_me_endpoint_authenticated(client, auth_headers):
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "admin"
-    assert data["is_admin"] == True
+    assert data["is_admin"]
 
 
 def test_me_endpoint_unauthenticated(client):
     """Test /auth/me endpoint without token"""
     response = client.get("/auth/me")
-    assert response.status_code in [401, 403]  # Both unauthorized responses are valid
+    # Both unauthorized responses are valid
+    assert response.status_code in [401, 403]
 
 
 def test_me_endpoint_invalid_token(client):

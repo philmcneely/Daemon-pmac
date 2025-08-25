@@ -47,13 +47,13 @@ def test_is_single_user_mode(test_db_session):
     # With no users, should be single user mode
     test_db_session.query(User).delete()
     test_db_session.commit()
-    assert is_single_user_mode(test_db_session) == True
+    assert is_single_user_mode(test_db_session)
 
     # With one user, should be single user mode
     user = User(username="only_user", email="only@test.com", hashed_password="hash")
     test_db_session.add(user)
     test_db_session.commit()
-    assert is_single_user_mode(test_db_session) == True
+    assert is_single_user_mode(test_db_session)
 
     # With two users, should be multi user mode
     user2 = User(
@@ -170,8 +170,8 @@ def test_data_validation_helpers():
     from app.utils import sanitize_data_entry, validate_endpoint_name
 
     # Valid endpoint names
-    assert validate_endpoint_name("valid_name") == True
-    assert validate_endpoint_name("validName123") == True
+    assert validate_endpoint_name("valid_name")
+    assert validate_endpoint_name("validName123")
 
     # Invalid endpoint names
     assert validate_endpoint_name("123invalid") == False
@@ -230,9 +230,9 @@ def test_privacy_helpers():
     from app.utils import is_sensitive_field, mask_sensitive_data
 
     # Sensitive field detection
-    assert is_sensitive_field("password") == True
-    assert is_sensitive_field("email") == True
-    assert is_sensitive_field("ssn") == True
+    assert is_sensitive_field("password")
+    assert is_sensitive_field("email")
+    assert is_sensitive_field("ssn")
     assert is_sensitive_field("name") == False
 
     # Data masking

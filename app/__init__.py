@@ -3,7 +3,7 @@ Daemon-pmac: Personal API Framework
 Main application module
 """
 
-from .main import app
+from .main import app  # noqa: F401
 
 __version__ = "0.1.0"
 __author__ = "Phil McNeely"

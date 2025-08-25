@@ -2,9 +2,8 @@
 Database models and configuration
 """
 
-import json
 from datetime import datetime
-from typing import Any, Dict, Generator, Optional
+from typing import Generator
 
 from sqlalchemy import (
     JSON,
@@ -161,7 +160,8 @@ class DataPrivacyRule(Base):
     id = Column(Integer, primary_key=True, index=True)
     endpoint_name = Column(String(100), nullable=False)
     field_path = Column(String(200), nullable=False)  # e.g., "contact.phone"
-    privacy_level = Column(String(20), default="private")  # public, private, sensitive
+    # public, private, sensitive
+    privacy_level = Column(String(20), default="private")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -178,8 +178,10 @@ class UserPrivacySettings(Base):
     show_salary_range = Column(Boolean, default=False)
     show_education_details = Column(Boolean, default=True)
     show_personal_projects = Column(Boolean, default=True)
-    business_card_mode = Column(Boolean, default=False)  # Ultra-minimal public view
-    ai_assistant_access = Column(Boolean, default=True)  # Allow AI assistants to access
+    # Ultra-minimal public view
+    business_card_mode = Column(Boolean, default=False)
+    # Allow AI assistants to access
+    ai_assistant_access = Column(Boolean, default=True)
     custom_privacy_rules = Column(JSON, default={})  # User-defined field rules
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

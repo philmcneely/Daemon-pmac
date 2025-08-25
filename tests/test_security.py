@@ -42,7 +42,8 @@ class TestOWASPSecurity:
                 },
                 headers=auth_headers,
             )
-            # Should either succeed (properly escaped) or fail validation, but not crash
+            # Should either succeed (properly escaped) or fail validation, but
+            # not crash
             assert response.status_code in [200, 400, 422]
 
             # Test in query parameters
@@ -132,7 +133,8 @@ class TestOWASPSecurity:
         invalid_user_time = time.time() - start_time
 
         # Times should be roughly similar (within reasonable bounds)
-        # This is a basic check - production systems need more sophisticated timing analysis
+        # This is a basic check - production systems need more sophisticated
+        # timing analysis
         time_difference = abs(valid_user_time - invalid_user_time)
         assert time_difference < 1.0  # Should not leak timing information
 
@@ -173,7 +175,10 @@ class TestOWASPSecurity:
                 print(f"Redirect location: {location}")
                 if location:
                     public_response = client.get(location)
-                    print(f"After redirect status: {public_response.status_code}")
+                    print(
+                        f"After redirect status: {
+                            public_response.status_code}"
+                    )
 
             if public_response.status_code == 200:
                 public_data = public_response.json()
@@ -205,7 +210,8 @@ class TestOWASPSecurity:
         if admin_response.status_code == 200:
             admin_idea_id = admin_response.json()["id"]
 
-            # Test horizontal privilege escalation - regular user trying to access admin's data
+            # Test horizontal privilege escalation - regular user trying to
+            # access admin's data
             user_attempt = client.put(
                 f"/api/v1/ideas/{admin_idea_id}",
                 json={
@@ -223,7 +229,8 @@ class TestOWASPSecurity:
             )
             assert user_delete.status_code in [403, 404]
 
-        # Test vertical privilege escalation - regular user trying admin functions
+        # Test vertical privilege escalation - regular user trying admin
+        # functions
         admin_endpoint = {
             "name": "user_created_endpoint",
             "description": "User should not be able to create this",
@@ -509,7 +516,8 @@ class TestOWASPSecurity:
             headers={"Authorization": "Bearer fake_token"},
         )
 
-        # Should handle large payloads gracefully (and may return 401 for invalid auth)
+        # Should handle large payloads gracefully (and may return 401 for
+        # invalid auth)
         assert response.status_code in [200, 400, 401, 413, 422]  # Should not crash
 
     def test_information_disclosure_prevention(self, client):
@@ -604,7 +612,8 @@ class TestOWASPSecurity:
         dangerous_methods = ["TRACE", "TRACK", "CONNECT"]
 
         for method in dangerous_methods:
-            # Most test clients don't support all methods, so we test what we can
+            # Most test clients don't support all methods, so we test what we
+            # can
             if hasattr(client, method.lower()):
                 response = getattr(client, method.lower())("/api/v1/endpoints")
                 # Should be method not allowed

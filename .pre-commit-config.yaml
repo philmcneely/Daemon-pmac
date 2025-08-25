@@ -27,6 +27,7 @@ repos:
     hooks:
       - id: isort
         args: [--profile=black, --check-only]
+        exclude: ^app/cli\.py$
 
 # Global settings
 default_stages: [pre-commit]

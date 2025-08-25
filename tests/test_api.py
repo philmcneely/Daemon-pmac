@@ -97,7 +97,8 @@ def test_create_endpoint_data_unauthenticated(client):
             "category": "testing",
         },
     )
-    # Should be 403 (Forbidden) not 401 (Unauthorized) because IP filtering might be applied
+    # Should be 403 (Forbidden) not 401 (Unauthorized) because IP filtering
+    # might be applied
     assert response.status_code in [401, 403]
 
 
@@ -966,7 +967,8 @@ def test_error_handling_and_edge_cases(client, auth_headers):
 
     # Test wrong HTTP method
     response = client.patch("/api/v1/ideas")  # PATCH not supported
-    assert response.status_code in [405, 404]  # Method Not Allowed or Not Found
+    # Method Not Allowed or Not Found
+    assert response.status_code in [405, 404]
 
     # Test updating non-existent item
     response = client.put(
@@ -1237,7 +1239,8 @@ def test_resume_privacy_levels_comprehensive(client, auth_headers):
         ), f"Phone number found in {level_name} level"
         assert "$175,000" not in data_str, f"Salary found in {level_name} level"
 
-    # Test that emergency contact is properly filtered from public_full level (bug fixed)
+    # Test that emergency contact is properly filtered from public_full level
+    # (bug fixed)
     assert (
         "555-999-8888" not in public_str.lower()
     ), "Emergency contact should NOT appear in public_full (bug fixed)"
@@ -1619,7 +1622,8 @@ def test_resume_multi_user_cross_access_permissions(
     assert admin_check.status_code == 200
     assert "Grace Administrator" in str(admin_check.json())
 
-    # Test that admin CAN access user's public resume (for debugging/admin purposes)
+    # Test that admin CAN access user's public resume (for debugging/admin
+    # purposes)
     admin_view_user = client.get("/api/v1/resume/users/user", headers=auth_headers)
     assert admin_view_user.status_code == 200
     # Admin should be able to see user's data (admin privileges)
@@ -1705,13 +1709,16 @@ def test_resume_multi_user_endpoint_patterns(
 
     # Test that direct endpoint redirects in multi-user mode
     direct_response = client.get("/api/v1/resume")
-    # Should either redirect to user-specific endpoint or work with authentication
+    # Should either redirect to user-specific endpoint or work with
+    # authentication
     assert direct_response.status_code in [200, 301, 302]
 
-    # Test with authentication - should show user's own data or be empty in multi-user mode
+    # Test with authentication - should show user's own data or be empty in
+    # multi-user mode
     auth_direct = client.get("/api/v1/resume", headers=auth_headers)
     if auth_direct.status_code == 200:
-        # In multi-user mode, direct endpoint might return empty and redirect to user-specific
+        # In multi-user mode, direct endpoint might return empty and redirect
+        # to user-specific
         auth_data = auth_direct.json()
         # Could be empty due to multi-user mode redirection behavior
         if len(auth_data) > 0:

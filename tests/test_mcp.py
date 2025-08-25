@@ -94,7 +94,8 @@ def test_mcp_tool_call_invalid_arguments(client):
     """Test MCP tool call with invalid arguments"""
     response = client.post(
         "/mcp/tools/call",
-        json={"name": "daemon_ideas", "arguments": {"limit": -1}},  # Invalid limit
+        json={"name": "daemon_ideas", "arguments": {"limit": -1}},
+        # Invalid limit
     )
     assert response.status_code == 400
 
