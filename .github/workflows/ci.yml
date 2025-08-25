@@ -281,58 +281,59 @@ jobs:
 
         echo "✅ Docker image tests passed!"
 
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [test, lint, security, docker]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    environment: staging
+  # Note: Deployment jobs are disabled until server infrastructure is configured
+  # deploy-staging:
+  #   name: Deploy to Staging
+  #   runs-on: ubuntu-latest
+  #   needs: [test, lint, security, docker]
+  #   if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+  #   environment: staging
+  #
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Deploy to staging server
+  #     uses: appleboy/ssh-action@v1.0.0
+  #     with:
+  #       host: ${{ secrets.STAGING_HOST }}
+  #       username: ${{ secrets.STAGING_USER }}
+  #       key: ${{ secrets.STAGING_SSH_KEY }}
+  #       script: |
+  #         cd /opt/daemon-staging
+  #         git pull origin develop
+  #         docker-compose pull
+  #         docker-compose up -d --no-deps app
+  #         docker-compose exec -T app python -m app.cli health-check
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to staging server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.STAGING_HOST }}
-        username: ${{ secrets.STAGING_USER }}
-        key: ${{ secrets.STAGING_SSH_KEY }}
-        script: |
-          cd /opt/daemon-staging
-          git pull origin develop
-          docker-compose pull
-          docker-compose up -d --no-deps app
-          docker-compose exec -T app python -m app.cli health-check
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [test, lint, security, docker]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to production server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.PROD_HOST }}
-        username: ${{ secrets.PROD_USER }}
-        key: ${{ secrets.PROD_SSH_KEY }}
-        script: |
-          cd /opt/daemon-pmac
-          git pull origin main
-          docker-compose pull
-          docker-compose up -d --no-deps app
-          docker-compose exec -T app python -m app.cli health-check
+  # deploy-production:
+  #   name: Deploy to Production
+  #   runs-on: ubuntu-latest
+  #   needs: [test, lint, security, docker]
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   environment: production
+  #
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Deploy to production server
+  #     uses: appleboy/ssh-action@v1.0.0
+  #     with:
+  #       host: ${{ secrets.PROD_HOST }}
+  #       username: ${{ secrets.PROD_USER }}
+  #       key: ${{ secrets.PROD_SSH_KEY }}
+  #       script: |
+  #         cd /opt/daemon-pmac
+  #         git pull origin main
+  #         docker-compose pull
+  #         docker-compose up -d --no-deps app
+  #         docker-compose exec -T app python -m app.cli health-check
 
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [deploy-production]
+    needs: [test, lint, security, docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
