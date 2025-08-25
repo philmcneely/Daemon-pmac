@@ -78,33 +78,33 @@ def log_audit_action(
     summary="List all available endpoints",
     description="""
     **Get a complete list of all available endpoints in the system**
-    
+
     This returns both core endpoints and any custom endpoints you've created.
-    
+
     ### 📊 Core Endpoints (Available by default)
-    
+
     - **resume** - Professional resume and work history
     - **skills** - Technical and soft skills with proficiency levels
     - **ideas** - Ideas, thoughts, and concepts
     - **favorite_books** - Book recommendations and reviews
-    - **hobbies** - Hobbies and personal interests  
+    - **hobbies** - Hobbies and personal interests
     - **problems** - Problems you're working on or have solved
     - **looking_for** - Things you're currently seeking
     - **about** - Basic personal/entity information
-    
+
     ### 🎯 Custom Endpoints
-    
+
     You can create custom endpoints via `POST /api/v1/endpoints` (admin only).
     Each endpoint can have its own validation schema and be public or private.
-    
+
     ### 🔗 Using Endpoints
-    
+
     Once you have the endpoint names, you can:
     - **GET** `/api/v1/{endpoint_name}` - Get data
     - **POST** `/api/v1/{endpoint_name}` - Add data (auth required)
     - **PUT** `/api/v1/{endpoint_name}/{id}` - Update data (auth required)
     - **DELETE** `/api/v1/{endpoint_name}/{id}` - Delete data (auth required)
-    
+
     In multi-user mode, use: `/api/v1/{endpoint_name}/users/{username}`
     """,
     responses={
@@ -242,36 +242,36 @@ async def create_endpoint(
     summary="Get endpoint data",
     description="""
     **Get data from any endpoint with privacy filtering**
-    
+
     This endpoint works with all dynamic endpoints in the system:
     - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies, problems, looking_for, about
     - **Custom endpoints**: Any endpoints you create via `/api/v1/endpoints`
-    
+
     ### 🔄 Adaptive Behavior
-    
+
     **Single User Mode**: Direct access (when only 1 user exists)
     ```
     GET /api/v1/resume
-    GET /api/v1/skills 
+    GET /api/v1/skills
     GET /api/v1/ideas
     ```
-    
+
     **Multi-User Mode**: Use user-specific endpoints (when 2+ users exist)
     ```
     GET /api/v1/resume/users/{username}
     GET /api/v1/skills/users/{username}
     GET /api/v1/ideas/users/{username}
     ```
-    
+
     ### 🔐 Privacy Levels
-    
+
     - **business_card**: Minimal networking info (name, title, basic contact)
     - **professional**: Work-appropriate details (experience, skills, public projects)
     - **public_full**: Full public information (respects user privacy settings)
     - **ai_safe**: AI-assistant safe (automatically removes sensitive data)
-    
+
     ### 📊 Examples
-    
+
     Try these endpoints:
     - `GET /api/v1/resume?privacy_level=business_card`
     - `GET /api/v1/skills?page=1&size=10`
@@ -480,18 +480,18 @@ async def get_endpoint_data(
     summary="Add data to endpoint",
     description="""
     **Add new data to any endpoint (authentication required)**
-    
+
     This endpoint allows you to add data to any endpoint in the system:
     - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies, problems, looking_for, about
     - **Custom endpoints**: Any endpoints you create
-    
+
     ### 🔄 Adaptive Behavior
-    
+
     **Single User Mode**: Data is automatically assigned to the single user
     **Multi-User Mode**: Data is assigned to the authenticated user
-    
+
     ### 📝 Data Validation
-    
+
     Each endpoint has its own schema validation:
     - **resume**: Requires `name` and `title`, supports contact, experience, education, skills, etc.
     - **skills**: Requires `name`, supports category, level (beginner/intermediate/advanced/expert), years_experience
@@ -501,9 +501,9 @@ async def get_endpoint_data(
     - **problems**: Supports title, description, category, status
     - **looking_for**: Supports title, description, category, urgency
     - **about**: Free-form personal information
-    
+
     ### 💡 Examples
-    
+
     Try adding data to different endpoints with the request body examples below.
     """,
     responses={
@@ -1025,26 +1025,26 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
     summary="Get system information",
     description="""
     **Get comprehensive system information and endpoint routing patterns**
-    
+
     This endpoint helps you understand how the API currently operates based on the number of users.
-    
+
     ### 🔄 Adaptive Routing Information
-    
+
     The response tells you:
     - **Current mode**: `single_user` or `multi_user`
     - **Endpoint patterns**: How to access endpoints in the current mode
     - **Available endpoints**: List of all accessible endpoints
     - **User information**: Current users in the system
-    
+
     ### 📊 Use Cases
-    
+
     - **API Discovery**: Find out what endpoints are available
     - **Mode Detection**: Understand if you need user-specific URLs
     - **Integration**: Build clients that adapt to single/multi-user modes
     - **Debugging**: Troubleshoot endpoint access issues
-    
+
     ### 🎯 Example Responses
-    
+
     **Single User Mode** (1 user or less):
     ```json
     {
@@ -1054,11 +1054,11 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
       "users": ["admin"]
     }
     ```
-    
+
     **Multi-User Mode** (2+ users):
     ```json
     {
-      "mode": "multi_user", 
+      "mode": "multi_user",
       "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
       "available_endpoints": [...],
       "users": ["admin", "john", "jane"]

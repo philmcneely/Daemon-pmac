@@ -144,7 +144,7 @@ python -m app.cli resume show
     "level": "expert"
   },
   {
-    "name": "Second Skill", 
+    "name": "Second Skill",
     "category": "Leadership",
     "level": "advanced"
   }

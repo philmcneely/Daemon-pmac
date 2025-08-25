@@ -20,7 +20,7 @@ echo -e "${GREEN}=== Daemon-pmac Setup Script ===${NC}"
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo -e "${RED}This script should not be run as root${NC}" 
+   echo -e "${RED}This script should not be run as root${NC}"
    exit 1
 fi
 
@@ -100,10 +100,10 @@ sudo -u $SERVICE_USER mkdir -p $PROJECT_DIR/{data,backups,logs}
 ENV_FILE="$PROJECT_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then
     echo -e "${YELLOW}Creating environment configuration...${NC}"
-    
+
     # Generate secret key
     SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-    
+
     sudo -u $SERVICE_USER tee $ENV_FILE > /dev/null <<EOF
 # Environment Configuration
 SECRET_KEY=$SECRET_KEY
@@ -132,7 +132,7 @@ API_PREFIX=/api/v1
 DOCS_URL=/docs
 REDOC_URL=/redoc
 EOF
-    
+
     echo -e "${GREEN}✓ Environment configuration created${NC}"
 else
     echo -e "${GREEN}✓ Environment configuration already exists${NC}"
@@ -216,7 +216,7 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;

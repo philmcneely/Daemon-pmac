@@ -43,9 +43,9 @@ Describe the security issue in detail.
 What could an attacker achieve if this vulnerability is exploited?
 
 ## Steps to Reproduce
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Affected Versions
 Which versions of Daemon are affected?

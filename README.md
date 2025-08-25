@@ -49,7 +49,15 @@ python dev.py
 
 ### Development Setup
 
-For development work, use the setup script:
+For development work, use the automated setup script:
+
+```bash
+# Quick setup with pre-commit hooks
+chmod +x setup-precommit.sh
+./setup-precommit.sh
+```
+
+Or use the full development environment setup:
 
 ```bash
 # Automated development environment setup
@@ -57,19 +65,20 @@ chmod +x setup-dev.sh
 ./setup-dev.sh
 ```
 
-Or manual setup:
+#### Manual Development Setup
 
 ```bash
 # Install development dependencies
 pip install -r requirements-dev.txt
 
-# Set up pre-commit hooks
+# Set up pre-commit hooks (RECOMMENDED)
+pip install pre-commit
 pre-commit install
 
 # Run tests
 pytest tests/
 
-# Run linting and formatting
+# Manual formatting and linting
 black app/ tests/
 isort app/ tests/
 flake8 app/ tests/
@@ -79,6 +88,26 @@ mypy app/
 bandit -r app/
 safety check
 pip-audit
+```
+
+#### Pre-commit Hooks
+
+This project uses **pre-commit hooks** to ensure code quality before commits:
+
+- **Black**: Automatic Python code formatting
+- **isort**: Import statement sorting
+- **Trailing whitespace**: Removes trailing spaces
+- **End of file**: Ensures files end with newline
+- **YAML/JSON validation**: Syntax checking for config files
+
+The hooks run automatically before each commit and **prevent** the code quality failures that would otherwise break the CI/CD pipeline.
+
+```bash
+# Test all hooks manually
+pre-commit run --all-files
+
+# Skip hooks for a specific commit (not recommended)
+git commit --no-verify -m "emergency fix"
 ```
 
 ### CI/CD
@@ -130,7 +159,7 @@ GET /api/v1/system/info
 # Ultra-minimal business card view
 GET /api/v1/resume/users/pmac?level=business_card
 
-# Professional networking view  
+# Professional networking view
 GET /api/v1/resume/users/pmac?level=professional
 
 # Full public view (respects user privacy settings)
@@ -154,7 +183,7 @@ POST /auth/register
 POST /api/v1/setup/user/kime
 {
   "username": "kime",
-  "email": "kime@example.com", 
+  "email": "kime@example.com",
   "password": "secure_password"
 }
 ```
@@ -180,7 +209,7 @@ The system automatically filters sensitive data for public access:
 **Public Filtered (`ai_safe` level):**
 ```json
 {
-  "name": "Phil McNeely", 
+  "name": "Phil McNeely",
   "contact": {
     "email": "phil@pmac.dev"
   }
@@ -247,7 +276,7 @@ GET /api/v1/skills/users/pmac
 - `GET /api/v1/books` - Favorite books and reading lists
 - `GET /api/v1/hobbies` - Hobbies and interests
 
-#### Ideas & Projects  
+#### Ideas & Projects
 - `GET /api/v1/ideas` - Ideas and thoughts
 - `GET /api/v1/problems` - Problems seeking solutions
 - `GET /api/v1/looking_for` - What you're actively seeking
@@ -675,7 +704,7 @@ http://localhost:8000/docs
 - **Multi-user aware**: Shows adaptive routing examples
 
 ### ReDoc (Alternative)
-```  
+```
 http://localhost:8000/redoc
 ```
 - **Clean design**: Focused on readability
@@ -692,7 +721,7 @@ http://localhost:8000/openapi.json
 
 ### Usage Tips
 
-1. **Authentication in Swagger**: 
+1. **Authentication in Swagger**:
    - Click "Authorize" button
    - Enter `Bearer YOUR_JWT_TOKEN`
    - All subsequent requests will be authenticated

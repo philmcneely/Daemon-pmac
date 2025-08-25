@@ -24,7 +24,7 @@ log_error() { echo -e "${RED}❌${NC} $1"; }
 # Check if we can connect to the server
 check_connection() {
     log_info "Checking connection to $DAEMON_HOST..."
-    
+
     if ssh -o ConnectTimeout=10 -o BatchMode=yes "$DAEMON_USER@$DAEMON_HOST" "echo 'Connected'" &>/dev/null; then
         log_success "SSH connection successful"
     else
@@ -38,7 +38,7 @@ check_connection() {
 # Sync code to server
 sync_code() {
     log_info "Syncing code to server..."
-    
+
     # Exclude patterns
     local exclude_opts=(
         --exclude='.git'
@@ -51,7 +51,7 @@ sync_code() {
         --exclude='.DS_Store'
         --exclude='*.log'
     )
-    
+
     if rsync -avz --delete "${exclude_opts[@]}" \
         "$LOCAL_PATH/" "$DAEMON_USER@$DAEMON_HOST:$DAEMON_PATH/"; then
         log_success "Code sync completed"
@@ -64,20 +64,20 @@ sync_code() {
 # Update dependencies
 update_dependencies() {
     log_info "Updating dependencies on server..."
-    
+
     ssh "$DAEMON_USER@$DAEMON_HOST" "
         cd $DAEMON_PATH &&
         source venv/bin/activate &&
         pip install -r requirements.txt
     "
-    
+
     log_success "Dependencies updated"
 }
 
 # Run database migrations
 run_migrations() {
     log_info "Running database migrations..."
-    
+
     ssh "$DAEMON_USER@$DAEMON_HOST" "
         cd $DAEMON_PATH &&
         source venv/bin/activate &&
@@ -110,7 +110,7 @@ with engine.connect() as conn:
         )\"\"\"))
         conn.commit()
         print(\"UserPrivacySettings table created\")
-    
+
     # Check if DataPrivacyRule table exists
     result = conn.execute(text(\"SELECT name FROM sqlite_master WHERE type=\"\"table\"\" AND name=\"\"data_privacy_rules\"\"\"))
     if not result.fetchone():
@@ -126,7 +126,7 @@ with engine.connect() as conn:
         )\"\"\"))
         conn.commit()
         print(\"DataPrivacyRule table created\")
-        
+
         # Insert default privacy rules
         default_rules = [
             (\"phone\", \"\\\\b\\\\d{3}[-.]?\\\\d{3}[-.]?\\\\d{4}\\\\b\", \"business_card\"),
@@ -135,37 +135,37 @@ with engine.connect() as conn:
             (\"salary\", \"\\\\$[0-9,]+(\\\\.[0-9]{2})?\", \"professional\"),
             (\"address\", \"\\\\d+\\\\s+[A-Za-z0-9\\\\s,.-]+\\\\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln)\", \"professional\")
         ]
-        
+
         for rule in default_rules:
             conn.execute(text(\"\"\"
             INSERT INTO data_privacy_rules (field_name, pattern, privacy_level)
             VALUES (:field_name, :pattern, :privacy_level)
             \"\"\"), {\"field_name\": rule[0], \"pattern\": rule[1], \"privacy_level\": rule[2]})
-        
+
         conn.commit()
         print(\"Default privacy rules inserted\")
 
 print(\"Database migration completed successfully\")
 '
     "
-    
+
     log_success "Database migrations completed"
 }
 
 # Restart the service
 restart_service() {
     log_info "Restarting daemon service..."
-    
+
     ssh "$DAEMON_USER@$DAEMON_HOST" "
         sudo systemctl restart daemon-pmac
     "
-    
+
     # Wait for service to start
     sleep 5
-    
+
     # Check service status
     local status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon-pmac")
-    
+
     if [[ "$status" == "active" ]]; then
         log_success "Service restarted successfully"
     else
@@ -178,24 +178,24 @@ restart_service() {
 # Verify deployment
 verify_deployment() {
     log_info "Verifying deployment..."
-    
+
     # Check if server responds
     local url="https://$DAEMON_HOST/health"
     local response=$(curl -s "$url" || echo "failed")
-    
+
     if echo "$response" | grep -q '"status":"healthy"'; then
         log_success "Server is responding correctly"
-        
+
         # Check system info
         local info_url="https://$DAEMON_HOST/api/v1/system/info"
         local info=$(curl -s "$info_url" || echo "{}")
-        
+
         local mode=$(echo "$info" | jq -r '.mode // "unknown"')
         local version=$(echo "$info" | jq -r '.version // "unknown"')
-        
+
         log_info "System mode: $mode"
         log_info "Version: $version"
-        
+
     else
         log_error "Server health check failed"
         echo "Response: $response"
@@ -206,9 +206,9 @@ verify_deployment() {
 # Backup before deployment
 backup_remote() {
     log_info "Creating backup on remote server..."
-    
+
     local backup_name="backup_$(date +%Y%m%d_%H%M%S)"
-    
+
     ssh "$DAEMON_USER@$DAEMON_HOST" "
         mkdir -p $DAEMON_PATH/backups &&
         cd $DAEMON_PATH &&
@@ -220,14 +220,14 @@ backup_remote() {
             --exclude='logs' \
             .
     "
-    
+
     log_success "Backup created: $backup_name.tar.gz"
 }
 
 # Show logs
 show_logs() {
     log_info "Showing recent logs..."
-    
+
     ssh "$DAEMON_USER@$DAEMON_HOST" "
         sudo journalctl -u daemon-pmac -n 20 --no-pager
     "
@@ -236,7 +236,7 @@ show_logs() {
 # Quick status check
 quick_status() {
     log_info "Checking remote status..."
-    
+
     # Check SSH connection
     if ssh -o ConnectTimeout=5 -o BatchMode=yes "$DAEMON_USER@$DAEMON_HOST" "echo 'SSH OK'" &>/dev/null; then
         log_success "SSH connection: OK"
@@ -244,7 +244,7 @@ quick_status() {
         log_error "SSH connection: FAILED"
         return 1
     fi
-    
+
     # Check service status
     local service_status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon-pmac 2>/dev/null || echo 'inactive'")
     if [[ "$service_status" == "active" ]]; then
@@ -252,7 +252,7 @@ quick_status() {
     else
         log_warning "Service status: $service_status"
     fi
-    
+
     # Check HTTP response
     local http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://$DAEMON_HOST/health" || echo "000")
     if [[ "$http_status" == "200" ]]; then
@@ -265,7 +265,7 @@ quick_status() {
 # Full deployment
 full_deploy() {
     log_info "Starting full deployment to $DAEMON_HOST..."
-    
+
     check_connection
     backup_remote
     sync_code
@@ -273,7 +273,7 @@ full_deploy() {
     run_migrations
     restart_service
     verify_deployment
-    
+
     log_success "🎉 Deployment completed successfully!"
     log_info "Server: https://$DAEMON_HOST"
 }
@@ -281,10 +281,10 @@ full_deploy() {
 # Code-only deployment (no service restart)
 code_deploy() {
     log_info "Starting code-only deployment..."
-    
+
     check_connection
     sync_code
-    
+
     log_success "Code sync completed!"
     log_warning "Remember to restart the service manually if needed"
 }
@@ -330,7 +330,7 @@ EOF
 # Main execution
 main() {
     local command=${1:-deploy}
-    
+
     case $command in
         deploy|full)
             full_deploy

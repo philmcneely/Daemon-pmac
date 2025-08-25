@@ -72,7 +72,7 @@ python -m app.cli data status
 Based on the original Daemon project:
 
 - **resume** - Professional resume and work history
-- **about** - Basic personal information  
+- **about** - Basic personal information
 - **ideas** - Ideas, thoughts, and concepts
 - **skills** - Skills and areas of expertise
 - **favorite_books** - Book recommendations and reviews

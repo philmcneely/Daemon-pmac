@@ -23,7 +23,7 @@ I've added a complete **optional resume management system** that allows you to e
 ```bash
 # Simple commands to manage your resume
 make check-resume      # Check if resume file is valid
-make import-resume     # Import/update resume data  
+make import-resume     # Import/update resume data
 make show-resume       # View current resume in database
 
 # Or use CLI directly
@@ -41,7 +41,7 @@ When you run `python dev.py` or `make dev`, the system automatically:
 I've parsed your entire resume from the provided document into structured JSON including:
 - **Professional info**: Name, title, summary, contact details
 - **Work experience**: 7 detailed positions from Adventures in Testing back to HomeAway
-- **Education**: All degrees including your recent AI/ML program at UT Austin  
+- **Education**: All degrees including your recent AI/ML program at UT Austin
 - **Skills**: Technical skills, languages, certifications, soft skills
 - **Projects**: Key projects like LLM infrastructure and DORA4 dashboard
 - **Volunteer work**: Veterans4Quality leadership roles

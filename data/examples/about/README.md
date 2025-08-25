@@ -10,7 +10,7 @@ The about endpoint supports the following fields:
 {
   "name": "string (required)",
   "title": "string (optional)",
-  "bio": "string (optional)", 
+  "bio": "string (optional)",
   "location": "string (optional)",
   "website": "string (optional)",
   "social_links": "object (optional)"
@@ -39,7 +39,7 @@ The `about_example.json` file contains sample data showing:
 {
   "social_links": {
     "linkedin": "https://linkedin.com/in/username",
-    "github": "https://github.com/username", 
+    "github": "https://github.com/username",
     "twitter": "https://twitter.com/username",
     "mastodon": "https://mastodon.social/@username",
     "blog": "https://blog.example.com",

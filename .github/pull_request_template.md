@@ -14,9 +14,9 @@ Brief description of the changes in this PR.
 Closes #(issue number)
 
 ## Changes Made
-- 
-- 
-- 
+-
+-
+-
 
 ## Testing
 - [ ] Tests pass locally

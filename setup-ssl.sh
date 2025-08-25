@@ -60,30 +60,30 @@ if [ "$LETSENCRYPT" = true ]; then
         echo "Usage: $0 --letsencrypt -d yourdomain.com -e your@email.com"
         exit 1
     fi
-    
+
     echo -e "${YELLOW}Setting up Let's Encrypt certificate for $DOMAIN${NC}"
-    
+
     # Install certbot
     sudo apt-get update
     sudo apt-get install -y certbot python3-certbot-nginx
-    
+
     # Stop nginx temporarily
     sudo systemctl stop nginx
-    
+
     # Get certificate
     sudo certbot certonly --standalone \
         --email $EMAIL \
         --agree-tos \
         --non-interactive \
         -d $DOMAIN
-    
+
     # Copy certificates to our SSL directory
     sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/cert.pem
     sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/key.pem
     sudo chown daemon:daemon $SSL_DIR/*.pem
     sudo chmod 600 $SSL_DIR/key.pem
     sudo chmod 644 $SSL_DIR/cert.pem
-    
+
     # Update nginx configuration
     sudo tee /etc/nginx/sites-available/daemon-pmac > /dev/null <<EOF
 # Redirect HTTP to HTTPS
@@ -119,7 +119,7 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
@@ -150,19 +150,19 @@ else
     if [ -z "$DOMAIN" ]; then
         DOMAIN="localhost"
     fi
-    
+
     echo -e "${YELLOW}Creating self-signed certificate for $DOMAIN${NC}"
-    
+
     # Generate self-signed certificate
     sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout $SSL_DIR/key.pem \
         -out $SSL_DIR/cert.pem \
         -subj "/C=US/ST=State/L=City/O=Organization/CN=$DOMAIN"
-    
+
     sudo chown daemon:daemon $SSL_DIR/*.pem
     sudo chmod 600 $SSL_DIR/key.pem
     sudo chmod 644 $SSL_DIR/cert.pem
-    
+
     # Update nginx configuration for self-signed
     sudo tee /etc/nginx/sites-available/daemon-pmac > /dev/null <<EOF
 server {
@@ -194,7 +194,7 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;

@@ -157,9 +157,9 @@ def create_default_privacy_settings_for_existing_users():
         result = conn.execute(
             text(
                 """
-        SELECT u.id, u.username 
-        FROM users u 
-        LEFT JOIN user_privacy_settings ups ON u.id = ups.user_id 
+        SELECT u.id, u.username
+        FROM users u
+        LEFT JOIN user_privacy_settings ups ON u.id = ups.user_id
         WHERE ups.id IS NULL
         """
             )

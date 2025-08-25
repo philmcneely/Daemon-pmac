@@ -37,21 +37,21 @@ get_token() {
         read -s -p "Enter admin password: " ADMIN_PASS
         echo
     fi
-    
+
     log_info "Authenticating with $DAEMON_URL..."
-    
+
     local response=$(curl -s -X POST "$DAEMON_URL/auth/login" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         -d "username=$ADMIN_USER&password=$ADMIN_PASS")
-    
+
     local token=$(echo "$response" | jq -r '.access_token')
-    
+
     if [[ "$token" == "null" || -z "$token" ]]; then
         log_error "Authentication failed"
         echo "$response" | jq .
         exit 1
     fi
-    
+
     log_success "Authentication successful"
     echo "$token"
 }
@@ -59,23 +59,23 @@ get_token() {
 # Check system status
 check_system() {
     log_info "Checking system status..."
-    
+
     local health=$(curl -s "$DAEMON_URL/health")
     local info=$(curl -s "$DAEMON_URL/api/v1/system/info")
-    
+
     if echo "$health" | jq -e '.status == "healthy"' > /dev/null; then
         log_success "Server is healthy"
     else
         log_warning "Server health check failed"
         echo "$health" | jq .
     fi
-    
+
     local mode=$(echo "$info" | jq -r '.mode')
     local users=$(echo "$info" | jq -r '.users[]? // empty' | wc -l)
-    
+
     log_info "System mode: $mode"
     log_info "Total users: $users"
-    
+
     if [[ "$mode" == "multi_user" ]]; then
         log_info "Available users:"
         echo "$info" | jq -r '.users[]?' | sed 's/^/  - /'
@@ -88,9 +88,9 @@ create_user() {
     local email=$2
     local password=${3:-"temp_password_$username"}
     local is_admin=${4:-false}
-    
+
     log_info "Creating user: $username"
-    
+
     local response=$(curl -s -X POST "$DAEMON_URL/api/v1/setup/user/$username" \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
@@ -100,10 +100,10 @@ create_user() {
             \"password\": \"$password\",
             \"is_admin\": $is_admin
         }")
-    
+
     if echo "$response" | jq -e '.success' > /dev/null; then
         log_success "User $username created successfully"
-        
+
         local imported=$(echo "$response" | jq -r '.import_result.total_entries // 0')
         if [[ "$imported" -gt 0 ]]; then
             log_success "Imported $imported data entries for $username"
@@ -118,21 +118,21 @@ create_user() {
 # Import data for all users
 import_all_data() {
     log_info "Importing data for all users..."
-    
+
     local response=$(curl -s -X POST "$DAEMON_URL/api/v1/import/all" \
         -H "Authorization: Bearer $TOKEN")
-    
+
     if echo "$response" | jq -e '.success' > /dev/null; then
         local total_users=$(echo "$response" | jq -r '.total_users')
         local total_entries=$(echo "$response" | jq -r '.total_entries')
-        
+
         log_success "Data import completed"
         log_success "Users processed: $total_users"
         log_success "Total entries imported: $total_entries"
-        
+
         # Show per-user breakdown
         echo "$response" | jq -r '.users_processed[]? | "  - \(.username): \(.total_entries) entries"'
-        
+
         # Show any errors
         local errors=$(echo "$response" | jq '.errors | length')
         if [[ "$errors" -gt 0 ]]; then
@@ -149,12 +149,12 @@ import_all_data() {
 # Import data for specific user
 import_user_data() {
     local username=$1
-    
+
     log_info "Importing data for user: $username"
-    
+
     local response=$(curl -s -X POST "$DAEMON_URL/api/v1/import/user/$username" \
         -H "Authorization: Bearer $TOKEN")
-    
+
     if echo "$response" | jq -e '.success' > /dev/null; then
         local total_entries=$(echo "$response" | jq -r '.total_entries')
         log_success "Imported $total_entries entries for $username"
@@ -168,10 +168,10 @@ import_user_data() {
 # List all users
 list_users() {
     log_info "Listing all users..."
-    
+
     local response=$(curl -s -X GET "$DAEMON_URL/auth/users" \
         -H "Authorization: Bearer $TOKEN")
-    
+
     if echo "$response" | jq -e 'type == "array"' > /dev/null; then
         echo "$response" | jq -r '.[] | "  - \(.username) (\(.email)) - Admin: \(.is_admin)"'
     else
@@ -183,9 +183,9 @@ list_users() {
 # Update user privacy settings
 update_privacy() {
     local username=$1
-    
+
     log_info "Updating privacy settings for $username..."
-    
+
     # This would require the user's token, not admin token
     # For demo purposes, showing the structure
     cat << EOF
@@ -228,7 +228,7 @@ interactive_mode() {
     while true; do
         show_menu
         read -p "Select an option (1-7): " choice
-        
+
         case $choice in
             1)
                 check_system
@@ -242,17 +242,17 @@ interactive_mode() {
                 read -s -p "Password (or leave empty for temp): " password
                 echo
                 read -p "Make admin? (y/N): " is_admin
-                
+
                 if [[ -z "$password" ]]; then
                     password="temp_password_$username"
                 fi
-                
+
                 if [[ "$is_admin" =~ ^[Yy]$ ]]; then
                     is_admin="true"
                 else
                     is_admin="false"
                 fi
-                
+
                 create_user "$username" "$email" "$password" "$is_admin"
                 ;;
             4)
@@ -274,7 +274,7 @@ interactive_mode() {
                 log_error "Invalid option"
                 ;;
         esac
-        
+
         echo
         read -p "Press Enter to continue..."
     done
@@ -284,7 +284,7 @@ interactive_mode() {
 batch_mode() {
     local action=$1
     shift
-    
+
     case $action in
         "create-user")
             create_user "$@"
@@ -315,10 +315,10 @@ main() {
     echo "Server: $DAEMON_URL"
     echo "Admin User: $ADMIN_USER"
     echo
-    
+
     check_dependencies
     TOKEN=$(get_token)
-    
+
     if [[ $# -eq 0 ]]; then
         # Interactive mode
         check_system

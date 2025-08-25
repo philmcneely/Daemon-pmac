@@ -10,7 +10,7 @@ jobs:
   update-dependencies:
     name: Update Dependencies
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
         if [ ! -f requirements.in ]; then
           cp requirements.txt requirements.in
         fi
-        
+
         # Update pinned dependencies
         pip-compile --upgrade requirements.in
 
@@ -55,18 +55,18 @@ jobs:
         title: "🔧 Update Python Dependencies"
         body: |
           ## Automated Dependency Update
-          
+
           This PR updates Python dependencies to their latest compatible versions.
-          
+
           ### Changes
           - Updated requirements.txt with latest package versions
           - All updates maintain compatibility with existing code
-          
+
           ### Testing
           - [ ] All tests pass
           - [ ] Security checks pass
           - [ ] Manual testing completed
-          
+
           This PR was automatically created by the dependency update workflow.
         branch: chore/update-dependencies
         delete-branch: true

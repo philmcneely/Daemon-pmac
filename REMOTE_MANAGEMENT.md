@@ -42,13 +42,13 @@ create_user() {
     local username=$1
     local email=$2
     local password=$3
-    
+
     curl -X POST "$DAEMON_URL/api/v1/setup/user/$username" \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
         -d "{
             \"username\": \"$username\",
-            \"email\": \"$email\", 
+            \"email\": \"$email\",
             \"password\": \"$password\",
             \"is_admin\": false
         }"
@@ -123,10 +123,10 @@ upload_and_import() {
     local username=$1
     local local_dir="./data/private/$username"
     local remote_dir="/app/data/private/$username"
-    
+
     # Upload files
     scp -r "$local_dir/" "daemon-server:$remote_dir/"
-    
+
     # Import via SSH
     ssh daemon-server "cd /app && python -m app.cli import-user-data $username"
 }
@@ -171,7 +171,7 @@ ssh daemon-server "docker exec daemon-container python -m app.cli import-user-da
 # remote-setup.sh
 
 DAEMON_URL="https://daemon.example.com"
-ADMIN_USER="admin" 
+ADMIN_USER="admin"
 ADMIN_PASS="your_secure_password"
 
 # Function to get auth token
@@ -187,9 +187,9 @@ create_user() {
     local username=$1
     local email=$2
     local password=${3:-"temp_password_$username"}
-    
+
     echo "Creating user: $username"
-    
+
     response=$(curl -s -X POST "$DAEMON_URL/api/v1/setup/user/$username" \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
@@ -199,7 +199,7 @@ create_user() {
             \"password\": \"$password\",
             \"is_admin\": false
         }")
-    
+
     if echo "$response" | jq -e '.success' > /dev/null; then
         echo "✓ User $username created successfully"
     else
@@ -229,7 +229,7 @@ echo "✓ Authentication successful"
 
 # Create users
 create_user "kime" "kime@example.com"
-create_user "brianc" "brian.c@example.com" 
+create_user "brianc" "brian.c@example.com"
 create_user "sarah" "sarah@example.com"
 
 # Import data for all users
@@ -266,13 +266,13 @@ DAEMON_URL="https://daemon.pmac.dev"
 
 sync_and_import() {
     echo "🔄 Syncing data to remote server..."
-    
+
     # Sync files
     rsync -avz --progress "$LOCAL_DATA_DIR/" "$REMOTE_SERVER:$REMOTE_DATA_DIR/"
-    
+
     if [[ $? -eq 0 ]]; then
         echo "✓ File sync completed"
-        
+
         # Trigger import via API
         TOKEN=$(get_token)
         if [[ -n "$TOKEN" && "$TOKEN" != "null" ]]; then
