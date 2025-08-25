@@ -5,17 +5,17 @@ Development server script with hot reload and debugging
 
 import os
 import sys
-import uvicorn
 from pathlib import Path
+
+import uvicorn
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from app.config import settings
-from app.database import init_db, SessionLocal, create_default_endpoints
-from app.database import User
 from app.auth import get_password_hash
+from app.config import settings
+from app.database import SessionLocal, User, create_default_endpoints, init_db
 
 
 def setup_dev_environment():

@@ -4,15 +4,15 @@ Database Migration Script for Multi-User Features
 Adds UserPrivacySettings and DataPrivacyRule tables with default data
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the app directory to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base
 
 # Direct database setup to avoid importing the full app
