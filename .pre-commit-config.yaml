@@ -13,6 +13,13 @@ repos:
       - id: check-added-large-files
       - id: debug-statements
 
+  # YAML linting with yamllint (more strict than basic check-yaml)
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint.yaml]
+
   # Black - Python code formatter (automatically fixes formatting)
   - repo: https://github.com/psf/black
     rev: 24.8.0

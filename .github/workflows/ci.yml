@@ -52,10 +52,10 @@ jobs:
         db.close()
         "
 
-          - name: Run working tests for coverage (excluding unit tests until they are fixed)
-        run: |
-          # Run only working E2E tests that don't require complex setup
-          python -m pytest tests/e2e/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
+    - name: Run working tests for coverage (excluding unit tests until they are fixed)
+      run: |
+        # Run only working E2E tests that don't require complex setup
+        python -m pytest tests/e2e/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
 
     - name: Run E2E tests only (excluding unit tests)
       run: |
