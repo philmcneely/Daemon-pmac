@@ -329,24 +329,6 @@ jobs:
           docker-compose up -d --no-deps app
           docker-compose exec -T app python -m app.cli health-check
 
-    - name: Notify deployment success
-      if: success()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: success
-        text: "✅ Daemon successfully deployed to production!"
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-    - name: Notify deployment failure
-      if: failure()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: failure
-        text: "❌ Daemon deployment to production failed!"
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
   release:
     name: Create Release
     runs-on: ubuntu-latest
