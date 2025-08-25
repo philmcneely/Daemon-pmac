@@ -89,8 +89,8 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
         else:
             return {
                 "success": False,
-                "error": f"Invalid data format. Expected object or array, got {
-                    type(raw_data)}",
+                "error": f"Invalid data format. Expected object or array, got "
+                f"{type(raw_data)}",
                 "file_path": file_path,
             }
 

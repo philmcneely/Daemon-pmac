@@ -10,13 +10,7 @@ import click
 
 from app.auth import get_password_hash
 from app.config import settings
-from app.database import (
-    Endpoint,
-    SessionLocal,
-    User,
-    create_default_endpoints,
-    init_db,
-)
+from app.database import Endpoint, SessionLocal, User, create_default_endpoints, init_db
 from app.utils import (
     cleanup_old_backups,
     create_backup,
@@ -45,10 +39,7 @@ def resume():
 def check(file):
     """Check if resume file exists and is valid"""
     try:
-        from app.resume_loader import (
-            check_resume_file_exists,
-            load_resume_from_file,
-        )
+        from app.resume_loader import check_resume_file_exists, load_resume_from_file
 
         # Check file existence
         file_info = check_resume_file_exists(file)
@@ -64,10 +55,7 @@ def check(file):
                 from datetime import datetime
 
                 modified_time = datetime.fromtimestamp(file_info["last_modified"])
-                click.echo(
-                    f"  Modified: {
-                        modified_time.strftime('%Y-%m-%d %H:%M:%S')}"
-                )
+                click.echo(f"  Modified: {modified_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
             # Try to load and validate
             click.echo("\nValidating resume data...")
