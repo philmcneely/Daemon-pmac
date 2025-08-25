@@ -2,25 +2,26 @@
 Management routes for admin operations
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from sqlalchemy.orm import Session
-from typing import List, Dict, Any
 import os
 import shutil
 from datetime import datetime, timedelta
+from typing import Any, Dict, List
 
-from ..database import get_db, User, Endpoint, DataEntry, ApiKey, AuditLog
-from ..auth import get_current_admin_user, generate_api_key
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from ..auth import generate_api_key, get_current_admin_user
+from ..config import settings
+from ..database import ApiKey, AuditLog, DataEntry, Endpoint, User, get_db
 from ..schemas import (
-    UserResponse,
-    EndpointResponse,
     ApiKeyCreate,
     ApiKeyResponse,
     BackupResponse,
     BulkOperationResponse,
+    EndpointResponse,
+    UserResponse,
 )
-from ..config import settings
-from ..utils import create_backup, cleanup_old_backups
+from ..utils import cleanup_old_backups, create_backup
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 
@@ -414,9 +415,10 @@ async def get_audit_log(
 @router.get("/system")
 async def get_system_info(current_user: User = Depends(get_current_admin_user)):
     """Get system information"""
-    import psutil
     import sys
     from datetime import datetime
+
+    import psutil
 
     # Database file size
     db_path = settings.database_url.replace("sqlite:///", "")

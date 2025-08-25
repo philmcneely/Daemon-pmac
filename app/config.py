@@ -4,8 +4,9 @@ Configuration management for Daemon
 
 import os
 from typing import List, Optional
+
+from pydantic import ConfigDict, Field, field_validator
 from pydantic_settings import BaseSettings
-from pydantic import Field, field_validator, ConfigDict
 
 
 class Settings(BaseSettings):

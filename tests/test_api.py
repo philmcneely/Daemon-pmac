@@ -2,8 +2,9 @@
 Test API endpoints
 """
 
-import pytest
 import json
+
+import pytest
 
 
 def test_root_endpoint(client):

@@ -2,18 +2,20 @@
 Test utility functions
 """
 
-import pytest
-import tempfile
-import os
 import json
-from unittest.mock import patch, MagicMock
+import os
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from app.utils import (
-    create_backup,
     cleanup_old_backups,
-    health_check,
-    get_uptime,
-    is_single_user_mode,
+    create_backup,
     get_single_user,
+    get_uptime,
+    health_check,
+    is_single_user_mode,
 )
 
 
@@ -165,7 +167,7 @@ def test_health_check_disk_space(mock_disk_usage):
 
 def test_data_validation_helpers():
     """Test data validation helper functions"""
-    from app.utils import validate_endpoint_name, sanitize_data_entry
+    from app.utils import sanitize_data_entry, validate_endpoint_name
 
     # Valid endpoint names
     assert validate_endpoint_name("valid_name") == True
@@ -190,8 +192,9 @@ def test_data_validation_helpers():
 
 def test_backup_rotation():
     """Test backup rotation logic"""
-    from app.utils import get_backup_files_to_delete
     from datetime import datetime, timedelta
+
+    from app.utils import get_backup_files_to_delete
 
     # Mock backup files with different ages
     backup_files = [
@@ -224,7 +227,7 @@ def test_system_metrics():
 
 def test_privacy_helpers():
     """Test privacy-related utility functions"""
-    from app.utils import mask_sensitive_data, is_sensitive_field
+    from app.utils import is_sensitive_field, mask_sensitive_data
 
     # Sensitive field detection
     assert is_sensitive_field("password") == True
@@ -248,8 +251,9 @@ def test_privacy_helpers():
 
 def test_rate_limiting_helpers():
     """Test rate limiting utility functions"""
-    from app.utils import should_rate_limit, get_client_identifier
     from unittest.mock import MagicMock
+
+    from app.utils import get_client_identifier, should_rate_limit
 
     # Mock request
     mock_request = MagicMock()
@@ -283,7 +287,7 @@ def test_health_check():
 
 def test_export_import_json(test_db_session):
     """Test JSON export and import"""
-    from app.database import Endpoint, DataEntry
+    from app.database import DataEntry, Endpoint
 
     # Create test endpoint
     endpoint = Endpoint(
@@ -313,7 +317,7 @@ def test_export_import_json(test_db_session):
 
 def test_export_csv(test_db_session):
     """Test CSV export"""
-    from app.database import Endpoint, DataEntry
+    from app.database import DataEntry, Endpoint
 
     # Create test endpoint
     endpoint = Endpoint(

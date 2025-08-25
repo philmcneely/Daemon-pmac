@@ -2,32 +2,33 @@
 Core API routes for daemon endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
-from typing import List, Optional, Dict, Any
 import json
 import re
+from typing import Any, Dict, List, Optional
 
-from ..database import get_db, Endpoint, DataEntry, User, AuditLog, UserPrivacySettings
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
 from ..auth import (
     get_current_active_user,
-    get_user_from_api_key,
     get_current_admin_user,
     get_password_hash,
+    get_user_from_api_key,
 )
-from ..utils import sanitize_data_dict, mask_sensitive_data, validate_url
+from ..database import AuditLog, DataEntry, Endpoint, User, UserPrivacySettings, get_db
 from ..schemas import (
-    EndpointCreate,
-    EndpointUpdate,
-    EndpointResponse,
-    DataEntryCreate,
-    DataEntryUpdate,
-    DataEntryResponse,
-    PaginatedResponse,
     ENDPOINT_MODELS,
+    DataEntryCreate,
+    DataEntryResponse,
+    DataEntryUpdate,
+    EndpointCreate,
+    EndpointResponse,
+    EndpointUpdate,
+    PaginatedResponse,
     UserCreate,
 )
+from ..utils import mask_sensitive_data, sanitize_data_dict, validate_url
 
 router = APIRouter(prefix="/api/v1", tags=["Daemon API"])
 
@@ -357,7 +358,7 @@ async def get_endpoint_data(
     current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """Get data for a specific endpoint"""
-    from ..utils import is_single_user_mode, get_single_user
+    from ..utils import get_single_user, is_single_user_mode
 
     # Handle level parameter as alias for privacy_level (for redirect compatibility)
     if level and privacy_level is None:
@@ -564,7 +565,7 @@ async def add_endpoint_data(
     db: Session = Depends(get_db),
 ):
     """Add data to an endpoint (authenticated users only)"""
-    from ..utils import is_single_user_mode, get_single_user
+    from ..utils import get_single_user, is_single_user_mode
 
     # Find endpoint
     endpoint = (
@@ -899,8 +900,8 @@ async def get_specific_user_data_universal(
     Works for any endpoint: /api/v1/{endpoint}/users/{username}
     Examples: /api/v1/resume/users/john, /api/v1/skills/users/jane
     """
-    from ..utils import is_single_user_mode
     from ..privacy import get_privacy_filter
+    from ..utils import is_single_user_mode
 
     # In single-user mode, redirect to the simple endpoint
     if is_single_user_mode(db):
@@ -990,7 +991,7 @@ async def get_specific_user_data_universal(
 # Create adaptive routing helper
 def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
     """Get information about how endpoints should be accessed based on user count"""
-    from ..utils import is_single_user_mode, get_single_user
+    from ..utils import get_single_user, is_single_user_mode
 
     single_user_mode = is_single_user_mode(db)
 
@@ -1431,11 +1432,11 @@ async def setup_new_user_with_data(
     db: Session = Depends(get_db),
 ):
     """Complete user setup: create user, directory, and import initial data (admin only)"""
+    from ..database import UserPrivacySettings
     from ..multi_user_import import (
         create_user_data_directory,
         import_user_data_from_directory,
     )
-    from ..database import UserPrivacySettings
 
     # Check if user already exists
     existing_user = db.query(User).filter(User.username == username).first()

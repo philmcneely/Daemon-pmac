@@ -2,23 +2,24 @@
 Database models and configuration
 """
 
+import json
+from datetime import datetime
+from typing import Any, Dict, Generator, Optional
+
 from sqlalchemy import (
+    JSON,
+    Boolean,
     Column,
+    DateTime,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    DateTime,
-    Boolean,
-    JSON,
-    ForeignKey,
     create_engine,
-    Index,
 )
-from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session, relationship
+from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 from sqlalchemy.sql import func
-from datetime import datetime
-from typing import Dict, Any, Optional, Generator
-import json
 
 from .config import settings
 

@@ -3,16 +3,17 @@ Generic data loader for all endpoints
 Extends the resume loader to handle any endpoint with JSON data files
 """
 
+import glob
 import json
 import os
-import glob
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
 
-from .database import get_db, Endpoint, DataEntry, User
-from .schemas import ENDPOINT_MODELS
 from .config import settings
+from .database import DataEntry, Endpoint, User, get_db
+from .schemas import ENDPOINT_MODELS
 
 # Default data directory
 DEFAULT_DATA_DIR = "data"

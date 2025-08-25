@@ -2,8 +2,9 @@
 Test MCP (Model Context Protocol) endpoints
 """
 
-import pytest
 import json
+
+import pytest
 
 
 def test_mcp_tools_list(client):

@@ -2,10 +2,12 @@
 Privacy filtering and data protection utilities
 """
 
-import re
 import json
-from typing import Dict, Any, Optional, List
+import re
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
+
 from .database import User, UserPrivacySettings
 
 

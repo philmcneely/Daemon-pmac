@@ -2,20 +2,21 @@
 Authentication and security utilities
 """
 
+import hashlib
+import ipaddress
+import secrets
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from typing import Optional, Union
+
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status, Depends, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-import hashlib
-import secrets
-import ipaddress
-from functools import wraps
 
 from .config import settings
-from .database import get_db, User, ApiKey
+from .database import ApiKey, User, get_db
 from .schemas import TokenData
 
 # Password hashing

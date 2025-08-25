@@ -2,25 +2,26 @@
 Command Line Interface for Daemon-pmac
 """
 
-import click
+import json
 import os
 import sys
 from datetime import datetime
+
+import click
 from sqlalchemy.orm import Session
-import json
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.database import init_db, SessionLocal, create_default_endpoints, User, Endpoint
 from app.auth import get_password_hash
+from app.config import settings
+from app.database import Endpoint, SessionLocal, User, create_default_endpoints, init_db
 from app.utils import (
-    create_backup,
     cleanup_old_backups,
+    create_backup,
     export_endpoint_data,
     import_endpoint_data,
 )
-from app.config import settings
 
 
 @click.group()
@@ -88,8 +89,8 @@ def check(file):
 def import_file(file, replace, user):
     """Import resume from JSON file"""
     try:
-        from app.resume_loader import import_resume_to_database
         from app.database import User
+        from app.resume_loader import import_resume_to_database
 
         # Get user ID if username provided
         user_id = None
@@ -565,6 +566,7 @@ def serve(host, port, reload):
     """Start the API server"""
     try:
         import uvicorn
+
         from app.main import app
 
         click.echo(f"Starting Daemon-pmac server on {host}:{port}")
@@ -583,7 +585,7 @@ def serve(host, port, reload):
 def status():
     """Show system status"""
     try:
-        from app.utils import health_check, get_system_metrics
+        from app.utils import get_system_metrics, health_check
 
         # Health check
         health = health_check()
@@ -630,8 +632,8 @@ def create_user(
     username: str, email: str, password: str, admin: bool, import_data: bool
 ):
     """Create a new user with optional data import"""
-    from .database import SessionLocal, User, UserPrivacySettings
     from .auth import get_password_hash
+    from .database import SessionLocal, User, UserPrivacySettings
     from .multi_user_import import (
         create_user_data_directory,
         import_user_data_from_directory,

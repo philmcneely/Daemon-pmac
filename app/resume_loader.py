@@ -5,12 +5,13 @@ Resume import utility for loading resume data from files
 import json
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
 
-from .database import get_db, Endpoint, DataEntry, User
-from .schemas import ResumeData
 from .config import settings
+from .database import DataEntry, Endpoint, User, get_db
+from .schemas import ResumeData
 
 # Default resume file location
 DEFAULT_RESUME_FILE = "data/private/pmac/resume/resume_pmac.json"

@@ -2,13 +2,13 @@
 Authentication routes
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
 
-from ..database import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+
 from ..auth import (
     authenticate_user,
     create_access_token,
@@ -16,9 +16,9 @@ from ..auth import (
     get_current_user,
     get_password_hash,
 )
-from ..schemas import Token, UserCreate, UserResponse
-from ..database import User
 from ..config import settings
+from ..database import User, get_db
+from ..schemas import Token, UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -63,8 +63,8 @@ async def login(
 @router.post("/register", response_model=UserResponse)
 async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new user (public registration or admin-only based on config)"""
-    from ..utils import is_single_user_mode
     from ..database import UserPrivacySettings
+    from ..utils import is_single_user_mode
 
     # Check if user already exists
     existing_user = (

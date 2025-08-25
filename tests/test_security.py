@@ -2,11 +2,12 @@
 Security tests for OWASP Top 10 and common vulnerabilities
 """
 
-import pytest
-import json
 import base64
+import json
 import urllib.parse
 from datetime import datetime, timedelta
+
+import pytest
 
 
 class TestOWASPSecurity:

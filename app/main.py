@@ -2,28 +2,29 @@
 Main FastAPI application
 """
 
-from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
+import asyncio
+import logging
+import os
+import time
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-import time
-import logging
-import asyncio
-import os
+from slowapi.util import get_remote_address
 
+from .auth import add_security_headers, check_ip_access
 from .config import settings
-from .database import init_db, create_default_endpoints, SessionLocal
-from .auth import check_ip_access, add_security_headers
-from .utils import health_check, get_uptime, create_backup, cleanup_old_backups
-from .schemas import HealthResponse, ErrorResponse
+from .database import SessionLocal, create_default_endpoints, init_db
 
 # Import routers
-from .routers import auth, api, admin, mcp
+from .routers import admin, api, auth, mcp
+from .schemas import ErrorResponse, HealthResponse
+from .utils import cleanup_old_backups, create_backup, get_uptime, health_check
 
 # Setup logging
 logging.basicConfig(
@@ -266,7 +267,7 @@ if settings.mcp_enabled:
 def get_available_endpoints():
     """Get list of available endpoint names from database"""
     try:
-        from .database import SessionLocal, Endpoint
+        from .database import Endpoint, SessionLocal
 
         db = SessionLocal()
         try:
@@ -512,8 +513,8 @@ async def metrics():
     if not settings.metrics_enabled:
         raise HTTPException(status_code=404, detail="Metrics disabled")
 
+    from .database import DataEntry, Endpoint, SessionLocal, User
     from .utils import get_system_metrics
-    from .database import SessionLocal, DataEntry, Endpoint, User
 
     try:
         # Get system metrics

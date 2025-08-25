@@ -2,17 +2,18 @@
 Utility functions for backup, monitoring, and other operations
 """
 
+import html
+import json
+import logging
 import os
+import re
 import shutil
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, Optional, List
-import json
-import logging
+from typing import Any, Dict, List, Optional
+
 import psutil
 from sqlalchemy.orm import Session
-import re
-import html
 
 from .config import settings
 from .schemas import BackupResponse
@@ -141,7 +142,7 @@ def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> List[s
 
 def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -> str:
     """Export endpoint data to various formats"""
-    from .database import Endpoint, DataEntry
+    from .database import DataEntry, Endpoint
 
     # Find endpoint
     endpoint = (
@@ -217,7 +218,7 @@ def import_endpoint_data(
     user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Import data into an endpoint"""
-    from .database import Endpoint, DataEntry
+    from .database import DataEntry, Endpoint
 
     # Find endpoint
     endpoint = (
@@ -493,8 +494,8 @@ def is_single_user_mode(db: Session) -> bool:
     - "single": Force single-user mode
     - "multi": Force multi-user mode
     """
-    from .database import User
     from .config import settings
+    from .database import User
 
     if settings.multi_user_mode == "single":
         return True

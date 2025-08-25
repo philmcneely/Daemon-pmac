@@ -2,9 +2,10 @@
 Test configuration and fixtures
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,10 +14,9 @@ from sqlalchemy.orm import sessionmaker
 os.environ.setdefault("SECRET_KEY", "test_secret_key_for_testing_only")
 os.environ.setdefault("DATABASE_URL", "sqlite:///test.db")
 
-from app.main import app
-from app.database import get_db, Base, create_default_endpoints
 from app.auth import get_password_hash
-from app.database import User
+from app.database import Base, User, create_default_endpoints, get_db
+from app.main import app
 
 
 @pytest.fixture
