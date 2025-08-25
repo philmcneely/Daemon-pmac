@@ -138,44 +138,71 @@ def client(temp_db):
 
 
 @pytest.fixture(autouse=True)
-def clean_e2e_database(request):
+def clean_e2e_database(request, e2e_db):
     """Clean the E2E database before each test if using E2E fixtures"""
     # Only clean if this test is using E2E fixtures
     if any(
         fixture in request.fixturenames
         for fixture in ["client", "test_db_session", "admin_user", "regular_user"]
     ):
-        # Get the shared database path
-        db_path = os.environ.get("DATABASE_URL", "sqlite:///test.db").replace(
-            "sqlite:///", ""
-        )
-        if os.path.exists(db_path):
-            engine = create_engine(f"sqlite:///{db_path}")
-            SessionLocal = sessionmaker(bind=engine)
-            session = SessionLocal()
-            try:
-                # Use SQLAlchemy models for safer deletion
-                from app.database import (
-                    ApiKey,
-                    AuditLog,
-                    DataEntry,
-                    DataPrivacyRule,
-                    User,
-                    UserPrivacySettings,
-                )
+        # Get the test database session
+        db_path, TestingSessionLocal = e2e_db
+        session = TestingSessionLocal()
+        try:
+            # Use SQLAlchemy models for safer deletion
+            from app.database import (
+                ApiKey,
+                AuditLog,
+                DataEntry,
+                DataPrivacyRule,
+                User,
+                UserPrivacySettings,
+            )
 
-                # Delete in correct order (respecting foreign keys)
-                session.query(UserPrivacySettings).delete()
-                session.query(DataPrivacyRule).delete()
-                session.query(AuditLog).delete()
-                session.query(DataEntry).delete()
-                session.query(ApiKey).delete()
-                session.query(User).delete()
-                session.commit()
-            except Exception:
-                session.rollback()
-            finally:
-                session.close()
+            # Delete in correct order (respecting foreign keys)
+            session.query(UserPrivacySettings).delete()
+            session.query(DataPrivacyRule).delete()
+            session.query(AuditLog).delete()
+            session.query(DataEntry).delete()
+            session.query(ApiKey).delete()
+            session.query(User).delete()
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+
+    yield  # Run the test
+
+    # Cleanup after test as well
+    if any(
+        fixture in request.fixturenames
+        for fixture in ["client", "test_db_session", "admin_user", "regular_user"]
+    ):
+        db_path, TestingSessionLocal = e2e_db
+        session = TestingSessionLocal()
+        try:
+            from app.database import (
+                ApiKey,
+                AuditLog,
+                DataEntry,
+                DataPrivacyRule,
+                User,
+                UserPrivacySettings,
+            )
+
+            # Delete in correct order (respecting foreign keys)
+            session.query(UserPrivacySettings).delete()
+            session.query(DataPrivacyRule).delete()
+            session.query(AuditLog).delete()
+            session.query(DataEntry).delete()
+            session.query(ApiKey).delete()
+            session.query(User).delete()
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
 
 
 @pytest.fixture(autouse=True)
