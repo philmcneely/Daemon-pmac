@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  daemon-api:
+    build: .
+    ports:
+      - "8004:8004"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=sqlite:///./data/daemon.db
+      - BACKUP_DIR=./backups
+      - HOST=0.0.0.0
+      - PORT=8004
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - daemon-api
+    restart: unless-stopped
+    profiles:
+      - nginx
+
+volumes:
+  daemon_data:
+  daemon_backups:

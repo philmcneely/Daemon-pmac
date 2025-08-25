@@ -1,0 +1,42 @@
+[
+  {
+    "type": "Collaboration Opportunities",
+    "description": "Looking for technical professionals interested in collaborating on open-source projects related to testing automation, DevOps tools, and AI integration in software development.",
+    "category": "professional",
+    "urgency": "medium",
+    "criteria": "Experience with Python, testing frameworks, or AI/ML applications. Interest in building tools that benefit the broader development community.",
+    "contact_method": "GitHub or professional email"
+  },
+  {
+    "type": "Mentorship Opportunities",
+    "description": "Seeking opportunities to mentor early-career quality engineers and software testers, particularly those transitioning from other fields or military backgrounds.",
+    "category": "education",
+    "urgency": "low",
+    "criteria": "Individuals committed to learning test automation, quality engineering principles, and professional development in tech.",
+    "contact_method": "LinkedIn or through Veterans4Quality network"
+  },
+  {
+    "type": "Speaking Engagements",
+    "description": "Interested in speaking at conferences, meetups, or workshops about quality engineering, AI-assisted testing, DevOps transformation, and leadership in technical organizations.",
+    "category": "professional",
+    "urgency": "medium",
+    "criteria": "Events focused on software quality, testing, DevOps, or engineering leadership. Preference for in-person events but open to virtual presentations.",
+    "contact_method": "Professional email or conference organizer contact"
+  },
+  {
+    "type": "Advisory Roles",
+    "description": "Looking for advisory opportunities with startups or organizations focusing on developer tools, testing frameworks, or quality engineering solutions.",
+    "category": "business",
+    "urgency": "low",
+    "criteria": "Companies with innovative approaches to software quality, automation, or developer experience. Interest in strategic guidance rather than hands-on implementation.",
+    "contact_method": "LinkedIn or professional referral"
+  },
+  {
+    "type": "Technical Learning Partners",
+    "description": "Seeking learning partners or study groups for advanced AI/ML topics, particularly in areas of model testing, prompt engineering, and AI system reliability.",
+    "category": "education",
+    "urgency": "medium",
+    "criteria": "Professionals with complementary skills in AI/ML who are interested in practical applications in software development and quality assurance.",
+    "contact_method": "Technical communities or professional networks"
+  }
+]

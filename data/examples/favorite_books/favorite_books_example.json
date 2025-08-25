@@ -1,0 +1,47 @@
+[
+  {
+    "title": "The DevOps Handbook",
+    "author": "Gene Kim, Jez Humble, Patrick Debois, John Willis",
+    "isbn": "978-1942788003",
+    "rating": 5,
+    "review": "Essential reading for anyone involved in software delivery. Provides practical guidance on implementing DevOps principles and transforming organizational culture.",
+    "genres": ["technology", "business", "devops"],
+    "date_read": "2023-03-15"
+  },
+  {
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "isbn": "978-0132350884",
+    "rating": 5,
+    "review": "Timeless principles for writing maintainable, readable code. Every developer should read this book multiple times throughout their career.",
+    "genres": ["programming", "software-engineering"],
+    "date_read": "2022-08-20"
+  },
+  {
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt, David Thomas",
+    "isbn": "978-0135957059",
+    "rating": 5,
+    "review": "Updated edition of the classic. Excellent advice on becoming a more effective programmer and building better software systems.",
+    "genres": ["programming", "career-development"],
+    "date_read": "2023-01-10"
+  },
+  {
+    "title": "Accelerate",
+    "author": "Nicole Forsgren, Jez Humble, Gene Kim",
+    "isbn": "978-1942788331",
+    "rating": 4,
+    "review": "Data-driven insights into what makes high-performing technology organizations. Great for understanding DevOps metrics and organizational capabilities.",
+    "genres": ["technology", "business", "data-science"],
+    "date_read": "2023-06-22"
+  },
+  {
+    "title": "Test Driven Development: By Example",
+    "author": "Kent Beck",
+    "isbn": "978-0321146533",
+    "rating": 4,
+    "review": "Classic introduction to TDD with practical examples. Shows how test-first development can improve code quality and design.",
+    "genres": ["testing", "programming", "methodology"],
+    "date_read": "2022-11-05"
+  }
+]

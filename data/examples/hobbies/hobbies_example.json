@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Home Automation & IoT",
+    "description": "Building and programming smart home systems using Raspberry Pi, Arduino, and various sensors to automate lighting, climate control, and security systems.",
+    "category": "technology",
+    "skill_level": "advanced",
+    "time_invested": "5+ years",
+    "favorite_aspects": ["Problem solving", "Hardware integration", "Python programming", "Real-world applications"]
+  },
+  {
+    "name": "3D Printing & Design",
+    "description": "Creating custom parts, prototypes, and functional items using CAD design and 3D printing technology. Focus on practical solutions and mechanical design.",
+    "category": "maker",
+    "skill_level": "intermediate",
+    "time_invested": "3 years",
+    "favorite_aspects": ["Design iteration", "Material experimentation", "Functional prototyping", "Creative problem solving"]
+  },
+  {
+    "name": "Photography",
+    "description": "Landscape and macro photography, focusing on technical excellence and post-processing techniques. Enjoy capturing nature and detailed close-up work.",
+    "category": "creative",
+    "skill_level": "intermediate",
+    "time_invested": "8 years",
+    "favorite_aspects": ["Technical challenges", "Outdoor exploration", "Artistic expression", "Equipment optimization"]
+  },
+  {
+    "name": "Woodworking",
+    "description": "Traditional woodworking and furniture making, combining hand tools with modern techniques to create functional and beautiful pieces.",
+    "category": "crafts",
+    "skill_level": "beginner",
+    "time_invested": "2 years",
+    "favorite_aspects": ["Working with natural materials", "Precision craftsmanship", "Tangible results", "Meditative focus"]
+  },
+  {
+    "name": "Gaming & Game Design",
+    "description": "Playing and analyzing video games, with interest in game mechanics, user experience design, and the technical aspects of game development.",
+    "category": "entertainment",
+    "skill_level": "advanced",
+    "time_invested": "20+ years",
+    "favorite_aspects": ["Strategic thinking", "System analysis", "Community interaction", "Technology evolution"]
+  }
+]

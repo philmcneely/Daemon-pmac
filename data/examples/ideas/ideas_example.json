@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Personal API Framework",
+    "description": "Build a lightweight API framework for personal data management, inspired by Daniel Miessler's Daemon project. Focus on simplicity, security, and extensibility.",
+    "category": "technology",
+    "status": "developing",
+    "tags": ["api", "python", "fastapi", "personal-data"]
+  },
+  {
+    "title": "AI-Assisted Code Review",
+    "description": "Develop a system that uses LLMs to provide intelligent code review suggestions, focusing on security vulnerabilities, performance improvements, and best practices.",
+    "category": "ai-tools",
+    "status": "draft",
+    "tags": ["ai", "code-review", "llm", "development-tools"]
+  },
+  {
+    "title": "Raspberry Pi Home Automation Hub",
+    "description": "Create a central hub for home automation using Raspberry Pi, integrating with various IoT devices and providing a unified control interface.",
+    "category": "hardware",
+    "status": "published",
+    "tags": ["raspberry-pi", "iot", "home-automation", "python"]
+  },
+  {
+    "title": "Quality Engineering Knowledge Base",
+    "description": "Build a comprehensive knowledge base for quality engineering best practices, testing methodologies, and automation frameworks.",
+    "category": "education",
+    "status": "developing",
+    "tags": ["quality-engineering", "testing", "knowledge-base", "documentation"]
+  },
+  {
+    "title": "Container-Based Testing Environment",
+    "description": "Design a containerized testing environment that can be easily reproduced across different systems, supporting multiple testing frameworks.",
+    "category": "devops",
+    "status": "draft",
+    "tags": ["docker", "testing", "containers", "devops", "automation"]
+  }
+]

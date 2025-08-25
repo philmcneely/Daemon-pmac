@@ -1,0 +1,708 @@
+# Daemon: Multi-User Personal API Framework
+
+An **adaptive personal API framework** that seamlessly scales from single-user simplicity to multi-user complexity with comprehensive privacy controls. Built with FastAPI and inspired by [Daniel Miessler's Daemon project](https://github.com/danielmiessler/Daemon).
+
+> **Adaptive Design**: Automatically switches between single-user mode (simple `/api/v1/resume`) and multi-user mode (`/api/v1/resume/users/pmac`) based on the number of users in the system.
+
+## ✨ Key Features
+
+### 🔄 **Adaptive Multi-User Support**
+- **Single User (≤1 user)**: Clean, simple endpoints without usernames
+- **Multi-User (2+ users)**: User-specific endpoints with full data isolation
+- **Automatic Mode Detection**: Seamlessly transitions between modes
+
+### 🔐 **Advanced Privacy System**
+- **Configurable Privacy Levels**: `business_card`, `professional`, `public_full`, `ai_safe`
+- **Smart Data Filtering**: Automatically removes sensitive information (phone, SSN, salary, etc.)
+- **User-Controlled Settings**: Each user controls their own privacy preferences
+- **AI-Safe Mode**: Perfect for AI assistant access with automatic data sanitization
+
+### 🚀 **Production Ready**
+- **FastAPI-based**: High-performance async API with auto-generated docs
+- **Secure by default**: JWT authentication, rate limiting, input validation
+- **SQLite database**: Lightweight with automatic backups and audit logging
+- **Docker support**: Easy deployment anywhere
+- **Health monitoring**: Comprehensive health checks and metrics
+
+### 🎯 **Developer Friendly**
+- **Hot reload**: Development-friendly with automatic reloading
+- **CLI tools**: Easy user and data management commands
+- **Extensible**: Simple to add new endpoints and data types
+- **RESTful design**: Clean, predictable API patterns
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Clone and setup
+git clone <your-repo-url>
+cd daemon-pmac
+pip install -r requirements.txt
+
+# Create first user (becomes admin automatically)
+python -m app.cli create-user pmac
+
+# Start the server
+python dev.py
+```
+
+### Development Setup
+
+For development work, use the setup script:
+
+```bash
+# Automated development environment setup
+chmod +x setup-dev.sh
+./setup-dev.sh
+```
+
+Or manual setup:
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Set up pre-commit hooks
+pre-commit install
+
+# Run tests
+pytest tests/
+
+# Run linting and formatting
+black app/ tests/
+isort app/ tests/
+flake8 app/ tests/
+mypy app/
+
+# Run security checks
+bandit -r app/
+safety check
+pip-audit
+```
+
+### CI/CD
+
+The project includes comprehensive GitHub Actions workflows:
+
+- **Tests**: Automated testing across Python 3.9-3.12
+- **Code Quality**: Black, isort, flake8, mypy linting
+- **Security**: Bandit security scanning and dependency audits
+- **Auto-formatting**: Automatic code formatting on push
+- **Dependency Updates**: Weekly automated dependency updates
+- **Docker**: Multi-platform container builds
+- **Deployment**: Automated staging and production deployments
+
+Configure these GitHub secrets for full CI/CD:
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` for Docker Hub
+- `STAGING_HOST`, `STAGING_USER`, `STAGING_SSH_KEY` for staging deployment
+- `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY` for production deployment
+- `SLACK_WEBHOOK_URL` for deployment notifications
+
+### Single User Mode (1 user)
+```bash
+# Simple, clean endpoints
+curl "http://localhost:8000/api/v1/resume"
+curl "http://localhost:8000/api/v1/skills"
+curl "http://localhost:8000/api/v1/hobbies"
+```
+
+### Multi-User Mode (2+ users)
+```bash
+# Create second user (triggers multi-user mode)
+python -m app.cli create-user kime
+
+# User-specific endpoints with privacy levels
+curl "http://localhost:8000/api/v1/resume/users/pmac?level=ai_safe"
+curl "http://localhost:8000/api/v1/skills/users/kime?level=business_card"
+```
+
+## 📚 API Examples
+
+### System Information
+```bash
+GET /api/v1/system/info
+# Returns current mode and endpoint patterns
+```
+
+### Privacy Levels
+```bash
+# Ultra-minimal business card view
+GET /api/v1/resume/users/pmac?level=business_card
+
+# Professional networking view  
+GET /api/v1/resume/users/pmac?level=professional
+
+# Full public view (respects user privacy settings)
+GET /api/v1/resume/users/pmac?level=public_full
+
+# AI assistant safe view (no sensitive data)
+GET /api/v1/resume/users/pmac?level=ai_safe
+```
+
+### User Management
+```bash
+# Register new user
+POST /auth/register
+{
+  "username": "pmac",
+  "email": "phil@pmac.dev",
+  "password": "secure_password"
+}
+
+# Complete user setup (admin only)
+POST /api/v1/setup/user/kime
+{
+  "username": "kime",
+  "email": "kime@example.com", 
+  "password": "secure_password"
+}
+```
+
+## 🔐 Privacy & Security
+
+### Privacy Filtering
+The system automatically filters sensitive data for public access:
+
+**Original Data:**
+```json
+{
+  "name": "Phil McNeely",
+  "contact": {
+    "email": "phil@pmac.dev",
+    "phone": "+1-555-123-4567",
+    "personal_email": "personal@gmail.com"
+  },
+  "salary": 150000
+}
+```
+
+**Public Filtered (`ai_safe` level):**
+```json
+{
+  "name": "Phil McNeely", 
+  "contact": {
+    "email": "phil@pmac.dev"
+  }
+}
+```
+
+### Privacy Settings
+Users control their own privacy:
+```bash
+# Update privacy settings
+PUT /api/v1/privacy/settings
+{
+  "business_card_mode": false,
+  "ai_assistant_access": true,
+  "show_contact_info": true,
+  "custom_privacy_rules": {"contact.phone": "hide"}
+}
+
+# Preview privacy filtering
+GET /api/v1/privacy/preview/resume?level=business_card
+```
+docker-compose up --build
+```
+
+## Configuration
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+Key settings:
+- `SECRET_KEY`: JWT signing key (generate with `python -c "import secrets; print(secrets.token_hex(32))"`)
+- `DATABASE_URL`: SQLite database path
+- `RATE_LIMIT_REQUESTS`: Requests per minute per IP
+- `BACKUP_ENABLED`: Enable automatic backups
+
+## API Endpoints
+
+### 🔄 Adaptive Routing System
+
+The API automatically adapts based on the number of users:
+
+**Single User Mode (≤1 user):**
+```bash
+GET /api/v1/resume          # Simple, clean endpoints
+GET /api/v1/ideas
+GET /api/v1/skills
+```
+
+**Multi-User Mode (2+ users):**
+```bash
+GET /api/v1/resume/users/pmac    # User-specific endpoints
+GET /api/v1/ideas/users/kime
+GET /api/v1/skills/users/pmac
+```
+
+### 📊 Core Data Endpoints
+
+#### Personal Information
+- `GET /api/v1/resume` - Professional resume and work history
+- `GET /api/v1/skills` - Technical and soft skills
+- `GET /api/v1/books` - Favorite books and reading lists
+- `GET /api/v1/hobbies` - Hobbies and interests
+
+#### Ideas & Projects  
+- `GET /api/v1/ideas` - Ideas and thoughts
+- `GET /api/v1/problems` - Problems seeking solutions
+- `GET /api/v1/looking_for` - What you're actively seeking
+
+### 🔐 Privacy-Aware Endpoints
+
+All data endpoints support privacy filtering via query parameters:
+
+```bash
+# Public access (automatic privacy filtering)
+GET /api/v1/resume?privacy_level=public_full
+
+# Business card mode (minimal info)
+GET /api/v1/resume?privacy_level=business_card
+
+# AI assistant access (full data, sanitized)
+GET /api/v1/resume?privacy_level=ai_safe
+
+# Professional level (work-appropriate)
+GET /api/v1/resume?privacy_level=professional
+```
+
+### 👑 Management Endpoints
+
+#### Data Management
+- `POST /api/v1/{endpoint}` - Add/update data (authenticated)
+- `DELETE /api/v1/{endpoint}/{id}` - Delete data (authenticated)
+- `GET /api/v1/endpoints` - List all available endpoints
+
+#### User Management (Admin Only)
+- `POST /auth/register` - Register new user
+- `GET /auth/users` - List all users
+- `POST /api/v1/setup/user/{username}` - Complete user setup
+
+#### Privacy Management
+- `GET /api/v1/privacy/settings` - Get privacy settings
+- `PUT /api/v1/privacy/settings` - Update privacy settings
+- `POST /api/v1/privacy/preview` - Preview privacy filtering
+
+#### Multi-User Data Access (Admin/User)
+- `GET /api/v1/{endpoint}/users/{username}` - Access specific user's data
+- `POST /api/v1/import/user/{username}` - Import user data
+- `POST /api/v1/import/all` - Import all users' data
+
+### 🏥 System Endpoints
+- `GET /health` - System health check
+- `GET /api/v1/system/info` - System information and mode detection
+
+## Adding New Endpoints
+
+### Via API
+```bash
+curl -X POST "http://localhost:8000/api/v1/endpoints" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "projects",
+    "description": "Current projects",
+    "schema": {
+      "name": {"type": "string", "required": true},
+      "description": {"type": "string"},
+      "status": {"type": "string", "enum": ["active", "completed", "paused"]}
+    }
+  }'
+```
+
+### Via CLI
+```bash
+python -m app.cli endpoint create projects "Current projects" \
+  --field name:string:required \
+  --field description:string \
+  --field status:enum:active,completed,paused
+```
+
+## Backup & Recovery
+
+### Manual Backup
+```bash
+python -m app.cli backup create
+```
+
+### Restore from Backup
+```bash
+python -m app.cli backup restore backup_20231215_143022.db
+```
+
+### Resume Management (Optional)
+```bash
+# Check if resume file exists and is valid
+make check-resume
+
+# Import resume from JSON file (auto-detects data/resume_pmac.json)
+make import-resume
+
+# View current resume data
+make show-resume
+```
+
+See [RESUME_MANAGEMENT.md](RESUME_MANAGEMENT.md) for detailed resume import instructions.
+
+### Automatic Backups
+Set `BACKUP_ENABLED=true` in `.env` for daily automatic backups.
+
+## Security Features
+
+- JWT token authentication
+- Rate limiting (configurable per endpoint)
+- Input validation and sanitization
+- SQL injection prevention
+- CORS configuration
+- Request logging
+- IP-based access control
+
+## Monitoring
+
+- Health check endpoint: `/health`
+- Metrics endpoint: `/metrics` (Prometheus format)
+- Database connection monitoring
+- Request/response time tracking
+
+## Production Deployment
+
+### Raspberry Pi Setup
+
+1. Install Python 3.9+
+2. Clone repository
+3. Set up systemd service
+4. Configure nginx reverse proxy
+5. Set up SSL certificate
+
+Example systemd service:
+```ini
+[Unit]
+Description=Daemon API
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/daemon-pmac
+Environment=PATH=/home/pi/daemon-pmac/venv/bin
+ExecStart=/home/pi/daemon-pmac/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## 🌍 Remote Server Management
+
+### Managing Your German Server from USA
+
+If your server is running in Germany and you're in the USA, here are several ways to manage users and data:
+
+#### **1. Direct API Access**
+```bash
+# Set your server URL
+export DAEMON_URL="https://daemon.pmac.dev"
+
+# Create users via API (requires admin token)
+curl -X POST "$DAEMON_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "pmac",
+    "email": "phil@pmac.dev",
+    "password": "secure_password"
+  }'
+
+# Login to get admin token
+TOKEN=$(curl -X POST "$DAEMON_URL/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=pmac&password=secure_password" | jq -r '.access_token')
+
+# Create additional users
+curl -X POST "$DAEMON_URL/api/v1/setup/user/kime" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "kime",
+    "email": "kime@example.com",
+    "password": "secure_password"
+  }'
+```
+
+#### **2. SSH + CLI Access**
+```bash
+# SSH into your German server
+ssh user@your-german-server.com
+
+# Use CLI commands on the server
+python -m app.cli create-user pmac
+python -m app.cli create-user kime --admin
+python -m app.cli import-all-data --base-dir /data/private
+```
+
+#### **3. File Upload + Import**
+```bash
+# Upload data files to server
+scp -r ./data/private/* user@your-german-server.com:/app/data/private/
+
+# Import via API
+curl -X POST "$DAEMON_URL/api/v1/import/all" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### **4. Docker Volume Management**
+```bash
+# If using Docker, copy data to container
+docker cp ./data/private/pmac/ daemon-container:/app/data/private/pmac/
+
+# Import data
+docker exec daemon-container python -m app.cli import-user-data pmac
+```
+
+#### **5. Automated Setup Script**
+Create a setup script for remote management:
+
+```bash
+#!/bin/bash
+# setup-remote-users.sh
+
+DAEMON_URL="https://daemon.pmac.dev"
+ADMIN_USER="pmac"
+ADMIN_PASS="your_secure_password"
+
+# Login and get token
+TOKEN=$(curl -s -X POST "$DAEMON_URL/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=$ADMIN_USER&password=$ADMIN_PASS" | jq -r '.access_token')
+
+# Create users
+for user in kime brianc; do
+  echo "Creating user: $user"
+  curl -X POST "$DAEMON_URL/api/v1/setup/user/$user" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"username\": \"$user\",
+      \"email\": \"$user@example.com\",
+      \"password\": \"temp_password_$user\"
+    }"
+done
+
+echo "Users created successfully!"
+```
+
+### **Time Zone Considerations**
+Since your server is in Germany (CET/CEST), keep in mind:
+- **API timestamps** will be in UTC by default
+- **Log files** will show German server time
+- **Backup schedules** run on German server time
+- **Rate limiting** resets on server time
+
+### **Security Best Practices for Remote Management**
+1. **Use HTTPS**: Always use `https://` for API calls
+2. **Rotate tokens**: JWT tokens expire, get new ones as needed
+3. **Use SSH keys**: For CLI access, use SSH key authentication
+4. **VPN access**: Consider VPN for sensitive operations
+5. **Audit logs**: Monitor who's accessing your server
+
+## 📊 Data Management
+
+### **Bulk Data Import**
+```bash
+# Import all users' data from directory structure
+POST /api/v1/import/all?base_directory=data/private
+
+# Import specific user's data
+POST /api/v1/import/user/pmac?data_directory=data/private/pmac
+
+# Import single file
+POST /api/v1/import/file?file_path=data/private/pmac/resume.json&endpoint_name=resume
+```
+
+### **CLI Data Management**
+```bash
+# Create user with automatic data import
+python -m app.cli create-user pmac --import-data
+
+# Import data for existing users
+python -m app.cli import-user-data pmac --data-dir data/private/pmac
+python -m app.cli import-all-data --base-dir data/private
+
+# Export user data (backup)
+python -m app.cli export-user-data pmac --output-dir ./backups/
+```
+
+### **Expected Directory Structure**
+```
+data/
+├── examples/              # Template files (tracked in git)
+│   ├── resume_example.json
+│   ├── skills_example.json
+│   └── hobbies_example.json
+└── private/              # User data (ignored by git)
+    ├── pmac/
+    │   ├── resume_pmac.json
+    │   ├── skills_pmac.json
+    │   └── hobbies_pmac.json
+    ├── kime/
+    │   ├── resume_kime.json
+    │   └── skills_kime.json
+    └── brianc/
+        └── resume_brianc.json
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
+
+## Attribution & Inspiration
+
+This project is an **example implementation** of the concepts from:
+
+**[Daemon - An open-source personal API framework](https://github.com/danielmiessler/Daemon)** by [Daniel Miessler](https://danielmiessler.com)
+
+The original Daemon project outlines a vision for personal APIs that allow entities (people, companies, objects) to expose information about themselves through standardized endpoints. This implementation takes those concepts and provides:
+
+- A complete, production-ready FastAPI implementation
+- Enhanced security features (JWT auth, rate limiting, input validation)
+- Database persistence with automatic backups
+- Comprehensive CLI management tools
+- Docker and Raspberry Pi deployment options
+- Model Context Protocol (MCP) support for AI integration
+- Extensive testing and monitoring capabilities
+
+### Key Differences from Original Concept
+
+While maintaining the core philosophy and endpoint structure of the original Daemon project, this implementation adds:
+
+- **Database persistence**: SQLite backend with structured data storage
+- **Authentication system**: JWT tokens and API keys for security
+- **Admin interface**: User management and system administration
+- **Deployment automation**: Scripts for Raspberry Pi and Docker deployment
+- **Monitoring**: Health checks, metrics, and audit logging
+- **Data management**: Import/export, backup/restore functionality
+
+### Related Projects
+
+Daniel Miessler has created an ecosystem of related projects:
+- [Substrate](https://github.com/danielmiessler/substrate) - Framework for human understanding and progress
+- [Fabric](https://github.com/danielmiessler/fabric) - AI-augmented productivity framework
+- [TELOS](https://danielmiessler.com/telos) - Life optimization framework
+
+## License
+
+MIT License - see LICENSE file for details.
+
+This project is independently developed and is not officially affiliated with Daniel Miessler or the original Daemon project, though it implements the same core concepts with gratitude and respect for the original vision.
+
+### 🔐 Authentication & Authorization
+
+#### Getting Started
+```bash
+# 1. Login to get JWT token
+curl -X POST "http://localhost:8000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=pmac&password=your_password"
+
+# Response:
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer",
+  "user": {
+    "username": "pmac",
+    "is_admin": true
+  }
+}
+```
+
+#### Using Authentication
+```bash
+# 2. Use token in requests
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://localhost:8000/api/v1/resume"
+
+# 3. Update data (authenticated endpoints)
+curl -X POST "http://localhost:8000/api/v1/ideas" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "New Idea", "description": "A great concept"}'
+```
+
+#### User Roles & Permissions
+
+**Admin Users:**
+- Create/manage other users
+- Access all users' data
+- System administration
+- Import/export data for any user
+
+**Regular Users:**
+- Access only their own data
+- Update their privacy settings
+- Cannot create other users
+
+#### Public vs Authenticated Access
+
+**Public Endpoints (No Authentication):**
+- `GET /api/v1/{endpoint}` - Privacy-filtered data
+- `GET /health` - System health
+- `GET /api/v1/system/info` - Basic system info
+
+**Authenticated Endpoints (Token Required):**
+- `POST /api/v1/{endpoint}` - Create/update data
+- `DELETE /api/v1/{endpoint}/{id}` - Delete data
+- `GET /api/v1/privacy/settings` - Privacy management
+- `POST /api/v1/import/*` - Data import
+
+## 📚 Interactive API Documentation
+
+FastAPI automatically generates interactive API documentation:
+
+### Swagger UI (Recommended)
+```
+http://localhost:8000/docs
+```
+- **Interactive**: Test endpoints directly in browser
+- **Authentication**: Built-in JWT token support
+- **Real-time**: Always up-to-date with current API
+- **Multi-user aware**: Shows adaptive routing examples
+
+### ReDoc (Alternative)
+```  
+http://localhost:8000/redoc
+```
+- **Clean design**: Focused on readability
+- **Comprehensive**: Detailed schema documentation
+- **Export friendly**: Easy to print or share
+
+### OpenAPI Schema
+```
+http://localhost:8000/openapi.json
+```
+- **Raw schema**: For automated tooling
+- **Client generation**: Use with OpenAPI generators
+- **Integration**: Perfect for external tools
+
+### Usage Tips
+
+1. **Authentication in Swagger**: 
+   - Click "Authorize" button
+   - Enter `Bearer YOUR_JWT_TOKEN`
+   - All subsequent requests will be authenticated
+
+2. **Privacy Testing**:
+   - Try different `privacy_level` parameters
+   - Compare filtered vs unfiltered responses
+   - Test with different user tokens
+
+3. **Multi-User Testing**:
+   - Create multiple users via `/auth/register`
+   - Test user-specific endpoints
+   - Verify data isolation between users

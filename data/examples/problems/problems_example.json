@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Flaky Test Detection and Resolution",
+    "description": "Addressing the persistent issue of unreliable automated tests that pass and fail intermittently, causing CI/CD pipeline delays and reducing team confidence in test results.",
+    "domain": "quality-engineering",
+    "status": "solving",
+    "priority": "high",
+    "approach": "Implementing statistical analysis of test results, identifying environmental dependencies, and creating more robust test isolation strategies"
+  },
+  {
+    "title": "Legacy System Testing Coverage",
+    "description": "Improving test coverage for legacy codebases that lack comprehensive automated testing, while maintaining system stability during refactoring efforts.",
+    "domain": "software-engineering",
+    "status": "researching",
+    "priority": "medium",
+    "approach": "Gradual introduction of characterization tests, API-level testing, and incremental modernization strategies"
+  },
+  {
+    "title": "Cross-Browser Compatibility at Scale",
+    "description": "Ensuring consistent user experience across multiple browsers and devices without exponentially increasing test execution time and infrastructure costs.",
+    "domain": "web-testing",
+    "status": "solved",
+    "priority": "medium",
+    "approach": "Implemented smart browser matrix selection, parallel execution optimization, and visual regression testing automation"
+  },
+  {
+    "title": "AI Model Testing and Validation",
+    "description": "Developing effective testing strategies for AI/ML models, including data quality validation, model performance monitoring, and bias detection.",
+    "domain": "ai-testing",
+    "status": "identifying",
+    "priority": "high",
+    "approach": "Researching specialized testing frameworks for ML pipelines and establishing model validation benchmarks"
+  },
+  {
+    "title": "Microservices Integration Testing",
+    "description": "Creating efficient testing strategies for distributed systems with multiple microservices, managing dependencies, and ensuring end-to-end functionality.",
+    "domain": "distributed-systems",
+    "status": "solving",
+    "priority": "high",
+    "approach": "Contract testing implementation, service virtualization, and comprehensive monitoring integration"
+  }
+]

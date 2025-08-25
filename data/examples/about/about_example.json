@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Alex Johnson",
+    "title": "Full-Stack Developer & Tech Entrepreneur",
+    "bio": "Passionate software developer with 10+ years of experience building scalable web applications and leading technical teams. I love solving complex problems and creating solutions that make a real impact. When I'm not coding, you'll find me exploring new technologies, contributing to open source projects, or mentoring aspiring developers.",
+    "location": "San Francisco, CA",
+    "website": "https://alexjohnson.dev",
+    "social_links": {
+      "linkedin": "https://linkedin.com/in/alexjohnson",
+      "github": "https://github.com/alexjohnson",
+      "twitter": "https://twitter.com/alexjohnsondev",
+      "mastodon": "https://mastodon.social/@alexjohnson",
+      "blog": "https://alexjohnson.dev/blog"
+    }
+  },
+  {
+    "name": "DevCorp Solutions",
+    "title": "Enterprise Software Development Company",
+    "bio": "DevCorp Solutions is a leading software development company specializing in enterprise applications, cloud infrastructure, and digital transformation. Founded in 2015, we've helped over 200 companies modernize their technology stack and accelerate their digital initiatives.",
+    "location": "Multiple offices: SF, NYC, Austin",
+    "website": "https://devcorp-solutions.com",
+    "social_links": {
+      "linkedin": "https://linkedin.com/company/devcorp-solutions",
+      "twitter": "https://twitter.com/devCorpSolutions",
+      "youtube": "https://youtube.com/@devCorpSolutions"
+    }
+  }
+]
