@@ -175,10 +175,7 @@ class TestOWASPSecurity:
                 print(f"Redirect location: {location}")
                 if location:
                     public_response = client.get(location)
-                    print(
-                        f"After redirect status: {
-                            public_response.status_code}"
-                    )
+                    print(f"After redirect status: {public_response.status_code}")
 
             if public_response.status_code == 200:
                 public_data = public_response.json()
