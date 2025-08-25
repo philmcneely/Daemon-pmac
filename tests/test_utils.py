@@ -291,8 +291,8 @@ def test_sanitize_filename():
     assert sanitize_filename("...test...") == "test"
 
 
-def test_health_check():
-    """Test health check function"""
+def test_health_check_basic():
+    """Test basic health check function"""
     health = health_check()
     assert "status" in health
     assert "timestamp" in health

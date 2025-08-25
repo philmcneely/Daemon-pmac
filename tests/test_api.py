@@ -356,8 +356,8 @@ def test_multi_user_data_isolation(client, auth_headers, regular_user_headers):
         assert "User Idea" not in admin_titles
 
 
-def test_get_nonexistent_endpoint(client):
-    """Test getting nonexistent endpoint"""
+def test_get_nonexistent_endpoint_config(client):
+    """Test getting nonexistent endpoint configuration"""
     response = client.get("/api/v1/endpoints/nonexistent")
     assert response.status_code == 404
 
@@ -428,8 +428,8 @@ def test_add_invalid_data(client, auth_headers):
     assert response.status_code == 400
 
 
-def test_update_endpoint_data(client, auth_headers, sample_idea_data):
-    """Test updating endpoint data"""
+def test_update_endpoint_data_with_validation(client, auth_headers, sample_idea_data):
+    """Test updating endpoint data with validation"""
     # First create an item
     create_response = client.post(
         "/api/v1/ideas", headers=auth_headers, json=sample_idea_data
@@ -448,8 +448,8 @@ def test_update_endpoint_data(client, auth_headers, sample_idea_data):
     assert data["data"]["title"] == "Updated Test Idea"
 
 
-def test_delete_endpoint_data(client, auth_headers, sample_idea_data):
-    """Test deleting endpoint data"""
+def test_delete_endpoint_data_with_auth(client, auth_headers, sample_idea_data):
+    """Test deleting endpoint data with authentication"""
     # First create an item
     create_response = client.post(
         "/api/v1/ideas", headers=auth_headers, json=sample_idea_data
@@ -475,8 +475,8 @@ def test_bulk_add_data(client, auth_headers):
     assert data["error_count"] == 0
 
 
-def test_pagination(client, auth_headers):
-    """Test pagination of endpoint data"""
+def test_pagination_basic(client, auth_headers):
+    """Test basic pagination of endpoint data"""
     # Add some test data first
     for i in range(5):
         client.post(
