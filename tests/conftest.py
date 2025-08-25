@@ -4,12 +4,11 @@ Test configuration and fixtures
 
 import os
 import tempfile
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Set test environment variables before importing app
