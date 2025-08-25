@@ -240,8 +240,28 @@ jobs:
         # Start container in background
         docker run -d --name daemon-test -p 8004:8004 daemon:test
 
-        # Wait for container to start
-        sleep 15
+        # Wait for container to be ready with proper health check loop
+        echo "Waiting for container to be ready..."
+        timeout=60
+        counter=0
+        while [ $counter -lt $timeout ]; do
+          if curl -s http://localhost:8004/health > /dev/null 2>&1; then
+            echo "✅ Container is ready after $counter seconds"
+            break
+          fi
+          echo "Waiting for health endpoint... ($counter/$timeout)"
+          sleep 2
+          counter=$((counter + 2))
+        done
+
+        if [ $counter -ge $timeout ]; then
+          echo "❌ Container failed to start within $timeout seconds"
+          echo "Container logs:"
+          docker logs daemon-test
+          docker stop daemon-test
+          docker rm daemon-test
+          exit 1
+        fi
 
         # Test health endpoint
         echo "Testing health endpoint..."
