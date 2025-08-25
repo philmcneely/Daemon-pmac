@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     # Database
     database_url: str = Field(default="sqlite:///./daemon.db")
 
-    # Server
-    host: str = Field(default="0.0.0.0")
+    # Server configuration - bind to all interfaces
+    host: str = Field(default="0.0.0.0")  # nosec B104
     port: int = Field(default=8004)
     debug: bool = Field(default=False)
     reload: bool = Field(default=False)

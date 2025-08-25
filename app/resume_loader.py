@@ -209,8 +209,10 @@ def check_resume_file_exists(file_path: Optional[str] = None) -> Dict[str, Any]:
             stat_info = os.stat(file_path)
             size = stat_info.st_size
             modified = stat_info.st_mtime
-        except Exception:
-            pass
+        except (OSError, IOError):
+            # Handle cases where filesystem operation fails
+            # Keep default values (readable=False, size=0, modified=0)
+            pass  # nosec B110
 
     return {
         "file_path": file_path,
