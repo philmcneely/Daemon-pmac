@@ -28,7 +28,7 @@ from .routers import auth, api, admin, mcp
 # Setup logging
 logging.basicConfig(
     level=getattr(logging, settings.logging_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     logger.info("Starting Daemon application...")
-    
+
     # Initialize database
     try:
         init_db()
@@ -55,11 +55,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         raise
-    
+
     # Create backup directory
     if settings.backup_enabled:
         os.makedirs(settings.backup_dir, exist_ok=True)
-    
+
     # Schedule background tasks
     if settings.backup_enabled:
         # Create initial backup
@@ -68,14 +68,14 @@ async def lifespan(app: FastAPI):
             logger.info(f"Initial backup created: {backup_info.filename}")
         except Exception as e:
             logger.warning(f"Initial backup failed: {e}")
-        
+
         # Schedule daily backups (simplified - in production use proper scheduler)
         asyncio.create_task(daily_backup_task())
-    
+
     logger.info("Application startup complete")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Daemon application...")
 
@@ -85,13 +85,13 @@ async def daily_backup_task():
     while True:
         try:
             # Wait 24 hours
-            await asyncio.sleep(86400)  
-            
+            await asyncio.sleep(86400)
+
             # Create backup
             if settings.backup_enabled:
                 backup_info = create_backup()
                 logger.info(f"Scheduled backup created: {backup_info.filename}")
-                
+
                 # Cleanup old backups
                 cleanup_old_backups()
         except Exception as e:
@@ -173,38 +173,35 @@ Core personal data endpoints:
     contact={
         "name": "Daemon API Support",
         "url": "https://github.com/yourusername/Daemon",
-        "email": "support@example.com"
+        "email": "support@example.com",
     },
-    license_info={
-        "name": "MIT License",
-        "url": "https://opensource.org/licenses/MIT"
-    },
+    license_info={"name": "MIT License", "url": "https://opensource.org/licenses/MIT"},
     tags_metadata=[
         {
             "name": "Root",
-            "description": "🏠 **Basic Information** - Root endpoint and basic app info"
+            "description": "🏠 **Basic Information** - Root endpoint and basic app info",
         },
         {
-            "name": "Authentication", 
-            "description": "🔐 **Authentication & Authorization** - Login, registration, and user management"
+            "name": "Authentication",
+            "description": "🔐 **Authentication & Authorization** - Login, registration, and user management",
         },
         {
             "name": "Daemon API",
-            "description": "📊 **Core Data Endpoints** - Dynamic personal data endpoints with privacy filtering"
+            "description": "📊 **Core Data Endpoints** - Dynamic personal data endpoints with privacy filtering",
         },
         {
             "name": "Administration",
-            "description": "👑 **Admin Management** - User administration, system management (Admin only)"
+            "description": "👑 **Admin Management** - User administration, system management (Admin only)",
         },
         {
             "name": "Monitoring",
-            "description": "🏥 **System Health** - Health checks, metrics, and system status monitoring"
+            "description": "🏥 **System Health** - Health checks, metrics, and system status monitoring",
         },
         {
             "name": "MCP",
-            "description": "🤖 **Model Context Protocol** - AI integration endpoints for LLM access"
-        }
-    ]
+            "description": "🤖 **Model Context Protocol** - AI integration endpoints for LLM access",
+        },
+    ],
 )
 
 # Add rate limiting
@@ -220,11 +217,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Security middleware
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     """Security middleware for IP filtering and headers"""
-    
+
     # IP access control
     if settings.allowed_ips:
         try:
@@ -232,23 +230,28 @@ async def security_middleware(request: Request, call_next):
         except HTTPException as e:
             return JSONResponse(
                 status_code=e.status_code,
-                content={"error": e.detail, "timestamp": datetime.now(timezone.utc).isoformat()}
+                content={
+                    "error": e.detail,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
             )
-    
+
     # Process request
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
-    
+
     # Add security headers
     response = add_security_headers(response)
-    
+
     # Add performance header
     response.headers["X-Process-Time"] = str(process_time)
-    
+
     # Log request
-    logger.info(f"{request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s")
-    
+    logger.info(
+        f"{request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s"
+    )
+
     return response
 
 
@@ -264,6 +267,7 @@ def get_available_endpoints():
     """Get list of available endpoint names from database"""
     try:
         from .database import SessionLocal, Endpoint
+
         db = SessionLocal()
         try:
             endpoints = db.query(Endpoint).filter(Endpoint.is_active == True).all()
@@ -272,52 +276,67 @@ def get_available_endpoints():
             db.close()
     except Exception:
         # Fallback to core endpoints if database query fails
-        return ["resume", "skills", "ideas", "favorite_books", "hobbies", "problems", "looking_for", "about"]
+        return [
+            "resume",
+            "skills",
+            "ideas",
+            "favorite_books",
+            "hobbies",
+            "problems",
+            "looking_for",
+            "about",
+        ]
 
 
 def custom_openapi():
     """Generate enhanced OpenAPI schema with dynamic endpoint examples and enums"""
     if app.openapi_schema:
         return app.openapi_schema
-    
+
     # Get default OpenAPI schema using FastAPI's get_openapi function
     from fastapi.openapi.utils import get_openapi
+
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
-    
+
     # Get available endpoints dynamically
     available_endpoints = get_available_endpoints()
-    
+
     # Enhance the schema with dynamic endpoint examples
     openapi_schema["info"]["x-logo"] = {
         "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
     }
-    
+
     # Add dynamic path examples to the schema
     paths = openapi_schema.get("paths", {})
-    
+
     # Update existing paths to add enum constraints to endpoint_name parameters
     paths_to_update = []
     for path, path_item in paths.items():
         if "/{endpoint_name}" in path:
             paths_to_update.append((path, path_item))
-    
+
     for path, path_item in paths_to_update:
         for method, operation in path_item.items():
             if isinstance(operation, dict) and "parameters" in operation:
                 for param in operation["parameters"]:
-                    if param.get("name") == "endpoint_name" and param.get("in") == "path":
+                    if (
+                        param.get("name") == "endpoint_name"
+                        and param.get("in") == "path"
+                    ):
                         # Add enum constraint with available endpoints
                         param["schema"]["enum"] = available_endpoints
-                        param["description"] = f"Endpoint name (available: {', '.join(available_endpoints)})"
-    
-    # Add example endpoints in the description  
+                        param["description"] = (
+                            f"Endpoint name (available: {', '.join(available_endpoints)})"
+                        )
+
+    # Add example endpoints in the description
     core_endpoints = available_endpoints
-    
+
     # Enhance the generic {endpoint_name} paths with concrete examples
     for endpoint in core_endpoints:
         # Add GET endpoint examples
@@ -335,14 +354,19 @@ def custom_openapi():
                             "in": "query",
                             "required": False,
                             "schema": {"type": "integer", "minimum": 1, "default": 1},
-                            "description": "Page number for pagination"
+                            "description": "Page number for pagination",
                         },
                         {
-                            "name": "size", 
+                            "name": "size",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 50},
-                            "description": "Items per page"
+                            "schema": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100,
+                                "default": 50,
+                            },
+                            "description": "Items per page",
                         },
                         {
                             "name": "privacy_level",
@@ -350,10 +374,15 @@ def custom_openapi():
                             "required": False,
                             "schema": {
                                 "type": "string",
-                                "enum": ["business_card", "professional", "public_full", "ai_safe"]
+                                "enum": [
+                                    "business_card",
+                                    "professional",
+                                    "public_full",
+                                    "ai_safe",
+                                ],
                             },
-                            "description": "Privacy filtering level"
-                        }
+                            "description": "Privacy filtering level",
+                        },
                     ],
                     "responses": {
                         "200": {
@@ -362,15 +391,15 @@ def custom_openapi():
                                 "application/json": {
                                     "schema": {
                                         "type": "array",
-                                        "items": {"type": "object"}
+                                        "items": {"type": "object"},
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 }
             }
-        
+
         # Add user-specific GET endpoint examples for multi-user mode
         user_example_path = f"/api/v1/{endpoint}/users/{{username}}"
         if user_example_path not in paths:
@@ -386,19 +415,24 @@ def custom_openapi():
                             "in": "path",
                             "required": True,
                             "schema": {"type": "string"},
-                            "description": "Username to get data for"
+                            "description": "Username to get data for",
                         },
                         {
                             "name": "level",
-                            "in": "query", 
+                            "in": "query",
                             "required": False,
                             "schema": {
                                 "type": "string",
-                                "enum": ["business_card", "professional", "public_full", "ai_safe"],
-                                "default": "public_full"
+                                "enum": [
+                                    "business_card",
+                                    "professional",
+                                    "public_full",
+                                    "ai_safe",
+                                ],
+                                "default": "public_full",
                             },
-                            "description": "Privacy filtering level"
-                        }
+                            "description": "Privacy filtering level",
+                        },
                     ],
                     "responses": {
                         "200": {
@@ -406,16 +440,16 @@ def custom_openapi():
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "type": "array", 
-                                        "items": {"type": "object"}
+                                        "type": "array",
+                                        "items": {"type": "object"},
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 }
             }
-    
+
     openapi_schema["paths"] = paths
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -423,6 +457,7 @@ def custom_openapi():
 
 # Set the custom OpenAPI generator
 app.openapi = custom_openapi
+
 
 # Root endpoint
 @app.get("/", tags=["Root"])
@@ -436,7 +471,7 @@ async def root():
         "docs_url": settings.docs_url,
         "health_url": "/health",
         "api_prefix": settings.api_prefix,
-        "mcp_enabled": settings.mcp_enabled
+        "mcp_enabled": settings.mcp_enabled,
     }
 
 
@@ -445,17 +480,19 @@ async def root():
 async def health():
     """Health check endpoint"""
     health_data = health_check()
-    
+
     # Add application-specific info
-    health_data.update({
-        "version": settings.version,
-        "uptime_seconds": get_uptime(),
-        "database": health_data["checks"]["database"]["status"] == "healthy"
-    })
-    
+    health_data.update(
+        {
+            "version": settings.version,
+            "uptime_seconds": get_uptime(),
+            "database": health_data["checks"]["database"]["status"] == "healthy",
+        }
+    )
+
     # Remove detailed checks from response (keep simple for load balancers)
     status_code = 200 if health_data["status"] == "healthy" else 503
-    
+
     return JSONResponse(
         status_code=status_code,
         content={
@@ -463,8 +500,8 @@ async def health():
             "timestamp": health_data["timestamp"],
             "version": settings.version,
             "database": health_data["database"],
-            "uptime_seconds": health_data["uptime_seconds"]
-        }
+            "uptime_seconds": health_data["uptime_seconds"],
+        },
     )
 
 
@@ -474,26 +511,26 @@ async def metrics():
     """Prometheus-style metrics endpoint"""
     if not settings.metrics_enabled:
         raise HTTPException(status_code=404, detail="Metrics disabled")
-    
+
     from .utils import get_system_metrics
     from .database import SessionLocal, DataEntry, Endpoint, User
-    
+
     try:
         # Get system metrics
         system_metrics = get_system_metrics()
-        
+
         # Get database metrics
         db = SessionLocal()
-        
+
         total_entries = db.query(DataEntry).count()
         active_entries = db.query(DataEntry).filter(DataEntry.is_active == True).count()
         total_endpoints = db.query(Endpoint).count()
         active_endpoints = db.query(Endpoint).filter(Endpoint.is_active == True).count()
         total_users = db.query(User).count()
         active_users = db.query(User).filter(User.is_active == True).count()
-        
+
         db.close()
-        
+
         # Format as Prometheus metrics
         metrics_output = f"""# HELP daemon_info Application information
 # TYPE daemon_info gauge
@@ -534,9 +571,9 @@ daemon_disk_usage_percent {system_metrics['disk']['percent']}
 # TYPE daemon_database_size_bytes gauge
 daemon_database_size_bytes {system_metrics['database']['size_bytes']}
 """
-        
+
         return Response(content=metrics_output, media_type="text/plain")
-    
+
     except Exception as e:
         logger.error(f"Error generating metrics: {e}")
         raise HTTPException(status_code=500, detail="Error generating metrics")
@@ -551,8 +588,8 @@ async def not_found_handler(request: Request, exc):
         content={
             "error": "Not Found",
             "detail": f"The requested resource was not found: {request.url.path}",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
     )
 
 
@@ -565,8 +602,8 @@ async def internal_error_handler(request: Request, exc):
         content={
             "error": "Internal Server Error",
             "detail": "An unexpected error occurred",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
     )
 
 
@@ -580,9 +617,7 @@ async def rate_limited_example(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "app.main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.reload
+        "app.main:app", host=settings.host, port=settings.port, reload=settings.reload
     )

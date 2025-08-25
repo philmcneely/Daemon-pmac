@@ -8,20 +8,24 @@ import json
 
 def test_mcp_tools_list(client):
     """Test MCP tools listing"""
-    response = client.post("/mcp/tools/list", json={
-        "jsonrpc": "2.0",
-        "method": "tools/list",
-        "id": 1
-    })
+    response = client.post(
+        "/mcp/tools/list", json={"jsonrpc": "2.0", "method": "tools/list", "id": 1}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "result" in data
     assert "tools" in data["result"]
     assert isinstance(data["result"]["tools"], list)
-    
+
     # Check that we have expected tools
     tool_names = [tool["name"] for tool in data["result"]["tools"]]
-    expected_tools = ["daemon_resume", "daemon_about", "daemon_ideas", "daemon_skills", "daemon_info"]
+    expected_tools = [
+        "daemon_resume",
+        "daemon_about",
+        "daemon_ideas",
+        "daemon_skills",
+        "daemon_info",
+    ]
     for tool in expected_tools:
         assert tool in tool_names
 
@@ -37,41 +41,38 @@ def test_mcp_tools_get(client):
 
 def test_mcp_tool_call_info(client):
     """Test MCP tool call for info"""
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_info",
-        "arguments": {}
-    })
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_info", "arguments": {}}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "result" in data
     assert "content" in data["result"]
     assert not data["result"]["is_error"]
-    
-    # Check that content contains system info
+
+    # Check that content contains daemon info
     content_text = data["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
-    assert "mode" in content_json
+    assert "daemon_version" in content_json
     assert "available_endpoints" in content_json
+    assert "total_endpoints" in content_json
 
 
 def test_mcp_tool_call_endpoint(client, auth_headers, sample_idea_data):
     """Test MCP tool call for specific endpoint"""
     # Add some test data first
     client.post("/api/v1/ideas", headers=auth_headers, json=sample_idea_data)
-    
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_ideas",
-        "arguments": {
-            "limit": 5,
-            "active_only": True
-        }
-    })
+
+    response = client.post(
+        "/mcp/tools/call",
+        json={"name": "daemon_ideas", "arguments": {"limit": 5, "active_only": True}},
+    )
     assert response.status_code == 200
     data = response.json()
     assert "result" in data
     assert "content" in data["result"]
     assert not data["result"]["is_error"]
-    
+
     # Verify the content structure
     content_text = data["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
@@ -82,21 +83,18 @@ def test_mcp_tool_call_endpoint(client, auth_headers, sample_idea_data):
 
 def test_mcp_tool_call_invalid_tool(client):
     """Test MCP tool call with invalid tool name"""
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_nonexistent",
-        "arguments": {}
-    })
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_nonexistent", "arguments": {}}
+    )
     assert response.status_code == 404
 
 
 def test_mcp_tool_call_invalid_arguments(client):
     """Test MCP tool call with invalid arguments"""
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_ideas",
-        "arguments": {
-            "limit": -1  # Invalid limit
-        }
-    })
+    response = client.post(
+        "/mcp/tools/call",
+        json={"name": "daemon_ideas", "arguments": {"limit": -1}},  # Invalid limit
+    )
     assert response.status_code == 400
 
 
@@ -104,11 +102,10 @@ def test_mcp_tool_specific_endpoint(client, auth_headers, sample_book_data):
     """Test MCP tool via specific endpoint call"""
     # Add some test data first
     client.post("/api/v1/favorite_books", headers=auth_headers, json=sample_book_data)
-    
-    response = client.post("/mcp/tools/daemon_favorite_books", json={
-        "limit": 3,
-        "active_only": True
-    })
+
+    response = client.post(
+        "/mcp/tools/daemon_favorite_books", json={"limit": 3, "active_only": True}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "result" in data
@@ -117,11 +114,10 @@ def test_mcp_tool_specific_endpoint(client, auth_headers, sample_book_data):
 
 def test_mcp_jsonrpc_compliance(client):
     """Test MCP JSON-RPC compliance"""
-    response = client.post("/mcp/tools/list", json={
-        "jsonrpc": "2.0",
-        "method": "tools/list",
-        "id": "test-123"
-    })
+    response = client.post(
+        "/mcp/tools/list",
+        json={"jsonrpc": "2.0", "method": "tools/list", "id": "test-123"},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["jsonrpc"] == "2.0"
@@ -133,17 +129,14 @@ def test_mcp_resume_tool(client, auth_headers, sample_resume_data):
     """Test MCP resume tool specifically"""
     # Add resume data first
     client.post("/api/v1/resume", headers=auth_headers, json=sample_resume_data)
-    
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_resume",
-        "arguments": {
-            "limit": 1
-        }
-    })
+
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_resume", "arguments": {"limit": 1}}
+    )
     assert response.status_code == 200
     data = response.json()
     assert not data["result"]["is_error"]
-    
+
     content_text = data["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
     assert content_json["endpoint"] == "resume"
@@ -158,17 +151,16 @@ def test_mcp_skills_tool(client, auth_headers):
         "category": "Programming Languages",
         "level": "advanced",
         "years_experience": 5,
-        "description": "Python development and automation"
+        "description": "Python development and automation",
     }
     client.post("/api/v1/skills", headers=auth_headers, json=skills_data)
-    
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_skills",
-        "arguments": {}
-    })
+
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_skills", "arguments": {}}
+    )
     assert response.status_code == 200
     data = response.json()
-    
+
     content_text = data["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
     assert content_json["endpoint"] == "skills"
@@ -179,19 +171,22 @@ def test_mcp_tool_with_limit_parameter(client, auth_headers):
     """Test MCP tool with different limit parameters"""
     # Create multiple ideas
     for i in range(5):
-        client.post("/api/v1/ideas", headers=auth_headers, json={
-            "title": f"Idea {i}",
-            "description": f"Description {i}",
-            "category": "testing"
-        })
-    
+        client.post(
+            "/api/v1/ideas",
+            headers=auth_headers,
+            json={
+                "title": f"Idea {i}",
+                "description": f"Description {i}",
+                "category": "testing",
+            },
+        )
+
     # Test with limit
-    response = client.post("/mcp/tools/call", json={
-        "name": "daemon_ideas",
-        "arguments": {"limit": 2}
-    })
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_ideas", "arguments": {"limit": 2}}
+    )
     assert response.status_code == 200
-    
+
     content_text = response.json()["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
     assert len(content_json["data"]) <= 2
@@ -200,9 +195,7 @@ def test_mcp_tool_with_limit_parameter(client, auth_headers):
 def test_mcp_error_handling(client):
     """Test MCP error handling"""
     # Test malformed JSON-RPC request
-    response = client.post("/mcp/tools/call", json={
-        "invalid": "request"
-    })
+    response = client.post("/mcp/tools/call", json={"invalid": "request"})
     assert response.status_code in [400, 422]
 
 

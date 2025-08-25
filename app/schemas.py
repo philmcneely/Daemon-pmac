@@ -10,7 +10,7 @@ from enum import Enum
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
-    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    email: str = Field(..., pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
 
 class UserCreate(UserBase):
@@ -19,7 +19,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     is_active: bool
     is_admin: bool
@@ -38,7 +38,9 @@ class TokenData(BaseModel):
 
 
 class EndpointBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100, pattern=r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+    name: str = Field(
+        ..., min_length=1, max_length=100, pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$"
+    )
     description: Optional[str] = None
     endpoint_schema: Dict[str, Any] = Field(..., alias="schema")
     is_public: bool = True
@@ -57,7 +59,7 @@ class EndpointUpdate(BaseModel):
 
 class EndpointResponse(EndpointBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     is_active: bool
     created_at: datetime
@@ -79,7 +81,7 @@ class DataEntryUpdate(BaseModel):
 
 class DataEntryResponse(DataEntryBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     endpoint_id: int
     is_active: bool
@@ -94,7 +96,7 @@ class ApiKeyCreate(BaseModel):
 
 class ApiKeyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     name: str
     key: str  # Only returned on creation
@@ -161,14 +163,16 @@ class IdeaData(BaseModel):
     title: str
     description: str
     category: Optional[str] = None
-    status: Optional[str] = Field(None, pattern=r'^(draft|developing|published)$')
+    status: Optional[str] = Field(None, pattern=r"^(draft|developing|published)$")
     tags: Optional[List[str]] = None
 
 
 class SkillData(BaseModel):
     name: str
     category: Optional[str] = None
-    level: Optional[str] = Field(None, pattern=r'^(beginner|intermediate|advanced|expert)$')
+    level: Optional[str] = Field(
+        None, pattern=r"^(beginner|intermediate|advanced|expert)$"
+    )
     years_experience: Optional[int] = Field(None, ge=0)
     description: Optional[str] = None
 
@@ -187,8 +191,10 @@ class ProblemData(BaseModel):
     title: str
     description: str
     domain: Optional[str] = None
-    status: Optional[str] = Field(None, pattern=r'^(identifying|researching|solving|solved)$')
-    priority: Optional[str] = Field(None, pattern=r'^(low|medium|high|critical)$')
+    status: Optional[str] = Field(
+        None, pattern=r"^(identifying|researching|solving|solved)$"
+    )
+    priority: Optional[str] = Field(None, pattern=r"^(low|medium|high|critical)$")
     approach: Optional[str] = None
 
 
@@ -196,7 +202,9 @@ class HobbyData(BaseModel):
     name: str
     description: Optional[str] = None
     category: Optional[str] = None
-    skill_level: Optional[str] = Field(None, pattern=r'^(beginner|intermediate|advanced)$')
+    skill_level: Optional[str] = Field(
+        None, pattern=r"^(beginner|intermediate|advanced)$"
+    )
     time_invested: Optional[str] = None
     favorite_aspects: Optional[List[str]] = None
 
@@ -205,7 +213,7 @@ class LookingForData(BaseModel):
     type: str
     description: str
     category: Optional[str] = None
-    urgency: Optional[str] = Field(None, pattern=r'^(low|medium|high)$')
+    urgency: Optional[str] = Field(None, pattern=r"^(low|medium|high)$")
     criteria: Optional[str] = None
     contact_method: Optional[str] = None
 

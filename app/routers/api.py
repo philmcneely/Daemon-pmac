@@ -10,27 +10,37 @@ import json
 import re
 
 from ..database import get_db, Endpoint, DataEntry, User, AuditLog, UserPrivacySettings
-from ..auth import get_current_active_user, get_user_from_api_key, get_current_admin_user, get_password_hash
+from ..auth import (
+    get_current_active_user,
+    get_user_from_api_key,
+    get_current_admin_user,
+    get_password_hash,
+)
 from ..utils import sanitize_data_dict, mask_sensitive_data, validate_url
 from ..schemas import (
-    EndpointCreate, EndpointUpdate, EndpointResponse,
-    DataEntryCreate, DataEntryUpdate, DataEntryResponse,
-    PaginatedResponse, ENDPOINT_MODELS, UserCreate
+    EndpointCreate,
+    EndpointUpdate,
+    EndpointResponse,
+    DataEntryCreate,
+    DataEntryUpdate,
+    DataEntryResponse,
+    PaginatedResponse,
+    ENDPOINT_MODELS,
+    UserCreate,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Daemon API"])
 
 
 def get_current_user_optional(
-    request: Request,
-    db: Session = Depends(get_db)
+    request: Request, db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user from JWT or API key, but don't require authentication"""
     # Try API key first
     user = get_user_from_api_key(request, db)
     if user:
         return user
-    
+
     # Try JWT token (this would need to be implemented properly)
     # For now, return None for public access
     return None
@@ -44,7 +54,7 @@ def log_audit_action(
     user: Optional[User] = None,
     old_values: Optional[Dict] = None,
     new_values: Optional[Dict] = None,
-    request: Optional[Request] = None
+    request: Optional[Request] = None,
 ):
     """Log an audit action"""
     audit_log = AuditLog(
@@ -55,13 +65,14 @@ def log_audit_action(
         new_values=new_values,
         user_id=user.id if user else None,
         ip_address=request.client.host if request else None,
-        user_agent=request.headers.get("user-agent") if request else None
+        user_agent=request.headers.get("user-agent") if request else None,
     )
     db.add(audit_log)
 
 
 # Dynamic endpoint routes
-@router.get("/endpoints", 
+@router.get(
+    "/endpoints",
     response_model=List[EndpointResponse],
     summary="List all available endpoints",
     description="""
@@ -110,11 +121,11 @@ def log_audit_action(
                                 "title": {"type": "string", "required": True},
                                 "contact": {"type": "object"},
                                 "experience": {"type": "array"},
-                                "education": {"type": "array"}
+                                "education": {"type": "array"},
                             },
                             "is_public": True,
                             "is_active": True,
-                            "created_at": "2024-08-24T10:00:00Z"
+                            "created_at": "2024-08-24T10:00:00Z",
                         },
                         {
                             "id": 2,
@@ -122,50 +133,58 @@ def log_audit_action(
                             "description": "Technical and soft skills",
                             "schema": {
                                 "name": {"type": "string", "required": True},
-                                "level": {"type": "string", "enum": ["beginner", "intermediate", "advanced", "expert"]},
+                                "level": {
+                                    "type": "string",
+                                    "enum": [
+                                        "beginner",
+                                        "intermediate",
+                                        "advanced",
+                                        "expert",
+                                    ],
+                                },
                                 "category": {"type": "string"},
-                                "years_experience": {"type": "integer"}
+                                "years_experience": {"type": "integer"},
                             },
                             "is_public": True,
                             "is_active": True,
-                            "created_at": "2024-08-24T10:00:00Z"
-                        }
+                            "created_at": "2024-08-24T10:00:00Z",
+                        },
                     ]
                 }
-            }
+            },
         }
-    }
+    },
 )
 async def list_endpoints(
-    active_only: bool = Query(True, description="Only return active (non-deleted) endpoints"),
-    db: Session = Depends(get_db)
+    active_only: bool = Query(
+        True, description="Only return active (non-deleted) endpoints"
+    ),
+    db: Session = Depends(get_db),
 ):
     """List all available endpoints"""
     query = db.query(Endpoint)
     if active_only:
         query = query.filter(Endpoint.is_active == True)
-    
+
     endpoints = query.all()
     return endpoints
 
 
 @router.get("/endpoints/{endpoint_name}", response_model=EndpointResponse)
-async def get_endpoint(
-    endpoint_name: str,
-    db: Session = Depends(get_db)
-):
+async def get_endpoint(endpoint_name: str, db: Session = Depends(get_db)):
     """Get endpoint configuration"""
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     return endpoint
 
 
@@ -174,7 +193,7 @@ async def create_endpoint(
     endpoint_data: EndpointCreate,
     request: Request,
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a new endpoint (admin users only)"""
     # Check if endpoint already exists
@@ -182,35 +201,42 @@ async def create_endpoint(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Endpoint '{endpoint_data.name}' already exists"
+            detail=f"Endpoint '{endpoint_data.name}' already exists",
         )
-    
+
     # Create endpoint
     endpoint = Endpoint(
-        **endpoint_data.model_dump(by_alias=True),
-        created_by_id=current_user.id
+        **endpoint_data.model_dump(by_alias=True), created_by_id=current_user.id
     )
     db.add(endpoint)
     db.commit()
     db.refresh(endpoint)
-    
+
     # Log audit action
     log_audit_action(
-        db, "CREATE", "endpoints", endpoint.id,
-        current_user, None, endpoint_data.model_dump(by_alias=True), request
+        db,
+        "CREATE",
+        "endpoints",
+        endpoint.id,
+        current_user,
+        None,
+        endpoint_data.model_dump(by_alias=True),
+        request,
     )
     db.commit()
-    
+
     # Clear OpenAPI schema cache to refresh endpoint dropdowns
     from .. import main
-    if hasattr(main.app, 'openapi_schema'):
+
+    if hasattr(main.app, "openapi_schema"):
         main.app.openapi_schema = None
-    
+
     return endpoint
 
 
 # Data management for endpoints
-@router.get("/{endpoint_name}", 
+@router.get(
+    "/{endpoint_name}",
     response_model=List[Dict[str, Any]],
     summary="Get endpoint data",
     description="""
@@ -265,18 +291,18 @@ async def create_endpoint(
                                     "title": "Software Engineer",
                                     "contact": {
                                         "email": "john@example.com",
-                                        "location": "San Francisco, CA"
+                                        "location": "San Francisco, CA",
                                     },
                                     "experience": [
                                         {
                                             "company": "Tech Corp",
                                             "position": "Senior Developer",
-                                            "duration": "2020-2024"
+                                            "duration": "2020-2024",
                                         }
                                     ],
-                                    "created_at": "2024-08-24T10:30:00Z"
+                                    "created_at": "2024-08-24T10:30:00Z",
                                 }
-                            ]
+                            ],
                         },
                         "skills_data": {
                             "summary": "Skills endpoint response",
@@ -287,76 +313,81 @@ async def create_endpoint(
                                     "category": "Programming Languages",
                                     "level": "expert",
                                     "years_experience": 8,
-                                    "description": "Expert in Python development"
+                                    "description": "Expert in Python development",
                                 }
-                            ]
+                            ],
                         },
                         "ideas_data": {
-                            "summary": "Ideas endpoint response", 
+                            "summary": "Ideas endpoint response",
                             "value": [
                                 {
                                     "id": 1,
                                     "title": "AI-Powered Code Review",
                                     "description": "Automated code review using machine learning",
                                     "category": "technology",
-                                    "status": "concept"
+                                    "status": "concept",
                                 }
-                            ]
-                        }
+                            ],
+                        },
                     }
                 }
-            }
+            },
         },
-        404: {"description": "Endpoint not found"}
-    }
+        404: {"description": "Endpoint not found"},
+    },
 )
 async def get_endpoint_data(
     endpoint_name: str,
     page: int = Query(1, ge=1, description="Page number for pagination"),
     size: int = Query(50, ge=1, le=100, description="Items per page (max 100)"),
-    active_only: bool = Query(True, description="Only return active (non-deleted) items"),
-    privacy_level: Optional[str] = Query(None, 
-        description="Privacy filtering level", 
-        enum=["business_card", "professional", "public_full", "ai_safe"]
+    active_only: bool = Query(
+        True, description="Only return active (non-deleted) items"
     ),
-    level: Optional[str] = Query(None, 
-        description="Privacy level alias (same as privacy_level)", 
-        enum=["business_card", "professional", "public_full", "ai_safe"]
+    privacy_level: Optional[str] = Query(
+        None,
+        description="Privacy filtering level",
+        enum=["business_card", "professional", "public_full", "ai_safe"],
+    ),
+    level: Optional[str] = Query(
+        None,
+        description="Privacy level alias (same as privacy_level)",
+        enum=["business_card", "professional", "public_full", "ai_safe"],
     ),
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """Get data for a specific endpoint"""
     from ..utils import is_single_user_mode, get_single_user
-    
+
     # Handle level parameter as alias for privacy_level (for redirect compatibility)
     if level and privacy_level is None:
         privacy_level = level
-    
+
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Check if endpoint is public or user has access
     if not endpoint.is_public and not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required for this endpoint"
+            detail="Authentication required for this endpoint",
         )
-    
+
     # Query data with adaptive user filtering
     query = db.query(DataEntry).filter(DataEntry.endpoint_id == endpoint.id)
     if active_only:
         query = query.filter(DataEntry.is_active == True)
-    
+
     # Adaptive user filtering logic
     if is_single_user_mode(db):
         # Single-user mode: show all data regardless of owner
@@ -366,62 +397,71 @@ async def get_endpoint_data(
         if current_user:
             # Authenticated user: show their data + public data
             query = query.filter(
-                (DataEntry.created_by_id == current_user.id) |
-                (DataEntry.created_by_id.is_(None))  # Public/system data
+                (DataEntry.created_by_id == current_user.id)
+                | (DataEntry.created_by_id.is_(None))  # Public/system data
             )
         else:
             # Unauthenticated user: show only public data
             query = query.filter(DataEntry.created_by_id.is_(None))
-    
+
     # Pagination
     offset = (page - 1) * size
     data_entries = query.offset(offset).limit(size).all()
 
     # Apply privacy filtering based on privacy_level parameter or authentication status
     should_apply_privacy = (
-        privacy_level is not None or  # Explicit privacy level requested
-        (not current_user and not is_single_user_mode(db))  # Unauthenticated in multi-user mode
+        privacy_level is not None  # Explicit privacy level requested
+        or (
+            not current_user and not is_single_user_mode(db)
+        )  # Unauthenticated in multi-user mode
     )
-    
+
     if should_apply_privacy:
         # Determine the privacy level to apply
         if privacy_level is None:
             privacy_level = "public_full"  # Default for unauthenticated users
-            
+
         filtered_data = []
         for entry in data_entries:
             # Determine which user's data this is for privacy filtering
             entry_user = None
             if entry.created_by_id:
-                entry_user = db.query(User).filter(User.id == entry.created_by_id).first()
-            
+                entry_user = (
+                    db.query(User).filter(User.id == entry.created_by_id).first()
+                )
+
             if entry_user:
                 from ..privacy import get_privacy_filter
+
                 privacy_filter = get_privacy_filter(db, entry_user)
                 filtered_entry = privacy_filter.filter_data(
-                    entry.data, 
-                    privacy_level=privacy_level
+                    entry.data, privacy_level=privacy_level
                 )
                 # Apply additional sensitive data masking
-                filtered_entry["data"] = mask_sensitive_data(filtered_entry.get("data", {}), privacy_level)
+                filtered_entry["data"] = mask_sensitive_data(
+                    filtered_entry.get("data", {}), privacy_level
+                )
                 if filtered_entry:
                     filtered_data.append(filtered_entry)
             else:
                 # System data - apply basic filtering if privacy level requested
                 if privacy_level and privacy_level != "none":
                     from ..privacy import get_privacy_filter
+
                     privacy_filter = get_privacy_filter(db)
                     filtered_entry = privacy_filter.filter_data(
-                        entry.data, 
-                        privacy_level=privacy_level, 
-                        is_authenticated=current_user is not None
+                        entry.data,
+                        privacy_level=privacy_level,
+                        is_authenticated=current_user is not None,
                     )
                     # Apply additional sensitive data masking
                     filtered_entry = mask_sensitive_data(filtered_entry, privacy_level)
                     filtered_data.append(filtered_entry)
                 else:
                     # Still apply basic masking even without privacy filter
-                    masked_data = mask_sensitive_data(entry.data, privacy_level or "public_full")
+                    masked_data = mask_sensitive_data(
+                        entry.data, privacy_level or "public_full"
+                    )
                     filtered_data.append(masked_data)
         return filtered_data
     else:
@@ -433,7 +473,8 @@ async def get_endpoint_data(
         return basic_filtered_data
 
 
-@router.post("/{endpoint_name}", 
+@router.post(
+    "/{endpoint_name}",
     response_model=Dict[str, Any],
     summary="Add data to endpoint",
     description="""
@@ -478,11 +519,9 @@ async def get_endpoint_data(
                                 "data": {
                                     "name": "John Doe",
                                     "title": "Software Engineer",
-                                    "contact": {
-                                        "email": "john@example.com"
-                                    }
-                                }
-                            }
+                                    "contact": {"email": "john@example.com"},
+                                },
+                            },
                         },
                         "skill_response": {
                             "summary": "Skill data added",
@@ -492,9 +531,9 @@ async def get_endpoint_data(
                                 "data": {
                                     "name": "Python Programming",
                                     "level": "expert",
-                                    "years_experience": 8
-                                }
-                            }
+                                    "years_experience": 8,
+                                },
+                            },
                         },
                         "idea_response": {
                             "summary": "Idea data added",
@@ -504,41 +543,42 @@ async def get_endpoint_data(
                                 "data": {
                                     "title": "AI Code Review Tool",
                                     "description": "Automated code review using machine learning",
-                                    "category": "technology"
-                                }
-                            }
-                        }
+                                    "category": "technology",
+                                },
+                            },
+                        },
                     }
                 }
-            }
+            },
         },
         400: {"description": "Validation error - check required fields"},
         401: {"description": "Authentication required"},
-        404: {"description": "Endpoint not found"}
-    }
+        404: {"description": "Endpoint not found"},
+    },
 )
 async def add_endpoint_data(
     endpoint_name: str,
     data: Dict[str, Any],
     request: Request,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Add data to an endpoint (authenticated users only)"""
     from ..utils import is_single_user_mode, get_single_user
-    
+
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Adaptive user assignment
     user_id = None
     if is_single_user_mode(db):
@@ -548,10 +588,10 @@ async def add_endpoint_data(
     else:
         # Multi-user mode: always assign to current user
         user_id = current_user.id
-    
+
     # Sanitize input
     sanitized_data = sanitize_data_dict(data)
-    
+
     # Validate data against endpoint schema if we have a specific model
     endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
     if endpoint_model:
@@ -561,30 +601,36 @@ async def add_endpoint_data(
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Data validation error: {str(e)}"
+                detail=f"Data validation error: {str(e)}",
             )
-    
+
     # Create data entry
     data_entry = DataEntry(
         endpoint_id=endpoint.id,
         data=sanitized_data,
-        created_by_id=user_id  # Use adaptive user assignment
+        created_by_id=user_id,  # Use adaptive user assignment
     )
     db.add(data_entry)
     db.commit()
     db.refresh(data_entry)
-    
+
     # Log audit action
     log_audit_action(
-        db, "CREATE", "data_entries", data_entry.id,
-        current_user, None, sanitized_data, request
+        db,
+        "CREATE",
+        "data_entries",
+        data_entry.id,
+        current_user,
+        None,
+        sanitized_data,
+        request,
     )
     db.commit()
-    
+
     return {
         "id": data_entry.id,
         "message": f"Data added to {endpoint_name}",
-        "data": data_entry.data
+        "data": data_entry.data,
     }
 
 
@@ -595,43 +641,45 @@ async def update_endpoint_data(
     data: Dict[str, Any],
     request: Request,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update data in an endpoint (authenticated users only)"""
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Find data entry
-    data_entry = db.query(DataEntry).filter(
-        DataEntry.id == item_id,
-        DataEntry.endpoint_id == endpoint.id
-    ).first()
-    
+    data_entry = (
+        db.query(DataEntry)
+        .filter(DataEntry.id == item_id, DataEntry.endpoint_id == endpoint.id)
+        .first()
+    )
+
     if not data_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item {item_id} not found in {endpoint_name}"
+            detail=f"Item {item_id} not found in {endpoint_name}",
         )
-    
+
     # Check ownership - users can only modify their own data unless they're admin
     if not current_user.is_admin and data_entry.created_by_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only modify your own data"
+            detail="You can only modify your own data",
         )
-    
+
     # Store old data for audit
     old_data = data_entry.data.copy()
-    
+
     # Sanitize and validate new data
     sanitized_data = sanitize_data_dict(data)
     endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
@@ -642,24 +690,30 @@ async def update_endpoint_data(
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Data validation error: {str(e)}"
+                detail=f"Data validation error: {str(e)}",
             )
-    
+
     # Update data entry
     data_entry.data = sanitized_data
     db.commit()
-    
+
     # Log audit action
     log_audit_action(
-        db, "UPDATE", "data_entries", data_entry.id,
-        current_user, old_data, sanitized_data, request
+        db,
+        "UPDATE",
+        "data_entries",
+        data_entry.id,
+        current_user,
+        old_data,
+        sanitized_data,
+        request,
     )
     db.commit()
-    
+
     return {
         "id": data_entry.id,
         "message": f"Data updated in {endpoint_name}",
-        "data": data_entry.data
+        "data": data_entry.data,
     }
 
 
@@ -669,54 +723,62 @@ async def delete_endpoint_data(
     item_id: int,
     request: Request,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete data from an endpoint (authenticated users only)"""
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Find data entry
-    data_entry = db.query(DataEntry).filter(
-        DataEntry.id == item_id,
-        DataEntry.endpoint_id == endpoint.id
-    ).first()
-    
+    data_entry = (
+        db.query(DataEntry)
+        .filter(DataEntry.id == item_id, DataEntry.endpoint_id == endpoint.id)
+        .first()
+    )
+
     if not data_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item {item_id} not found in {endpoint_name}"
+            detail=f"Item {item_id} not found in {endpoint_name}",
         )
-    
+
     # Check ownership - users can only delete their own data unless they're admin
     if not current_user.is_admin and data_entry.created_by_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only delete your own data"
+            detail="You can only delete your own data",
         )
-    
+
     # Store data for audit
     old_data = data_entry.data.copy()
-    
+
     # Soft delete by setting is_active to False
     data_entry.is_active = False
     db.commit()
-    
+
     # Log audit action
     log_audit_action(
-        db, "DELETE", "data_entries", data_entry.id,
-        current_user, old_data, None, request
+        db,
+        "DELETE",
+        "data_entries",
+        data_entry.id,
+        current_user,
+        old_data,
+        None,
+        request,
     )
     db.commit()
-    
+
     return {"message": f"Data deleted from {endpoint_name}"}
 
 
@@ -727,66 +789,63 @@ async def bulk_add_endpoint_data(
     data_list: List[Dict[str, Any]],
     request: Request,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Bulk add data to an endpoint (authenticated users only)"""
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     success_count = 0
     error_count = 0
     errors = []
     created_items = []
-    
+
     endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
-    
+
     for i, data in enumerate(data_list):
         try:
             # Sanitize input
             sanitized_data = sanitize_data_dict(data)
-            
+
             # Validate data
             if endpoint_model:
                 validated_data = endpoint_model(**sanitized_data)
                 sanitized_data = validated_data.model_dump(exclude_unset=True)
-            
+
             # Create data entry
             data_entry = DataEntry(
                 endpoint_id=endpoint.id,
                 data=sanitized_data,
-                created_by_id=current_user.id
+                created_by_id=current_user.id,
             )
             db.add(data_entry)
             db.flush()  # Get the ID without committing
-            
+
             created_items.append(data_entry.id)
             success_count += 1
-            
+
         except Exception as e:
             error_count += 1
-            errors.append({
-                "index": i,
-                "data": data,
-                "error": str(e)
-            })
-    
+            errors.append({"index": i, "data": data, "error": str(e)})
+
     db.commit()
-    
+
     return {
         "success_count": success_count,
         "error_count": error_count,
         "errors": errors,
         "created_items": created_items,
-        "message": f"Bulk operation completed for {endpoint_name}"
+        "message": f"Bulk operation completed for {endpoint_name}",
     }
 
 
@@ -795,11 +854,14 @@ async def bulk_add_endpoint_data(
 async def get_user_public_data_legacy(
     username: str,
     endpoint_name: str,
-    level: str = Query("public_full", description="Privacy level: business_card, professional, public_full, ai_safe"),
+    level: str = Query(
+        "public_full",
+        description="Privacy level: business_card, professional, public_full, ai_safe",
+    ),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(50, ge=1, le=100, description="Items per page"),
     active_only: bool = Query(True, description="Filter active items only"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Legacy user-specific endpoint access (DEPRECATED)
@@ -808,12 +870,12 @@ async def get_user_public_data_legacy(
     # Build redirect URL with query parameters
     query_params = f"?level={level}&page={page}&size={size}&active_only={active_only}"
     redirect_url = f"/api/v1/{endpoint_name}/users/{username}{query_params}"
-    
+
     # Redirect to the new pattern
     raise HTTPException(
         status_code=status.HTTP_301_MOVED_PERMANENTLY,
         detail=f"Use /api/v1/{endpoint_name}/users/{username} instead",
-        headers={"Location": redirect_url}
+        headers={"Location": redirect_url},
     )
 
 
@@ -823,11 +885,14 @@ async def get_specific_user_data_universal(
     endpoint_name: str,
     username: str,
     request: Request,
-    level: str = Query("public_full", description="Privacy level: business_card, professional, public_full, ai_safe"),
+    level: str = Query(
+        "public_full",
+        description="Privacy level: business_card, professional, public_full, ai_safe",
+    ),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(50, ge=1, le=100, description="Items per page"),
     active_only: bool = Query(True, description="Filter active items only"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Universal user-specific endpoint access
@@ -836,7 +901,7 @@ async def get_specific_user_data_universal(
     """
     from ..utils import is_single_user_mode
     from ..privacy import get_privacy_filter
-    
+
     # In single-user mode, redirect to the simple endpoint
     if is_single_user_mode(db):
         # Preserve query parameters in redirect
@@ -844,83 +909,81 @@ async def get_specific_user_data_universal(
         location = f"/api/v1/{endpoint_name}"
         if query_string:
             location += f"?{query_string}"
-        
+
         raise HTTPException(
             status_code=status.HTTP_301_MOVED_PERMANENTLY,
             detail=f"In single-user mode, use /api/v1/{endpoint_name} instead",
-            headers={"Location": location}
+            headers={"Location": location},
         )
-    
+
     # Find the user
-    user = db.query(User).filter(
-        User.username == username,
-        User.is_active == True
-    ).first()
-    
+    user = (
+        db.query(User).filter(User.username == username, User.is_active == True).first()
+    )
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User '{username}' not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{username}' not found"
         )
-    
+
     # Check AI assistant access permission
     if level == "ai_safe":
-        privacy_settings = db.query(UserPrivacySettings).filter(
-            UserPrivacySettings.user_id == user.id
-        ).first()
+        privacy_settings = (
+            db.query(UserPrivacySettings)
+            .filter(UserPrivacySettings.user_id == user.id)
+            .first()
+        )
         if privacy_settings and not privacy_settings.ai_assistant_access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="AI assistant access not permitted for this user"
+                detail="AI assistant access not permitted for this user",
             )
-    
+
     # Find endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Only allow access to public endpoints
     if not endpoint.is_public:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="This endpoint is not publicly accessible"
+            detail="This endpoint is not publicly accessible",
         )
-    
+
     # Query user's data
     query = db.query(DataEntry).filter(
-        DataEntry.endpoint_id == endpoint.id,
-        DataEntry.created_by_id == user.id
+        DataEntry.endpoint_id == endpoint.id, DataEntry.created_by_id == user.id
     )
-    
+
     if active_only:
         query = query.filter(DataEntry.is_active == True)
-    
+
     # Pagination
     offset = (page - 1) * size
     data_entries = query.offset(offset).limit(size).all()
-    
+
     # Apply privacy filtering
     privacy_filter = get_privacy_filter(db, user)
     filtered_data = []
-    
+
     for entry in data_entries:
         filtered_entry = privacy_filter.filter_data(
-            entry.data, 
-            privacy_level=level, 
-            is_authenticated=False
+            entry.data, privacy_level=level, is_authenticated=False
         )
         if filtered_entry:
             # Apply additional sensitive data masking
             masked_entry = mask_sensitive_data(filtered_entry, level)
             filtered_data.append(masked_entry)
-    
+
     return filtered_data
 
 
@@ -928,16 +991,16 @@ async def get_specific_user_data_universal(
 def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
     """Get information about how endpoints should be accessed based on user count"""
     from ..utils import is_single_user_mode, get_single_user
-    
+
     single_user_mode = is_single_user_mode(db)
-    
+
     if single_user_mode:
         single_user = get_single_user(db)
         return {
             "mode": "single_user",
             "user": single_user.username if single_user else None,
             "endpoint_pattern": "/api/v1/{endpoint_name}",
-            "example": "/api/v1/resume"
+            "example": "/api/v1/resume",
         }
     else:
         users = db.query(User).filter(User.is_active == True).all()
@@ -946,11 +1009,17 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
             "users": [user.username for user in users],
             "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
             "example": "/api/v1/resume/users/john",
-            "privacy_levels": ["business_card", "professional", "public_full", "ai_safe"]
+            "privacy_levels": [
+                "business_card",
+                "professional",
+                "public_full",
+                "ai_safe",
+            ],
         }
 
 
-@router.get("/system/info", 
+@router.get(
+    "/system/info",
     response_model=Dict[str, Any],
     summary="Get system information",
     description="""
@@ -1011,15 +1080,24 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                                 "example_urls": [
                                     "/api/v1/resume",
                                     "/api/v1/skills",
-                                    "/api/v1/ideas"
+                                    "/api/v1/ideas",
                                 ],
                                 "available_endpoints": [
-                                    {"name": "resume", "description": "Professional resume and work history"},
-                                    {"name": "skills", "description": "Technical and soft skills"},
-                                    {"name": "ideas", "description": "Ideas and thoughts"}
+                                    {
+                                        "name": "resume",
+                                        "description": "Professional resume and work history",
+                                    },
+                                    {
+                                        "name": "skills",
+                                        "description": "Technical and soft skills",
+                                    },
+                                    {
+                                        "name": "ideas",
+                                        "description": "Ideas and thoughts",
+                                    },
                                 ],
-                                "total_endpoints": 8
-                            }
+                                "total_endpoints": 8,
+                            },
                         },
                         "multi_user_mode": {
                             "summary": "Multi-user mode response",
@@ -1031,53 +1109,74 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                                 "example_urls": [
                                     "/api/v1/resume/users/john",
                                     "/api/v1/skills/users/jane",
-                                    "/api/v1/ideas/users/admin"
+                                    "/api/v1/ideas/users/admin",
                                 ],
                                 "available_endpoints": [
-                                    {"name": "resume", "description": "Professional resume and work history"},
-                                    {"name": "skills", "description": "Technical and soft skills"},
-                                    {"name": "ideas", "description": "Ideas and thoughts"}
+                                    {
+                                        "name": "resume",
+                                        "description": "Professional resume and work history",
+                                    },
+                                    {
+                                        "name": "skills",
+                                        "description": "Technical and soft skills",
+                                    },
+                                    {
+                                        "name": "ideas",
+                                        "description": "Ideas and thoughts",
+                                    },
                                 ],
-                                "total_endpoints": 8
-                            }
-                        }
+                                "total_endpoints": 8,
+                            },
+                        },
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
 async def get_system_info(db: Session = Depends(get_db)):
     """Get system information including endpoint routing patterns"""
     adaptive_info = get_adaptive_endpoint_info(db)
-    
+
     # Get available endpoints
-    endpoints = db.query(Endpoint).filter(
-        Endpoint.is_active == True,
-        Endpoint.is_public == True
-    ).all()
-    
-    endpoint_list = [{"name": ep.name, "description": ep.description} for ep in endpoints]
-    
+    endpoints = (
+        db.query(Endpoint)
+        .filter(Endpoint.is_active == True, Endpoint.is_public == True)
+        .all()
+    )
+
+    endpoint_list = [
+        {"name": ep.name, "description": ep.description} for ep in endpoints
+    ]
+
     return {
         **adaptive_info,
         "available_endpoints": endpoint_list,
-        "total_endpoints": len(endpoint_list)
+        "total_endpoints": len(endpoint_list),
     }
 
 
-def filter_sensitive_data(data: dict, is_authenticated: bool = False, user: Optional[User] = None, db: Optional[Session] = None) -> dict:
+def filter_sensitive_data(
+    data: dict,
+    is_authenticated: bool = False,
+    user: Optional[User] = None,
+    db: Optional[Session] = None,
+) -> dict:
     """
     Legacy wrapper for the new privacy filtering system
     Maintains backward compatibility while using enhanced filtering
     """
     if db and user:
         from ..privacy import get_privacy_filter
+
         privacy_filter = get_privacy_filter(db, user)
-        return privacy_filter.filter_data(data, privacy_level="public_full", is_authenticated=is_authenticated)
+        return privacy_filter.filter_data(
+            data, privacy_level="public_full", is_authenticated=is_authenticated
+        )
     else:
         # Fallback to basic filtering if no user context
         from ..privacy import PrivacyFilter
+
         basic_filter = PrivacyFilter(None, None)
         return basic_filter._apply_sensitive_patterns(data)
 
@@ -1085,14 +1184,15 @@ def filter_sensitive_data(data: dict, is_authenticated: bool = False, user: Opti
 # Privacy settings management
 @router.get("/privacy/settings", response_model=Dict[str, Any])
 async def get_privacy_settings(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ):
     """Get current user's privacy settings"""
-    settings = db.query(UserPrivacySettings).filter(
-        UserPrivacySettings.user_id == current_user.id
-    ).first()
-    
+    settings = (
+        db.query(UserPrivacySettings)
+        .filter(UserPrivacySettings.user_id == current_user.id)
+        .first()
+    )
+
     if not settings:
         # Create default settings
         settings = UserPrivacySettings(
@@ -1105,12 +1205,12 @@ async def get_privacy_settings(
             show_personal_projects=True,
             business_card_mode=False,
             ai_assistant_access=True,
-            custom_privacy_rules={}
+            custom_privacy_rules={},
         )
         db.add(settings)
         db.commit()
         db.refresh(settings)
-    
+
     return {
         "show_contact_info": settings.show_contact_info,
         "show_location": settings.show_location,
@@ -1120,7 +1220,7 @@ async def get_privacy_settings(
         "show_personal_projects": settings.show_personal_projects,
         "business_card_mode": settings.business_card_mode,
         "ai_assistant_access": settings.ai_assistant_access,
-        "custom_privacy_rules": settings.custom_privacy_rules
+        "custom_privacy_rules": settings.custom_privacy_rules,
     }
 
 
@@ -1128,31 +1228,39 @@ async def get_privacy_settings(
 async def update_privacy_settings(
     settings_data: Dict[str, Any],
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update user's privacy settings"""
-    settings = db.query(UserPrivacySettings).filter(
-        UserPrivacySettings.user_id == current_user.id
-    ).first()
-    
+    settings = (
+        db.query(UserPrivacySettings)
+        .filter(UserPrivacySettings.user_id == current_user.id)
+        .first()
+    )
+
     if not settings:
         settings = UserPrivacySettings(user_id=current_user.id)
         db.add(settings)
-    
+
     # Update allowed fields
     allowed_fields = {
-        "show_contact_info", "show_location", "show_current_company",
-        "show_salary_range", "show_education_details", "show_personal_projects",
-        "business_card_mode", "ai_assistant_access", "custom_privacy_rules"
+        "show_contact_info",
+        "show_location",
+        "show_current_company",
+        "show_salary_range",
+        "show_education_details",
+        "show_personal_projects",
+        "business_card_mode",
+        "ai_assistant_access",
+        "custom_privacy_rules",
     }
-    
+
     for field, value in settings_data.items():
         if field in allowed_fields:
             setattr(settings, field, value)
-    
+
     db.commit()
     db.refresh(settings)
-    
+
     return {"message": "Privacy settings updated successfully"}
 
 
@@ -1161,49 +1269,60 @@ async def preview_privacy_filtering(
     endpoint_name: str,
     level: str = Query("public_full", description="Privacy level to preview"),
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Preview how your data looks with different privacy levels"""
     from ..privacy import get_privacy_filter
-    
+
     # Get user's data for the endpoint
-    endpoint = db.query(Endpoint).filter(
-        Endpoint.name == endpoint_name,
-        Endpoint.is_active == True
-    ).first()
-    
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
     if not endpoint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found"
+            detail=f"Endpoint '{endpoint_name}' not found",
         )
-    
+
     # Get user's latest data entry
-    data_entry = db.query(DataEntry).filter(
-        DataEntry.endpoint_id == endpoint.id,
-        DataEntry.created_by_id == current_user.id,
-        DataEntry.is_active == True
-    ).order_by(DataEntry.created_at.desc()).first()
-    
+    data_entry = (
+        db.query(DataEntry)
+        .filter(
+            DataEntry.endpoint_id == endpoint.id,
+            DataEntry.created_by_id == current_user.id,
+            DataEntry.is_active == True,
+        )
+        .order_by(DataEntry.created_at.desc())
+        .first()
+    )
+
     if not data_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No data found for endpoint '{endpoint_name}'"
+            detail=f"No data found for endpoint '{endpoint_name}'",
         )
-    
+
     # Apply privacy filtering
     privacy_filter = get_privacy_filter(db, current_user)
-    
+
     # Show both original and filtered versions
     return {
         "original": data_entry.data,
         "filtered": privacy_filter.filter_data(
-            data_entry.data, 
-            privacy_level=level, 
-            is_authenticated=False
+            data_entry.data, privacy_level=level, is_authenticated=False
         ),
         "privacy_level": level,
-        "fields_removed": len(str(data_entry.data)) - len(str(privacy_filter.filter_data(data_entry.data, privacy_level=level, is_authenticated=False)))
+        "fields_removed": len(str(data_entry.data))
+        - len(
+            str(
+                privacy_filter.filter_data(
+                    data_entry.data, privacy_level=level, is_authenticated=False
+                )
+            )
+        ),
     }
 
 
@@ -1211,52 +1330,52 @@ async def preview_privacy_filtering(
 @router.post("/import/user/{username}", response_model=Dict[str, Any])
 async def import_user_data(
     username: str,
-    data_directory: Optional[str] = Query(None, description="Custom data directory path"),
+    data_directory: Optional[str] = Query(
+        None, description="Custom data directory path"
+    ),
     replace_existing: bool = Query(False, description="Replace existing data"),
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Import data for a specific user from their data directory (admin only)"""
     from ..multi_user_import import import_user_data_from_directory
-    
+
     result = import_user_data_from_directory(
         username=username,
         data_directory=data_directory,
         db=db,
-        replace_existing=replace_existing
+        replace_existing=replace_existing,
     )
-    
+
     if not result["success"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result["error"]
+            status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"]
         )
-    
+
     return result
 
 
 @router.post("/import/all", response_model=Dict[str, Any])
 async def import_all_users_data(
-    base_directory: str = Query("data/private", description="Base directory containing user folders"),
+    base_directory: str = Query(
+        "data/private", description="Base directory containing user folders"
+    ),
     replace_existing: bool = Query(False, description="Replace existing data"),
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Import data for all users from their respective directories (admin only)"""
     from ..multi_user_import import import_all_users_data
-    
+
     result = import_all_users_data(
-        base_directory=base_directory,
-        db=db,
-        replace_existing=replace_existing
+        base_directory=base_directory, db=db, replace_existing=replace_existing
     )
-    
+
     if not result["success"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result["error"]
+            status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"]
         )
-    
+
     return result
 
 
@@ -1264,38 +1383,39 @@ async def import_all_users_data(
 async def import_single_file(
     file_path: str = Query(..., description="Path to JSON file to import"),
     endpoint_name: str = Query(..., description="Endpoint name to import to"),
-    username: Optional[str] = Query(None, description="Username (defaults to current user)"),
+    username: Optional[str] = Query(
+        None, description="Username (defaults to current user)"
+    ),
     replace_existing: bool = Query(False, description="Replace existing data"),
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Import a single JSON file to an endpoint"""
     from ..multi_user_import import import_user_file
-    
+
     # Use provided username or current user's username
     target_username = username if username else current_user.username
-    
+
     # Only admins can import for other users
     if target_username != current_user.username and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can import data for other users"
+            detail="Only admins can import data for other users",
         )
-    
+
     result = import_user_file(
         username=target_username,
         file_path=file_path,
         endpoint_name=endpoint_name,
         db=db,
-        replace_existing=replace_existing
+        replace_existing=replace_existing,
     )
-    
+
     if not result["success"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result["error"]
+            status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"]
         )
-    
+
     return result
 
 
@@ -1303,23 +1423,28 @@ async def import_single_file(
 async def setup_new_user_with_data(
     username: str,
     user_data: UserCreate,
-    copy_examples: bool = Query(True, description="Copy example files to user directory"),
+    copy_examples: bool = Query(
+        True, description="Copy example files to user directory"
+    ),
     import_data: bool = Query(True, description="Import data after setup"),
     current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Complete user setup: create user, directory, and import initial data (admin only)"""
-    from ..multi_user_import import create_user_data_directory, import_user_data_from_directory
+    from ..multi_user_import import (
+        create_user_data_directory,
+        import_user_data_from_directory,
+    )
     from ..database import UserPrivacySettings
-    
+
     # Check if user already exists
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User '{username}' already exists"
+            detail=f"User '{username}' already exists",
         )
-    
+
     try:
         # 1. Create the user
         hashed_password = get_password_hash(user_data.password)
@@ -1328,12 +1453,12 @@ async def setup_new_user_with_data(
             email=user_data.email,
             hashed_password=hashed_password,
             is_active=True,
-            is_admin=user_data.is_admin or False
+            is_admin=user_data.is_admin or False,
         )
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        
+
         # 2. Create default privacy settings
         privacy_settings = UserPrivacySettings(
             user_id=new_user.id,
@@ -1345,16 +1470,16 @@ async def setup_new_user_with_data(
             show_personal_projects=True,
             business_card_mode=False,
             ai_assistant_access=True,
-            custom_privacy_rules={}
+            custom_privacy_rules={},
         )
         db.add(privacy_settings)
         db.commit()
-        
+
         # 3. Create user data directory
         user_dir = None
         if copy_examples:
             user_dir = create_user_data_directory(username)
-        
+
         # 4. Import data if requested
         import_result = None
         if import_data and user_dir:
@@ -1362,25 +1487,25 @@ async def setup_new_user_with_data(
                 username=username,
                 data_directory=user_dir,
                 db=db,
-                replace_existing=False
+                replace_existing=False,
             )
-        
+
         return {
             "success": True,
             "user": {
                 "id": new_user.id,
                 "username": new_user.username,
                 "email": new_user.email,
-                "is_admin": new_user.is_admin
+                "is_admin": new_user.is_admin,
             },
             "data_directory": user_dir,
-            "import_result": import_result
+            "import_result": import_result,
         }
-    
+
     except Exception as e:
         # Rollback user creation if something fails
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"User setup failed: {str(e)}"
+            detail=f"User setup failed: {str(e)}",
         )

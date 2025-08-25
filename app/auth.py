@@ -41,17 +41,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
+
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
     return encoded_jwt
 
 
 def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
     """Verify and decode a JWT token"""
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -73,7 +79,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Union[User, 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """Get the current authenticated user"""
     credentials_exception = HTTPException(
@@ -81,16 +87,16 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     token_data = verify_token(credentials.credentials, credentials_exception)
     user = db.query(User).filter(User.username == token_data.username).first()
     if user is None:
         raise credentials_exception
-    
+
     # Update last login
     user.last_login = datetime.now(timezone.utc)
     db.commit()
-    
+
     return user
 
 
@@ -101,12 +107,13 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
     return current_user
 
 
-def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+def get_current_admin_user(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
     """Get the current admin user"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
         )
     return current_user
 
@@ -122,34 +129,34 @@ def generate_api_key() -> tuple[str, str]:
 def verify_api_key(db: Session, api_key: str) -> Optional[User]:
     """Verify an API key and return the associated user"""
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    api_key_obj = db.query(ApiKey).filter(
-        ApiKey.key_hash == key_hash,
-        ApiKey.is_active == True
-    ).first()
-    
+    api_key_obj = (
+        db.query(ApiKey)
+        .filter(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
+        .first()
+    )
+
     if not api_key_obj:
         return None
-    
+
     # Check expiration
     if api_key_obj.expires_at and api_key_obj.expires_at < datetime.now(timezone.utc):
         return None
-    
+
     # Update last used
     api_key_obj.last_used = datetime.now(timezone.utc)
     db.commit()
-    
+
     return api_key_obj.user
 
 
 def get_user_from_api_key(
-    request: Request,
-    db: Session = Depends(get_db)
+    request: Request, db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get user from API key in headers"""
     api_key = request.headers.get("X-API-Key")
     if not api_key:
         return None
-    
+
     return verify_api_key(db, api_key)
 
 
@@ -158,11 +165,11 @@ def is_ip_allowed(ip_address: str) -> bool:
     """Check if an IP address is allowed"""
     if not settings.allowed_ips:
         return True  # No restrictions if list is empty
-    
+
     try:
         client_ip = ipaddress.ip_address(ip_address)
         for allowed in settings.allowed_ips:
-            if '/' in allowed:  # CIDR notation
+            if "/" in allowed:  # CIDR notation
                 if client_ip in ipaddress.ip_network(allowed, strict=False):
                     return True
             else:  # Single IP
@@ -179,7 +186,7 @@ def check_ip_access(request: Request):
     if not is_ip_allowed(client_ip):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied from this IP address"
+            detail="Access denied from this IP address",
         )
 
 
@@ -189,7 +196,9 @@ def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Content-Security-Policy"] = "default-src 'self'"
     return response
@@ -198,13 +207,16 @@ def add_security_headers(response):
 # Rate limiting decorator
 def rate_limit(max_requests: int = None, window_seconds: int = None):
     """Rate limiting decorator"""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # This is a simple in-memory rate limiter
             # For production, use Redis or similar
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -218,7 +230,15 @@ def sanitize_input(data: dict) -> dict:
             value = value.replace("<script>", "").replace("</script>", "")
             value = value.replace("<", "&lt;").replace(">", "&gt;")
             # Remove SQL injection patterns
-            dangerous_patterns = ["DROP", "DELETE", "INSERT", "UPDATE", "SELECT", "--", ";"]
+            dangerous_patterns = [
+                "DROP",
+                "DELETE",
+                "INSERT",
+                "UPDATE",
+                "SELECT",
+                "--",
+                ";",
+            ]
             for pattern in dangerous_patterns:
                 if pattern.lower() in value.lower():
                     value = value.replace(pattern.lower(), "")

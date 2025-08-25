@@ -22,51 +22,48 @@ SUPPORTED_FORMATS = [".json"]
 def discover_data_files(data_dir: Optional[str] = None) -> Dict[str, List[str]]:
     """
     Discover data files for all endpoints
-    
+
     Args:
         data_dir: Directory to search for data files (defaults to ./data)
-    
+
     Returns:
         Dict mapping endpoint names to lists of data files
     """
     if data_dir is None:
         data_dir = DEFAULT_DATA_DIR
-    
+
     if not os.path.exists(data_dir):
         return {}
-    
+
     # Pattern: {endpoint_name}.json or {endpoint_name}_*.json
     discovered = {}
-    
+
     for file_path in glob.glob(os.path.join(data_dir, "*.json")):
         filename = os.path.basename(file_path)
-        name_part = filename.split('.')[0]  # Remove .json
-        
+        name_part = filename.split(".")[0]  # Remove .json
+
         # Handle patterns like "ideas.json", "ideas_personal.json", "resume_pmac.json"
-        if '_' in name_part:
-            endpoint_name = name_part.split('_')[0]
+        if "_" in name_part:
+            endpoint_name = name_part.split("_")[0]
         else:
             endpoint_name = name_part
-        
+
         if endpoint_name not in discovered:
             discovered[endpoint_name] = []
-        
+
         discovered[endpoint_name].append(file_path)
-    
+
     return discovered
 
 
-def load_endpoint_data_from_file(
-    endpoint_name: str,
-    file_path: str
-) -> Dict[str, Any]:
+def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str, Any]:
     """
     Load and validate data for a specific endpoint from file
-    
+
     Args:
         endpoint_name: Name of the endpoint
         file_path: Path to the data file
-    
+
     Returns:
         Dict with load results
     """
@@ -74,14 +71,14 @@ def load_endpoint_data_from_file(
         return {
             "success": False,
             "error": f"Data file not found: {file_path}",
-            "file_path": file_path
+            "file_path": file_path,
         }
-    
+
     try:
         # Load JSON data
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             raw_data = json.load(f)
-        
+
         # Handle both single items and arrays
         if isinstance(raw_data, list):
             data_items = raw_data
@@ -95,13 +92,13 @@ def load_endpoint_data_from_file(
             return {
                 "success": False,
                 "error": f"Invalid data format. Expected object or array, got {type(raw_data)}",
-                "file_path": file_path
+                "file_path": file_path,
             }
-        
+
         # Validate each item if we have a specific model
         endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
         validated_items = []
-        
+
         for i, item in enumerate(data_items):
             try:
                 if endpoint_model:
@@ -113,35 +110,35 @@ def load_endpoint_data_from_file(
                         return {
                             "success": False,
                             "error": f"Item {i} is not a valid object",
-                            "file_path": file_path
+                            "file_path": file_path,
                         }
                     validated_items.append(item)
             except Exception as e:
                 return {
                     "success": False,
                     "error": f"Validation failed for item {i}: {str(e)}",
-                    "file_path": file_path
+                    "file_path": file_path,
                 }
-        
+
         return {
             "success": True,
             "data": validated_items,
             "count": len(validated_items),
             "file_path": file_path,
-            "message": f"Loaded {len(validated_items)} items for {endpoint_name}"
+            "message": f"Loaded {len(validated_items)} items for {endpoint_name}",
         }
-    
+
     except json.JSONDecodeError as e:
         return {
             "success": False,
             "error": f"Invalid JSON: {str(e)}",
-            "file_path": file_path
+            "file_path": file_path,
         }
     except Exception as e:
         return {
             "success": False,
             "error": f"Failed to load file: {str(e)}",
-            "file_path": file_path
+            "file_path": file_path,
         }
 
 
@@ -149,17 +146,17 @@ def import_endpoint_data_to_database(
     endpoint_name: str,
     file_path: str,
     user_id: Optional[int] = None,
-    replace_existing: bool = False
+    replace_existing: bool = False,
 ) -> Dict[str, Any]:
     """
     Load data from file and import into database for specific endpoint
-    
+
     Args:
         endpoint_name: Name of the endpoint
         file_path: Path to the data file
         user_id: User ID to associate with entries
         replace_existing: Whether to replace existing data
-    
+
     Returns:
         Dict with import results
     """
@@ -167,61 +164,61 @@ def import_endpoint_data_to_database(
     load_result = load_endpoint_data_from_file(endpoint_name, file_path)
     if not load_result["success"]:
         return load_result
-    
+
     data_items = load_result["data"]
-    
+
     # Get database session
     db = next(get_db())
-    
+
     try:
         # Find endpoint
-        endpoint = db.query(Endpoint).filter(
-            Endpoint.name == endpoint_name,
-            Endpoint.is_active == True
-        ).first()
-        
+        endpoint = (
+            db.query(Endpoint)
+            .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+            .first()
+        )
+
         if not endpoint:
             return {
                 "success": False,
                 "error": f"Endpoint '{endpoint_name}' not found or inactive",
-                "file_path": file_path
+                "file_path": file_path,
             }
-        
+
         # Check for existing data
-        existing_entries = db.query(DataEntry).filter(
-            DataEntry.endpoint_id == endpoint.id,
-            DataEntry.is_active == True
-        ).all()
-        
+        existing_entries = (
+            db.query(DataEntry)
+            .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active == True)
+            .all()
+        )
+
         if existing_entries and not replace_existing:
             return {
                 "success": False,
                 "error": f"Data already exists for '{endpoint_name}'. Use replace_existing=True to overwrite.",
                 "file_path": file_path,
-                "existing_entries": len(existing_entries)
+                "existing_entries": len(existing_entries),
             }
-        
+
         # If replacing, deactivate existing entries
         replaced_count = 0
         if replace_existing and existing_entries:
             for entry in existing_entries:
                 entry.is_active = False
                 replaced_count += 1
-        
+
         # Import new data
         created_entries = []
         for item_data in data_items:
             data_entry = DataEntry(
-                endpoint_id=endpoint.id,
-                data=item_data,
-                created_by_id=user_id
+                endpoint_id=endpoint.id, data=item_data, created_by_id=user_id
             )
             db.add(data_entry)
             db.flush()  # Get ID without committing
             created_entries.append(data_entry.id)
-        
+
         db.commit()
-        
+
         return {
             "success": True,
             "endpoint_name": endpoint_name,
@@ -229,15 +226,15 @@ def import_endpoint_data_to_database(
             "imported_count": len(created_entries),
             "replaced_count": replaced_count,
             "entry_ids": created_entries,
-            "message": f"Successfully imported {len(created_entries)} items to {endpoint_name}"
+            "message": f"Successfully imported {len(created_entries)} items to {endpoint_name}",
         }
-    
+
     except Exception as e:
         db.rollback()
         return {
             "success": False,
             "error": f"Database import failed: {str(e)}",
-            "file_path": file_path
+            "file_path": file_path,
         }
     finally:
         db.close()
@@ -246,33 +243,33 @@ def import_endpoint_data_to_database(
 def import_all_discovered_data(
     data_dir: Optional[str] = None,
     user_id: Optional[int] = None,
-    replace_existing: bool = False
+    replace_existing: bool = False,
 ) -> Dict[str, Any]:
     """
     Discover and import all data files found in the data directory
-    
+
     Args:
         data_dir: Directory to search for data files
         user_id: User ID to associate with entries
         replace_existing: Whether to replace existing data
-    
+
     Returns:
         Dict with overall import results
     """
     discovered_files = discover_data_files(data_dir)
-    
+
     if not discovered_files:
         return {
             "success": True,
             "message": "No data files found to import",
             "imported_endpoints": {},
-            "errors": []
+            "errors": [],
         }
-    
+
     imported_endpoints = {}
     errors = []
     total_imported = 0
-    
+
     for endpoint_name, file_paths in discovered_files.items():
         for file_path in file_paths:
             try:
@@ -280,99 +277,116 @@ def import_all_discovered_data(
                     endpoint_name=endpoint_name,
                     file_path=file_path,
                     user_id=user_id,
-                    replace_existing=replace_existing
+                    replace_existing=replace_existing,
                 )
-                
+
                 if result["success"]:
                     if endpoint_name not in imported_endpoints:
                         imported_endpoints[endpoint_name] = []
-                    
-                    imported_endpoints[endpoint_name].append({
-                        "file": file_path,
-                        "imported_count": result["imported_count"],
-                        "replaced_count": result.get("replaced_count", 0)
-                    })
-                    
+
+                    imported_endpoints[endpoint_name].append(
+                        {
+                            "file": file_path,
+                            "imported_count": result["imported_count"],
+                            "replaced_count": result.get("replaced_count", 0),
+                        }
+                    )
+
                     total_imported += result["imported_count"]
                 else:
-                    errors.append({
-                        "endpoint": endpoint_name,
-                        "file": file_path,
-                        "error": result["error"]
-                    })
-            
+                    errors.append(
+                        {
+                            "endpoint": endpoint_name,
+                            "file": file_path,
+                            "error": result["error"],
+                        }
+                    )
+
             except Exception as e:
-                errors.append({
-                    "endpoint": endpoint_name,
-                    "file": file_path,
-                    "error": str(e)
-                })
-    
+                errors.append(
+                    {"endpoint": endpoint_name, "file": file_path, "error": str(e)}
+                )
+
     return {
         "success": len(errors) == 0,
         "imported_endpoints": imported_endpoints,
         "total_imported": total_imported,
         "errors": errors,
-        "message": f"Imported {total_imported} total items across {len(imported_endpoints)} endpoints"
+        "message": f"Imported {total_imported} total items across {len(imported_endpoints)} endpoints",
     }
 
 
 def get_data_import_status(data_dir: Optional[str] = None) -> Dict[str, Any]:
     """
     Get status of all discoverable data files and their import status
-    
+
     Args:
         data_dir: Directory to search for data files
-    
+
     Returns:
         Dict with status information
     """
     discovered_files = discover_data_files(data_dir)
     db = next(get_db())
-    
+
     try:
         status = {
             "data_directory": data_dir or DEFAULT_DATA_DIR,
             "directory_exists": os.path.exists(data_dir or DEFAULT_DATA_DIR),
             "discovered_files": {},
-            "endpoint_status": {}
+            "endpoint_status": {},
         }
-        
+
         for endpoint_name, file_paths in discovered_files.items():
             # Check if endpoint exists in database
-            endpoint = db.query(Endpoint).filter(
-                Endpoint.name == endpoint_name,
-                Endpoint.is_active == True
-            ).first()
-            
+            endpoint = (
+                db.query(Endpoint)
+                .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+                .first()
+            )
+
             # Count existing data in database
             existing_count = 0
             if endpoint:
-                existing_count = db.query(DataEntry).filter(
-                    DataEntry.endpoint_id == endpoint.id,
-                    DataEntry.is_active == True
-                ).count()
-            
+                existing_count = (
+                    db.query(DataEntry)
+                    .filter(
+                        DataEntry.endpoint_id == endpoint.id,
+                        DataEntry.is_active == True,
+                    )
+                    .count()
+                )
+
             file_info = []
             for file_path in file_paths:
                 load_result = load_endpoint_data_from_file(endpoint_name, file_path)
-                file_info.append({
-                    "file_path": file_path,
-                    "valid": load_result["success"],
-                    "item_count": load_result.get("count", 0),
-                    "error": load_result.get("error") if not load_result["success"] else None,
-                    "size_bytes": os.path.getsize(file_path) if os.path.exists(file_path) else 0
-                })
-            
+                file_info.append(
+                    {
+                        "file_path": file_path,
+                        "valid": load_result["success"],
+                        "item_count": load_result.get("count", 0),
+                        "error": (
+                            load_result.get("error")
+                            if not load_result["success"]
+                            else None
+                        ),
+                        "size_bytes": (
+                            os.path.getsize(file_path)
+                            if os.path.exists(file_path)
+                            else 0
+                        ),
+                    }
+                )
+
             status["discovered_files"][endpoint_name] = file_info
             status["endpoint_status"][endpoint_name] = {
                 "endpoint_exists": endpoint is not None,
                 "database_entries": existing_count,
                 "files_found": len(file_paths),
-                "needs_import": existing_count == 0 and len(file_paths) > 0
+                "needs_import": existing_count == 0 and len(file_paths) > 0,
             }
-        
+
         return status
-    
+
     finally:
         db.close()
