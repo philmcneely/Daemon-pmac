@@ -590,8 +590,7 @@ async def not_found_handler(request: Request, exc):
         status_code=404,
         content={
             "error": "Not Found",
-            "detail": f"The requested resource was not found: {
-                request.url.path}",
+            "detail": f"The requested resource was not found: {request.url.path}",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     )
