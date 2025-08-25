@@ -169,6 +169,7 @@ jobs:
 
     - name: Extract metadata
       id: meta
+      if: steps.docker_login.outcome == 'success'
       uses: docker/metadata-action@v5
       with:
         images: |
@@ -180,13 +181,25 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
+      if: steps.docker_login.outcome == 'success'
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64,linux/arm64
-        push: ${{ github.event_name != 'pull_request' && steps.docker_login.outcome == 'success' }}
+        push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build Docker image (no push)
+      if: steps.docker_login.outcome != 'success'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: false
+        tags: daemon:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
