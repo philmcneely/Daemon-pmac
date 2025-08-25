@@ -10,7 +10,7 @@ import pytest
 def test_mcp_tools_list(client):
     """Test MCP tools listing"""
     response = client.post(
-        "/mcp/tools/list", json={"jsonrpc": "2.0", "method": "tools/list", "id": 1}
+        "/mcp/tools/list", json={"jsonrpc": "2.0", "method": "tools/list", "id": "1"}
     )
     assert response.status_code == 200
     data = response.json()

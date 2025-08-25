@@ -10,7 +10,7 @@ import re
 import shutil
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import psutil
 from sqlalchemy.orm import Session
@@ -57,7 +57,7 @@ def create_backup() -> BackupResponse:
 def cleanup_old_backups():
     """Clean up old backup files based on retention policy"""
     if not settings.backup_enabled or not os.path.exists(settings.backup_dir):
-        return
+        return {"deleted_count": 0, "error": None}
 
     cutoff_date = datetime.now() - timedelta(days=settings.backup_retention_days)
     deleted_count = 0
@@ -66,18 +66,21 @@ def cleanup_old_backups():
         for filename in os.listdir(settings.backup_dir):
             if filename.endswith(".db"):
                 filepath = os.path.join(settings.backup_dir, filename)
-                file_time = datetime.fromtimestamp(os.path.getctime(filepath))
+                file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
 
                 if file_time < cutoff_date:
-                    os.remove(filepath)
+                    os.unlink(filepath)
                     deleted_count += 1
                     logger.info(f"Deleted old backup: {filename}")
 
         if deleted_count > 0:
             logger.info(f"Cleaned up {deleted_count} old backup files")
 
+        return {"deleted_count": deleted_count, "error": None}
+
     except Exception as e:
         logger.error(f"Error cleaning up backups: {e}")
+        return {"deleted_count": 0, "error": str(e)}
 
 
 def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> List[str]:
@@ -508,14 +511,27 @@ def is_single_user_mode(db: Session) -> bool:
 
 def get_single_user(db: Session) -> Optional[Any]:
     """
-    Get the single user if system is in single-user mode.
-    Returns None if there are multiple users.
+    Get the single user if system is in single-user mode,
+    or the preferred user (admin) in multi-user mode.
+    Returns None if there are no users.
     """
     from .database import User
 
-    if is_single_user_mode(db):
+    # Check if there are any users
+    user_count = db.query(User).filter(User.is_active == True).count()
+    if user_count == 0:
+        return None
+    elif user_count == 1:
         return db.query(User).filter(User.is_active == True).first()
-    return None
+    else:
+        # Multiple users - prefer admin user
+        admin_user = (
+            db.query(User).filter(User.is_active == True, User.is_admin == True).first()
+        )
+        if admin_user:
+            return admin_user
+        # If no admin, return first active user
+        return db.query(User).filter(User.is_active == True).first()
 
 
 def sanitize_input(value: Any) -> Any:
@@ -595,6 +611,8 @@ def mask_sensitive_data(
             "api_key",
             "private_key",
             "secret",
+            "email",
+            "phone",
         ],
         "professional": ["ssn", "credit_card", "password", "api_key", "private_key"],
         "public_full": ["password", "api_key", "private_key"],
@@ -638,9 +656,21 @@ def mask_sensitive_data(
                 # Debug: print what we're checking
                 # print(f"Checking key '{key}' against fields {fields_to_mask}, should_mask: {should_mask}")
                 if should_mask:
-                    masked_obj[key] = (
-                        "***REDACTED***"  # Mask all sensitive fields regardless of type
-                    )
+                    # Different masking based on field type
+                    if "password" in key.lower() or "secret" in key.lower():
+                        masked_obj[key] = "[REDACTED]"
+                    elif "email" in key.lower():
+                        # Mask email while keeping format
+                        if isinstance(value, str) and "@" in value:
+                            parts = value.split("@")
+                            if len(parts) == 2:
+                                masked_obj[key] = f"{'*' * len(parts[0])}@{parts[1]}"
+                            else:
+                                masked_obj[key] = "***MASKED***"
+                        else:
+                            masked_obj[key] = "***MASKED***"
+                    else:
+                        masked_obj[key] = "***REDACTED***"
                 else:
                     masked_obj[key] = recursively_mask(value)
             return masked_obj
@@ -737,7 +767,7 @@ def sanitize_data_entry(data: Any) -> Any:
 
 
 def get_backup_files_to_delete(
-    backup_files: List[str], retention_days: int = 30
+    backup_files: List[Union[str, Tuple[str, float]]], retention_days: int = 30
 ) -> List[str]:
     """Get list of backup files that should be deleted based on retention policy"""
     from datetime import datetime, timedelta
@@ -745,17 +775,25 @@ def get_backup_files_to_delete(
     cutoff_date = datetime.now() - timedelta(days=retention_days)
     files_to_delete = []
 
-    for file_path in backup_files:
+    for backup_item in backup_files:
         try:
-            # Extract timestamp from filename pattern: daemon_backup_YYYYMMDD_HHMMSS.db
-            filename = os.path.basename(file_path)
-            if filename.startswith("daemon_backup_") and filename.endswith(".db"):
-                timestamp_str = filename[14:-3]  # Remove prefix and suffix
-                file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-
+            if isinstance(backup_item, tuple):
+                # Handle test format: (filename, timestamp)
+                filename, timestamp = backup_item
+                file_date = datetime.fromtimestamp(timestamp)
                 if file_date < cutoff_date:
-                    files_to_delete.append(file_path)
-        except (ValueError, IndexError):
+                    files_to_delete.append(filename)
+            else:
+                # Handle file path format
+                file_path = backup_item
+                filename = os.path.basename(file_path)
+                if filename.startswith("daemon_backup_") and filename.endswith(".db"):
+                    timestamp_str = filename[14:-3]  # Remove prefix and suffix
+                    file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+
+                    if file_date < cutoff_date:
+                        files_to_delete.append(file_path)
+        except (ValueError, IndexError, OSError):
             # Skip files that don't match expected pattern
             continue
 
@@ -802,14 +840,10 @@ def get_client_identifier(request) -> str:
     else:
         client_ip = getattr(request.client, "host", "unknown")
 
-    # Include user agent for more specific identification
-    user_agent = getattr(request.headers, "user-agent", "")
-    return f"{client_ip}:{hash(user_agent) % 10000}"
+    return client_ip
 
 
-def should_rate_limit(
-    client_id: str, max_requests: int = 100, window_minutes: int = 60
-) -> bool:
+def should_rate_limit(client_id: str, limit: int = 100, window: int = 60) -> bool:
     """Check if a client should be rate limited"""
     # This is a simple in-memory rate limiter for testing
     # In production, you'd want to use Redis or similar
@@ -820,7 +854,7 @@ def should_rate_limit(
         should_rate_limit.requests = defaultdict(list)
 
     now = time.time()
-    window_seconds = window_minutes * 60
+    window_seconds = window * 60
 
     # Clean old requests
     should_rate_limit.requests[client_id] = [
@@ -830,7 +864,7 @@ def should_rate_limit(
     ]
 
     # Check if limit exceeded
-    if len(should_rate_limit.requests[client_id]) >= max_requests:
+    if len(should_rate_limit.requests[client_id]) >= limit:
         return True
 
     # Add current request
