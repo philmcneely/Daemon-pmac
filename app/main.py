@@ -91,10 +91,7 @@ async def daily_backup_task():
             # Create backup
             if settings.backup_enabled:
                 backup_info = create_backup()
-                logger.info(
-                    f"Scheduled backup created: {
-                        backup_info.filename}"
-                )
+                logger.info(f"Scheduled backup created: {backup_info.filename}")
 
                 # Cleanup old backups
                 cleanup_old_backups()
