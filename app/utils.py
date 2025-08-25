@@ -352,7 +352,7 @@ def get_system_metrics() -> Dict[str, Any]:
         db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "memory": {
                 "total": memory.total,
                 "available": memory.available,
@@ -374,7 +374,7 @@ def get_system_metrics() -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting system metrics: {e}")
-        return {"timestamp": datetime.utcnow().isoformat(), "error": str(e)}
+        return {"timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}
 
 
 def health_check() -> Dict[str, Any]:

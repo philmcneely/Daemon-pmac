@@ -4,7 +4,7 @@ Management routes for admin operations
 
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
@@ -443,5 +443,5 @@ async def get_system_info(current_user: User = Depends(get_current_admin_user)):
             "backup_enabled": settings.backup_enabled,
             "rate_limit": f"{settings.rate_limit_requests}/{settings.rate_limit_window}s",
         },
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(timezone.utc),
     }
