@@ -1,5 +1,10 @@
 # Daemon: Multi-User Personal API Framework
 
+[![CI/CD Pipeline](https://github.com/philmcneely/Daemon-pmac/actions/workflows/ci.yml/badge.svg)](https://github.com/philmcneely/Daemon-pmac/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/philmcneely/Daemon-pmac/branch/main/graph/badge.svg)](https://codecov.io/gh/philmcneely/Daemon-pmac)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 An **adaptive personal API framework** that seamlessly scales from single-user simplicity to multi-user complexity with comprehensive privacy controls. Built with FastAPI and inspired by [Daniel Miessler's Daemon project](https://github.com/danielmiessler/Daemon).
 
 > **Adaptive Design**: Automatically switches between single-user mode (simple `/api/v1/resume`) and multi-user mode (`/api/v1/resume/users/pmac`) based on the number of users in the system.
