@@ -94,6 +94,10 @@ ssl/
 .temp/
 .tmp/
 
+# Pre-commit and linting reports
+bandit-report.json
+.pre-commit-config.yaml.bak
+
 # Docker
 .dockerignore
 
