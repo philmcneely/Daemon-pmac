@@ -238,7 +238,8 @@ class TestDataImport:
             assert isinstance(result, dict)
 
     @patch("app.data_loader.SessionLocal")
-    def test_import_endpoint_data_to_database(self, mock_session):
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    def test_import_endpoint_data_to_database(self, mock_load_data, mock_session):
         """Test importing data for specific endpoint to database"""
         # Mock database session
         mock_db = MagicMock()
@@ -251,24 +252,35 @@ class TestDataImport:
             mock_endpoint
         )
 
+        # Mock the file loading function
         test_data = {"name": "Test Data"}
+        mock_load_data.return_value = {"success": True, "data": test_data}
 
-        result = import_endpoint_data_to_database("resume", test_data)
+        result = import_endpoint_data_to_database("resume", "/path/to/test.json")
         assert isinstance(result, dict)
 
     @patch("app.data_loader.SessionLocal")
-    def test_import_endpoint_data_to_database_nonexistent_endpoint(self, mock_session):
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    def test_import_endpoint_data_to_database_nonexistent_endpoint(
+        self, mock_load_data, mock_session
+    ):
         """Test importing to non-existent endpoint"""
         # Mock database session
         mock_db = MagicMock()
         mock_session.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = import_endpoint_data_to_database("nonexistent", {})
+        # Mock the file loading function
+        mock_load_data.return_value = {"success": True, "data": {}}
+
+        result = import_endpoint_data_to_database("nonexistent", "/path/to/test.json")
         assert isinstance(result, dict)
 
     @patch("app.data_loader.SessionLocal")
-    def test_import_endpoint_data_to_database_with_user(self, mock_session):
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    def test_import_endpoint_data_to_database_with_user(
+        self, mock_load_data, mock_session
+    ):
         """Test importing data with specific user"""
         # Mock database session
         mock_db = MagicMock()
@@ -284,9 +296,13 @@ class TestDataImport:
             mock_endpoint
         )
 
+        # Mock the file loading function
         test_data = {"name": "Test Data"}
+        mock_load_data.return_value = {"success": True, "data": test_data}
 
-        result = import_endpoint_data_to_database("resume", test_data, user_id=1)
+        result = import_endpoint_data_to_database(
+            "resume", "/path/to/test.json", user_id=1
+        )
         assert isinstance(result, dict)
 
 
@@ -298,8 +314,16 @@ class TestDataImportStatus:
         result = get_data_import_status()
         assert isinstance(result, dict)
 
-    def test_get_data_import_status_custom_dir(self):
+    @patch("app.data_loader.get_db")
+    @patch("app.data_loader.SessionLocal")
+    def test_get_data_import_status_custom_dir(self, mock_session, mock_get_db):
         """Test getting import status for custom directory"""
+        # Mock database session
+        mock_db = MagicMock()
+        mock_session.return_value = mock_db
+        mock_get_db.return_value = iter([mock_db])
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create test files
             test_file = os.path.join(temp_dir, "resume.json")
@@ -363,14 +387,18 @@ class TestEdgeCases:
             assert isinstance(result, dict)
 
     @patch("app.data_loader.SessionLocal")
-    def test_import_with_database_error(self, mock_session):
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    def test_import_with_database_error(self, mock_load_data, mock_session):
         """Test import with database errors"""
         # Mock database session that raises exception
         mock_db = MagicMock()
         mock_session.return_value = mock_db
         mock_db.query.side_effect = Exception("Database error")
 
-        result = import_endpoint_data_to_database("resume", {"test": "data"})
+        # Mock the file loading function
+        mock_load_data.return_value = {"success": True, "data": {"test": "data"}}
+
+        result = import_endpoint_data_to_database("resume", "/path/to/test.json")
         # Should handle database errors gracefully
         assert isinstance(result, dict)
 
