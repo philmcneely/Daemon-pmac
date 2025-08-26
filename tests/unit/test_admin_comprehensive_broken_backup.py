@@ -41,105 +41,118 @@ class TestAdminRouter:
         # Should handle gracefully (may be forbidden or error)
         assert response.status_code in [400, 403, 404, 422]
 
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_toggle_admin_status(self, mock_get_db, mock_admin_user, unit_client):
+    def test_toggle_admin_status(self, unit_client):
         """Test toggling admin status"""
+        from app.main import app
+        from app.routers.admin import get_current_admin_user, get_db
+
         # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database and query
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock target user
-        mock_user = MagicMock()
-        mock_user.id = 2
-        mock_user.is_admin = False
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_user
-
-        response = unit_client.put("/admin/users/2/admin")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 404, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_list_api_keys(self, mock_get_db, mock_admin_user, unit_client):
-        """Test listing API keys"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database and query
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock API keys
-        mock_key1 = MagicMock()
-        mock_key1.id = 1
-        mock_key1.name = "Test Key 1"
-        mock_key1.user_id = 1
-        mock_key1.user.username = "user1"
-        mock_key1.is_active = True
-        mock_key1.expires_at = None
-        mock_key1.last_used = None
-        mock_key1.created_at = datetime.now()
-
-        mock_key2 = MagicMock()
-        mock_key2.id = 2
-        mock_key2.name = "Test Key 2"
-        mock_key2.user_id = 2
-        mock_key2.user.username = "user2"
-        mock_key2.is_active = True
-        mock_key2.expires_at = datetime.now() + timedelta(days=30)
-        mock_key2.last_used = datetime.now() - timedelta(days=1)
-        mock_key2.created_at = datetime.now()
-
-        mock_db.query.return_value.all.return_value = [mock_key1, mock_key2]
-
-        response = unit_client.get("/admin/api-keys")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 422]
-
-    @patch("app.routers.admin.generate_api_key")
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_create_api_key(
-        self, mock_get_db, mock_admin_user, mock_generate, unit_client
-    ):
-        """Test creating API key"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        def mock_admin_user():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            return mock_admin
 
         # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
+        def mock_db():
+            mock_session = MagicMock()
+            # Mock target user
+            mock_user = MagicMock()
+            mock_user.id = 2
+            mock_user.is_admin = False
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                mock_user
+            )
+            return mock_session
 
-        # Mock API key generation
-        mock_generate.return_value = ("test-api-key", "hashed-key")
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_admin_user
+        app.dependency_overrides[get_db] = mock_db
 
-        # Mock created API key object
-        mock_api_key = MagicMock()
-        mock_api_key.id = 1
-        mock_api_key.name = "Test Key"
-        mock_api_key.expires_at = None
-        mock_api_key.created_at = datetime.now()
+        try:
+            response = unit_client.put("/admin/users/2/admin")
+            # Should handle gracefully
+            assert response.status_code in [200, 401, 404, 422]
+        finally:
+            # Clean up overrides
+            if get_current_admin_user in app.dependency_overrides:
+                del app.dependency_overrides[get_current_admin_user]
+            if get_db in app.dependency_overrides:
+                del app.dependency_overrides[get_db]
 
-        mock_db.refresh.return_value = None
+    def test_list_api_keys(self, unit_client):
+        """Test listing API keys"""
+        from app.main import app
+        from app.routers.admin import get_current_admin_user, get_db
 
-        key_data = {"name": "Test Key", "expires_at": None}
+        # Mock admin user
+        def mock_admin_user():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            return mock_admin
 
-        response = unit_client.post("/admin/api-keys", json=key_data)
+        # Mock database
+        def mock_db():
+            mock_session = MagicMock()
+            # Mock API keys
+            mock_key1 = MagicMock()
+            mock_key1.id = 1
+            mock_key1.name = "Test Key 1"
+            mock_key1.user_id = 1
+            mock_key1.user.username = "user1"
+            mock_key1.is_active = True
+            mock_key1.expires_at = None
+            mock_key1.last_used = None
+            mock_key1.created_at = datetime.now()
 
-        # Should handle gracefully
-        assert response.status_code in [200, 201, 401, 422]
+            mock_session.query.return_value.all.return_value = [mock_key1]
+            return mock_session
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_admin_user
+        app.dependency_overrides[get_db] = mock_db
+
+        try:
+            response = unit_client.get("/admin/api-keys")
+            # Should work with proper mocking
+            assert response.status_code in [200, 401, 422]
+        finally:
+            # Clean up overrides
+            if get_current_admin_user in app.dependency_overrides:
+                del app.dependency_overrides[get_current_admin_user]
+            if get_db in app.dependency_overrides:
+                del app.dependency_overrides[get_db]
+
+    def test_create_api_key(self, unit_client):
+        """Test creating API key"""
+        from app.main import app
+        from app.routers.admin import get_current_admin_user, get_db
+
+        # Mock admin user
+        def mock_admin_user():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            return mock_admin
+
+        # Mock database
+        def mock_db():
+            mock_session = MagicMock()
+            return mock_session
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_admin_user
+        app.dependency_overrides[get_db] = mock_db
+
+        try:
+            key_data = {"name": "Test Key", "expires_at": None}
+            response = unit_client.post("/admin/api-keys", json=key_data)
+            # Should handle gracefully
+            assert response.status_code in [200, 201, 401, 422]
+        finally:
+            # Clean up overrides
+            if get_current_admin_user in app.dependency_overrides:
+                del app.dependency_overrides[get_current_admin_user]
+            if get_db in app.dependency_overrides:
+                del app.dependency_overrides[get_db]
 
     @patch("app.routers.admin.get_current_admin_user")
     @patch("app.routers.admin.get_db")
