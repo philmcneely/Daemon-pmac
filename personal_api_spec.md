@@ -1,7 +1,45 @@
 ### Personal API — Monolithic Endpoint Spec (Markdown-ready)
 
-For each new endpoint listed, you need to generate the endpoint, e2e tests and unit tests and update documentation including OpenApi. add an example file in the data\examples dir. each of the new endpoints should allow markdown and not enforce a db schema.  users should be able to customize how they present their data. I want flexible markdown content instead of a rigid JSON schema. remember to account for single user and multi user scenarios in code and tests, review existing code to make sure you understand the behaviour for a single user or multiple users. Make sure you create each endpoint 1 by 1, get it all working, then commit and push after each one is complete.
+**THIS IS THE DEFINITIVE SPECIFICATION FOR PERSONAL API IMPLEMENTATION**
 
+## Implementation Requirements & Process
+
+### Critical Process Rules
+1. **MUST follow COPILOT_INSTRUCTIONS.md** - Especially for GitHub CLI operations (use `gh_temp/` directory for output redirection)
+2. **ONE ENDPOINT AT A TIME** - Create each endpoint individually, test thoroughly, then commit and push before starting the next
+3. **COMPREHENSIVE TESTING** - Each endpoint must pass ALL tests (unit, e2e, integration) before pushing to CI
+4. **NO BROKEN CI** - Ensure tests pass locally AND in CI before any commit/push operations
+5. **PRESERVE EXISTING FUNCTIONALITY** - Do not destroy the existing resume endpoint or any structured endpoints
+
+### Required Components Per Endpoint
+For each new endpoint listed below, you MUST generate:
+- ✅ Endpoint implementation with flexible markdown schema
+- ✅ Unit tests covering all CRUD operations
+- ✅ E2E tests for both single-user and multi-user scenarios
+- ✅ Example file in `data/examples/` directory
+- ✅ OpenAPI documentation updates
+- ✅ Privacy/visibility controls implementation
+- ✅ Commit and push after verification
+
+### Technical Requirements
+- **Flexible Content**: Users should be able to customize how they present their data using markdown content instead of rigid JSON schemas
+- **Multi-User Support**: Account for single user and multi user scenarios in both code and tests
+- **Privacy Controls**: Implement visibility levels (public/unlisted/private) with appropriate defaults
+- **Backward Compatibility**: Review existing code to understand current single/multi-user behavior patterns
+
+### Quality Gates
+Before each commit/push:
+1. All existing tests must pass
+2. New endpoint tests must pass
+3. CI pipeline must be green
+4. Example files must be complete and functional
+5. Documentation must be updated and accurate
+
+---
+
+### Original Specification
+
+For each new endpoint listed, you need to generate the endpoint, e2e tests and unit tests and update documentation including OpenApi. add an example file in the data\examples dir. each of the new endpoints should allow markdown and not enforce a db schema. users should be able to customize how they present their data. I want flexible markdown content instead of a rigid JSON schema. remember to account for single user and multi user scenarios in code and tests, review existing code to make sure you understand the behaviour for a single user or multiple users. Make sure you create each endpoint 1 by 1, get it all working, then commit and push after each one is complete.
 
 #### Note up front
 - Each endpoint is intentionally flexible: entries are free-text Markdown blocks.

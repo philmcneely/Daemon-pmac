@@ -216,11 +216,11 @@ def test_projects_pagination(client, auth_headers):
         )
         assert response.status_code == 200
 
-    # Test pagination
-    response = client.get("/api/v1/projects?limit=3&offset=0")
+    # Test pagination using page and size parameters
+    response = client.get("/api/v1/projects?page=1&size=3")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) <= 3  # Should respect the limit
+    assert len(data) <= 3  # Should respect the size limit
 
 
 def test_projects_search_by_content(client, auth_headers):

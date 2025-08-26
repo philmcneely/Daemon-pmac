@@ -369,8 +369,8 @@ def test_create_endpoint(client, auth_headers):
         "/api/v1/endpoints",
         headers=auth_headers,
         json={
-            "name": "projects",
-            "description": "Current projects",
+            "name": "test_projects",
+            "description": "Test projects endpoint",
             "schema": {
                 "name": {"type": "string", "required": True},
                 "status": {"type": "string", "enum": ["active", "completed"]},
@@ -379,8 +379,8 @@ def test_create_endpoint(client, auth_headers):
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "projects"
-    assert data["description"] == "Current projects"
+    assert data["name"] == "test_projects"
+    assert data["description"] == "Test projects endpoint"
 
 
 def test_create_endpoint_unauthorized(client):
@@ -862,10 +862,10 @@ def test_pagination_comprehensive(client, auth_headers):
 
 def test_custom_endpoint_creation_and_usage(client, auth_headers):
     """Test creating and using custom endpoints"""
-    # Create a custom projects endpoint
+    # Create a custom test_custom_projects endpoint
     projects_endpoint = {
-        "name": "projects",
-        "description": "Personal and professional projects",
+        "name": "test_custom_projects",
+        "description": "Test custom projects endpoint",
         "schema": {
             "name": {"type": "string", "required": True},
             "status": {
@@ -892,7 +892,7 @@ def test_custom_endpoint_creation_and_usage(client, auth_headers):
     list_response = client.get("/api/v1/endpoints")
     assert list_response.status_code == 200
     endpoint_names = [ep["name"] for ep in list_response.json()]
-    assert "projects" in endpoint_names
+    assert "test_custom_projects" in endpoint_names
 
     # Test adding data to custom endpoint
     project_data = {
@@ -905,12 +905,12 @@ def test_custom_endpoint_creation_and_usage(client, auth_headers):
     }
 
     data_response = client.post(
-        "/api/v1/projects", json=project_data, headers=auth_headers
+        "/api/v1/test_custom_projects", json=project_data, headers=auth_headers
     )
     assert data_response.status_code == 200
 
     # Test retrieving data from custom endpoint
-    get_response = client.get("/api/v1/projects")
+    get_response = client.get("/api/v1/test_custom_projects")
     assert get_response.status_code == 200
     projects = get_response.json()
     assert len(projects) >= 1
