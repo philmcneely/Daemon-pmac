@@ -92,6 +92,10 @@ ssl/
 *.temp
 .temp/
 .tmp/
+gh_temp/
+
+# GitHub CLI temporary files (AI assistants should use this directory)
+gh_temp/
 
 # Pre-commit and linting reports
 bandit-report.json

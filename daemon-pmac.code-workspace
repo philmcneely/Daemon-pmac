@@ -6,7 +6,7 @@
     ],
     "settings": {
         "python.defaultInterpreterPath": "./venv/bin/python",
-        "copilot.instructions": "IMPORTANT: When using GitHub CLI (gh) commands, ALWAYS redirect output to a text file first, then read the file. Example: 'gh run list > ci_status.txt 2>&1' then read ci_status.txt. Never try to read gh command output directly from terminal."
+        "copilot.instructions": "IMPORTANT: When using GitHub CLI (gh) commands, ALWAYS redirect output to gh_temp/ directory first, then read the file. Example: 'gh run list > gh_temp/ci_status.txt 2>&1' then read gh_temp/ci_status.txt. Never put temporary files in root directory - use gh_temp/ which is gitignored."
     },
     "extensions": {
         "recommendations": [
