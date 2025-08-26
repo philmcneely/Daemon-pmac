@@ -91,7 +91,7 @@ async def list_api_keys(
             "id": key.id,
             "name": key.name,
             "user_id": key.user_id,
-            "username": key.user.username,
+            "username": key.user.username if key.user else "Unknown",
             "is_active": key.is_active,
             "expires_at": key.expires_at,
             "last_used": key.last_used,
