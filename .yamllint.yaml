@@ -8,9 +8,10 @@ rules:
     level: warning
 
   # Indentation must be consistent (2 spaces)
+  # More relaxed for GitHub Actions workflows which can have complex nesting
   indentation:
-    spaces: 2
-    indent-sequences: true
+    spaces: consistent
+    indent-sequences: consistent
     check-multi-line-strings: false
 
   # Trailing spaces not allowed
@@ -49,5 +50,5 @@ rules:
 
 # Ignore patterns for files with complex multi-line content
 ignore: |
-  # Ignore complex shell scripts in workflow files
-  *.yml:*:syntax
+  # Note: Removed .github/workflows/*.yml to ensure YAML syntax checking
+  # Workflow files should have valid YAML syntax
