@@ -448,3 +448,82 @@ async def get_system_info(current_user: User = Depends(get_current_admin_user)):
         },
         "timestamp": datetime.now(timezone.utc),
     }
+
+
+# Combined stats endpoint
+@router.get("/stats")
+async def get_stats(
+    current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)
+):
+    """Get comprehensive system and data statistics"""
+    import sys
+    from datetime import datetime
+
+    import psutil
+
+    # Get data statistics
+    data_stats = {}
+    endpoints = db.query(Endpoint).all()
+    for endpoint in endpoints:
+        active_count = (
+            db.query(DataEntry)
+            .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active == True)
+            .count()
+        )
+        total_count = (
+            db.query(DataEntry).filter(DataEntry.endpoint_id == endpoint.id).count()
+        )
+        data_stats[endpoint.name] = {
+            "active": active_count,
+            "total": total_count,
+            "deleted": total_count - active_count,
+        }
+
+    # Overall data stats
+    total_active_entries = (
+        db.query(DataEntry).filter(DataEntry.is_active == True).count()
+    )
+    total_all_entries = db.query(DataEntry).count()
+    total_users = db.query(User).count()
+
+    # Database file size
+    db_path = settings.database_url.replace("sqlite:///", "")
+    if db_path.startswith("./"):
+        db_path = db_path[2:]
+    db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+
+    # System metrics
+    memory = psutil.virtual_memory()
+    disk = psutil.disk_usage(".")
+
+    return {
+        "system": {
+            "python_version": sys.version,
+            "platform": sys.platform,
+            "cpu": {
+                "count": psutil.cpu_count(),
+                "percent": psutil.cpu_percent(interval=1),
+            },
+            "memory": {
+                "total": memory.total,
+                "available": memory.available,
+                "percent": memory.percent,
+            },
+            "disk": {
+                "total": disk.total,
+                "used": disk.used,
+                "free": disk.free,
+                "percent": (disk.used / disk.total) * 100 if disk.total > 0 else 0,
+            },
+        },
+        "database": {
+            "size_bytes": db_size,
+            "total_users": total_users,
+            "total_endpoints": len(endpoints),
+            "total_entries": total_all_entries,
+            "active_entries": total_active_entries,
+            "deleted_entries": total_all_entries - total_active_entries,
+            "endpoints": data_stats,
+        },
+        "timestamp": datetime.now(timezone.utc),
+    }

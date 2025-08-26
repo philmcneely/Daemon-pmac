@@ -1,0 +1,60 @@
+
+X fix/ci-yaml-syntax CI/CD Pipeline philmcneely/Daemon-pmac#7 · 17222266520
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Code Quality in 32s (ID 48860014840)
+X Test Suite (3.9) in 1m10s (ID 48860014847)
+X Test Suite (3.10) in 1m7s (ID 48860014866)
+✓ Security Checks in 31s (ID 48860014868)
+X Test Suite (3.12) in 1m13s (ID 48860014872)
+X Test Suite (3.11) in 1m5s (ID 48860014897)
+  ✓ Set up job
+  ✓ Checkout code
+  ✓ Set up Python 3.11
+  ✓ Cache pip dependencies
+  ✓ Install dependencies
+  ✓ Create test database
+  X Run working tests for coverage (excluding unit tests until they are fixed)
+  - Run E2E tests only (excluding unit tests)
+  - Generate coverage badge and summary
+  - Upload coverage reports
+  - Upload coverage to Codecov
+  - Comment coverage on PR
+  - Check coverage threshold
+  - Post Cache pip dependencies
+  - Post Set up Python 3.11
+  ✓ Post Checkout code
+  ✓ Complete job
+- Docker Build in 0s (ID 48860083187)
+- Create Release in 0s (ID 48860083230)
+
+ANNOTATIONS
+X The operation was canceled.
+Test Suite (3.9): .github#608
+
+X The strategy configuration was canceled because "test._3_11" failed
+Test Suite (3.9): .github#1
+
+X The operation was canceled.
+Test Suite (3.10): .github#608
+
+X The strategy configuration was canceled because "test._3_11" failed
+Test Suite (3.10): .github#1
+
+X The operation was canceled.
+Test Suite (3.12): .github#617
+
+X The strategy configuration was canceled because "test._3_11" failed
+Test Suite (3.12): .github#1
+
+X Process completed with exit code 1.
+Test Suite (3.11): .github#612
+
+
+ARTIFACTS
+bandit-security-report
+security-reports
+
+To see what failed, try: gh run view 17222266520 --log-failed
+View this run on GitHub: https://github.com/philmcneely/Daemon-pmac/actions/runs/17222266520

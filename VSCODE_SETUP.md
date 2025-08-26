@@ -4,6 +4,22 @@
 
 Your VS Code interpreter error should now be resolved. Here's what was configured:
 
+## 🤖 GitHub Copilot Instructions
+
+**CRITICAL FOR AI ASSISTANTS**: When using GitHub CLI (`gh`) commands, ALWAYS redirect output to a text file first, then read the file.
+
+### Required Pattern:
+```bash
+# CORRECT: Save output to file first
+gh run list --repo philmcneely/Daemon-pmac --limit 5 > ci_status.txt 2>&1
+cat ci_status.txt
+
+# WRONG: Cannot read gh output directly from terminal
+gh run list --repo philmcneely/Daemon-pmac --limit 5
+```
+
+This is essential because GitHub CLI output cannot be read directly from VS Code terminal output.
+
 ## 🐍 Python Environment
 - **Virtual Environment**: `./venv/` with Python 3.12.4
 - **All Dependencies Installed**: Both production and development packages

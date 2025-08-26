@@ -1,0 +1,54 @@
+# yamllint configuration
+# More strict YAML validation than basic check-yaml
+
+rules:
+  # Line length is more flexible for CI files
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation must be consistent (2 spaces)
+  # More relaxed for GitHub Actions workflows which can have complex nesting
+  indentation:
+    spaces: consistent
+    indent-sequences: consistent
+    check-multi-line-strings: false
+
+  # Trailing spaces not allowed
+  trailing-spaces: enable
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 0
+
+  # Key ordering (less strict for CI files)
+  key-ordering: disable
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Document structure
+  document-start: disable
+  document-end: disable
+
+  # Bracket formatting
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Brace formatting
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Disable some strict checks that interfere with GitHub Actions content
+  quoted-strings: disable
+  truthy: disable
+
+# Ignore patterns for files with complex multi-line content
+ignore: |
+  # Note: Removed .github/workflows/*.yml to ensure YAML syntax checking
+  # Workflow files should have valid YAML syntax

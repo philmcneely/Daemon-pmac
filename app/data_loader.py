@@ -124,8 +124,7 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
             "data": validated_items,
             "count": len(validated_items),
             "file_path": file_path,
-            "message": f"Loaded {
-                len(validated_items)} items for {endpoint_name}",
+            "message": f"Loaded {len(validated_items)} items for {endpoint_name}",
         }
 
     except json.JSONDecodeError as e:
