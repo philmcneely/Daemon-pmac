@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .database import DataEntry, Endpoint, User, get_db
+from .database import DataEntry, Endpoint, SessionLocal, User, get_db
 
 
 def import_user_data_from_directory(

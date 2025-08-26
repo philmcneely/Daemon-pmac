@@ -8,7 +8,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from .database import DataEntry, Endpoint, get_db
+from .database import DataEntry, Endpoint, SessionLocal, get_db
 from .schemas import ENDPOINT_MODELS
 
 # Default data directory
