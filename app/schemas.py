@@ -249,6 +249,51 @@ def get_endpoint_model(endpoint_name: str) -> Optional[Type[BaseModel]]:
     return cast(Optional[Type[BaseModel]], ENDPOINT_MODELS.get(endpoint_name))
 
 
+# Personal API Flexible Markdown Schemas
+
+
+class PersonalItemMeta(BaseModel):
+    """Optional metadata for personal API items"""
+
+    title: Optional[str] = None
+    date: Optional[str] = None
+    tags: Optional[List[str]] = None
+    status: Optional[str] = None
+    visibility: Optional[str] = Field(
+        default="public", pattern=r"^(public|unlisted|private)$"
+    )
+
+
+class PersonalItemCreate(BaseModel):
+    """Create/Update request for personal API items"""
+
+    content: str = Field(..., min_length=1, description="Markdown content")
+    meta: Optional[PersonalItemMeta] = None
+
+
+class PersonalItemUpdate(BaseModel):
+    """Update request for personal API items"""
+
+    content: Optional[str] = Field(None, min_length=1, description="Markdown content")
+    meta: Optional[PersonalItemMeta] = None
+
+
+class PersonalItemResponse(BaseModel):
+    """Response for personal API items"""
+
+    id: str
+    content: str
+    meta: Optional[PersonalItemMeta] = None
+    updated_at: datetime
+    created_at: datetime
+
+
+class PersonalItemListResponse(BaseModel):
+    """List response for personal API items"""
+
+    items: List[PersonalItemResponse]
+
+
 # Generic response models
 class PaginatedResponse(BaseModel):
     items: List[Dict[str, Any]]

@@ -1,6 +1,6 @@
 ### Personal API — Monolithic Endpoint Spec (Markdown-ready)
 
-For each new endpoint listed, you need to generate the endpoint, e2e tests and unit tests and update documentation including OpenApi. add an example file in the data\examples dir. each of the new endpoints should allow markdown and not enforce a db schema.  users should be able to customize how they present their data. I want flexible markdown content instead of a rigid JSON schema. remember to account for single user and multi user scenarios in code and tests. Make sure you create each endpoint 1 by 1, get it all working, then commit and push after each one is complete.
+For each new endpoint listed, you need to generate the endpoint, e2e tests and unit tests and update documentation including OpenApi. add an example file in the data\examples dir. each of the new endpoints should allow markdown and not enforce a db schema.  users should be able to customize how they present their data. I want flexible markdown content instead of a rigid JSON schema. remember to account for single user and multi user scenarios in code and tests, review existing code to make sure you understand the behaviour for a single user or multiple users. Make sure you create each endpoint 1 by 1, get it all working, then commit and push after each one is complete.
 
 
 #### Note up front
@@ -132,16 +132,6 @@ Example:
 ### Looking for
 - Product design collaborator for side-project
 - Mentor in enterprise sales strategy
-```
-
-#### /resume
-Description: A Markdown-formatted resume or CV (rich layout permitted).
-Example:
-```md
-# John Doe — Senior Engineer
-## Experience
-- Company X (2020-2024) — Lead Backend Engineer
-- Achievements: ...
 ```
 
 #### /personal_story

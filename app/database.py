@@ -421,12 +421,533 @@ def create_default_endpoints(db: Session):
             "name": "looking_for",
             "description": "Things currently looking for or seeking",
             "schema": {
-                "type": {"type": "string", "required": True},
-                "description": {"type": "string", "required": True},
+                "content": {"type": "string", "required": True},  # Markdown content
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+                # Legacy fields for backward compatibility
+                "type": {"type": "string"},
+                "description": {"type": "string"},
                 "category": {"type": "string"},
                 "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
                 "criteria": {"type": "string"},
                 "contact_method": {"type": "string"},
+            },
+        },
+        # New flexible markdown endpoints
+        {
+            "name": "skills_matrix",
+            "description": "Skills matrix with endorsements and skill-grid commentary",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "personal_story",
+            "description": "Personal narrative, biography, or personal story",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "goals",
+            "description": "Personal or professional goals with status and notes",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "values",
+            "description": "Core values and guiding principles",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "recommendations",
+            "description": "Recommendations for tools, books, people, or processes",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "learning",
+            "description": "Current learning topics, courses, notes, and study plans",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "quotes",
+            "description": "Favorite quotes or mottos with context/explanations",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "contact_info",
+            "description": "Public-safe contact information",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "unlisted",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "events",
+            "description": "Public events, appearances, or past events",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "achievements",
+            "description": "Notable accomplishments",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "contacts",
+            "description": "Directory of people with public-safe bios",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "private",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "arguments",
+            "description": "Argument maps, structured debate notes, or position pieces",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "claims",
+            "description": "Individual claims or beliefs with supporting evidence",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "data_sources",
+            "description": "Notes and links to trusted data sources",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "experiments",
+            "description": "Experiments with hypothesis, method, and results",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "frames",
+            "description": "Cognitive frames or context pieces for viewing topics",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "funding_sources",
+            "description": "Notes about funding sources and revenue streams",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "private",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "organizations",
+            "description": "Organizations affiliated with, past employers, etc.",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "outcomes",
+            "description": "Measured outcomes and observed impacts",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "people",
+            "description": "Profiles of people with public-friendly bios",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "private",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "results",
+            "description": "Raw or summarized results from experiments or projects",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "risks",
+            "description": "Risk logs or concerns with mitigation notes",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "private",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "solutions",
+            "description": "Proposed solutions to stated problems",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "name": "threats",
+            "description": "External threats and contextual narrative",
+            "schema": {
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "private",
+                        },
+                    },
+                },
             },
         },
     ]
