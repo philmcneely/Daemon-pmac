@@ -1,0 +1,24 @@
+# Development and testing dependencies
+# Note: pytest and httpx are already in requirements.txt
+
+
+# Security scanning
+bandit>=1.7.0
+# Code formatting and linting
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.5.0
+pip-audit>=2.6.0
+
+# Development workflow
+pre-commit>=3.3.0
+
+# Testing tools (additional to base requirements.txt)
+pytest-cov>=4.1.0
+safety>=2.3.0
+
+# Optional: Type stubs for better mypy checking
+types-requests>=2.31.0
+types-python-jose>=3.3.0
+types-passlib>=1.7.0
