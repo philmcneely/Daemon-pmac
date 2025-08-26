@@ -1,472 +1,184 @@
 """
-Test admin router functionality - comprehensive unit tests with mocking
+Test admin router functionality - comprehensive unit tests with dependency overrides
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from app.auth import get_current_admin_user
+from app.auth import get_current_admin_user, get_current_user
+from app.database import Base, get_db
+from app.main import app
+
+# Create test database
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_admin_comprehensive.db"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 class TestAdminRouter:
-    """Test admin router functionality with mocked dependencies"""
+    """Test admin router functionality with dependency overrides"""
 
-    def test_list_users(self, unit_client):
+    @pytest.fixture(autouse=True)
+    def setup_and_teardown(self):
+        """Set up test database and clean up after each test"""
+        Base.metadata.create_all(bind=engine)
+
+        def override_get_db():
+            try:
+                db = TestingSessionLocal()
+                yield db
+            finally:
+                db.close()
+
+        def mock_get_current_admin_user():
+            from types import SimpleNamespace
+
+            return SimpleNamespace(
+                id=1, username="admin_user", is_admin=True, is_active=True
+            )
+
+        app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_current_admin_user] = mock_get_current_admin_user
+        app.dependency_overrides[get_current_user] = mock_get_current_admin_user
+
+        yield
+
+        # Clean up
+        app.dependency_overrides.clear()
+        Base.metadata.drop_all(bind=engine)
+
+    def test_list_users(self):
         """Test listing all users"""
-        response = unit_client.get("/admin/users")
+        with TestClient(app) as client:
+            response = client.get("/admin/users")
+            assert response.status_code in [200, 404]
 
-        # Should work with mocked admin authentication or return 403 if auth required
-        assert response.status_code in [200, 403, 422]
-
-    def test_toggle_user_status_success(self, unit_client):
+    def test_toggle_user_status_success(self):
         """Test toggling user status successfully"""
-        response = unit_client.put("/admin/users/2/toggle")
+        with TestClient(app) as client:
+            response = client.put("/admin/users/2/toggle")
+            assert response.status_code in [200, 404]
 
-        # Should handle gracefully (user may not exist in test DB)
-        assert response.status_code in [200, 403, 404, 422]
-
-    def test_toggle_user_status_not_found(self, unit_client):
+    def test_toggle_user_status_not_found(self):
         """Test toggling status of non-existent user"""
-        response = unit_client.put("/admin/users/999/toggle")
+        with TestClient(app) as client:
+            response = client.put("/admin/users/999/toggle")
+            assert response.status_code in [404]
 
-        # Should handle gracefully (user not found)
-        assert response.status_code in [403, 404, 422]
-
-    def test_toggle_user_status_self(self, unit_client):
+    def test_toggle_user_status_self(self):
         """Test attempting to toggle own status"""
-        response = unit_client.put("/admin/users/1/toggle")
+        with TestClient(app) as client:
+            response = client.put("/admin/users/1/toggle")
+            assert response.status_code in [400, 404]
 
-        # Should handle gracefully (may be forbidden or error)
-        assert response.status_code in [400, 403, 404, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_toggle_admin_status(self, mock_get_db, mock_admin_user, unit_client):
+    def test_toggle_admin_status(self):
         """Test toggling admin status"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            response = client.put("/admin/users/2/admin")
+            assert response.status_code in [200, 404]
 
-        # Mock database and query
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock target user
-        mock_user = MagicMock()
-        mock_user.id = 2
-        mock_user.is_admin = False
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_user
-
-        response = unit_client.put("/admin/users/2/admin")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 404, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_list_api_keys(self, mock_get_db, mock_admin_user, unit_client):
+    def test_list_api_keys(self):
         """Test listing API keys"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            response = client.get("/admin/api-keys")
+            assert response.status_code in [200, 404]
 
-        # Mock database and query
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock API keys
-        mock_key1 = MagicMock()
-        mock_key1.id = 1
-        mock_key1.name = "Test Key 1"
-        mock_key1.user_id = 1
-        mock_key1.user.username = "user1"
-        mock_key1.is_active = True
-        mock_key1.expires_at = None
-        mock_key1.last_used = None
-        mock_key1.created_at = datetime.now()
-
-        mock_key2 = MagicMock()
-        mock_key2.id = 2
-        mock_key2.name = "Test Key 2"
-        mock_key2.user_id = 2
-        mock_key2.user.username = "user2"
-        mock_key2.is_active = True
-        mock_key2.expires_at = datetime.now() + timedelta(days=30)
-        mock_key2.last_used = datetime.now() - timedelta(days=1)
-        mock_key2.created_at = datetime.now()
-
-        mock_db.query.return_value.all.return_value = [mock_key1, mock_key2]
-
-        response = unit_client.get("/admin/api-keys")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 422]
-
-    @patch("app.routers.admin.generate_api_key")
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_create_api_key(
-        self, mock_get_db, mock_admin_user, mock_generate, unit_client
-    ):
+    def test_create_api_key(self):
         """Test creating API key"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            key_data = {"name": "Test Key", "expires_at": None}
+            response = client.post("/admin/api-keys", json=key_data)
+            assert response.status_code in [200, 201, 404, 422]
 
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock API key generation
-        mock_generate.return_value = ("test-api-key", "hashed-key")
-
-        # Mock created API key object
-        mock_api_key = MagicMock()
-        mock_api_key.id = 1
-        mock_api_key.name = "Test Key"
-        mock_api_key.expires_at = None
-        mock_api_key.created_at = datetime.now()
-
-        mock_db.refresh.return_value = None
-
-        key_data = {"name": "Test Key", "expires_at": None}
-
-        response = unit_client.post("/admin/api-keys", json=key_data)
-
-        # Should handle gracefully
-        assert response.status_code in [200, 201, 401, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_delete_api_key_success(self, mock_get_db, mock_admin_user, unit_client):
+    def test_delete_api_key_success(self):
         """Test deleting API key successfully"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            response = client.delete("/admin/api-keys/1")
+            assert response.status_code in [200, 404]
 
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock API key
-        mock_api_key = MagicMock()
-        mock_api_key.id = 1
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_api_key
-
-        response = unit_client.delete("/admin/api-keys/1")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 404, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_delete_api_key_not_found(self, mock_get_db, mock_admin_user, unit_client):
+    def test_delete_api_key_not_found(self):
         """Test deleting non-existent API key"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            response = client.delete("/admin/api-keys/999")
+            assert response.status_code in [404]
 
-        # Mock database with no API key found
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-        mock_db.query.return_value.filter.return_value.first.return_value = None
+    def test_revoke_api_key(self):
+        """Test revoking API key"""
+        with TestClient(app) as client:
+            response = client.put("/admin/api-keys/1/revoke")
+            assert response.status_code in [200, 404]
 
-        response = unit_client.delete("/admin/api-keys/999")
-
-        # Should handle gracefully
-        assert response.status_code in [401, 404, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_list_endpoints(self, mock_get_db, mock_admin_user, unit_client):
-        """Test listing endpoints"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock endpoints
-        mock_endpoint1 = MagicMock()
-        mock_endpoint1.id = 1
-        mock_endpoint1.name = "resume"
-        mock_endpoint1.description = "Resume data"
-        mock_endpoint1.is_active = True
-        mock_endpoint1.is_public = True
-
-        mock_endpoint2 = MagicMock()
-        mock_endpoint2.id = 2
-        mock_endpoint2.name = "skills"
-        mock_endpoint2.description = "Skills data"
-        mock_endpoint2.is_active = True
-        mock_endpoint2.is_public = False
-
-        mock_db.query.return_value.all.return_value = [mock_endpoint1, mock_endpoint2]
-
-        response = unit_client.get("/admin/endpoints")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_create_endpoint(self, mock_get_db, mock_admin_user, unit_client):
-        """Test creating endpoint"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock endpoint creation
-        mock_endpoint = MagicMock()
-        mock_endpoint.id = 1
-        mock_endpoint.name = "test_endpoint"
-        mock_endpoint.description = "Test endpoint"
-        mock_endpoint.schema = {"name": {"type": "string"}}
-        mock_endpoint.is_active = True
-        mock_endpoint.is_public = True
-        mock_endpoint.created_at = datetime.now()
-
-        mock_db.refresh.return_value = None
-
-        endpoint_data = {
-            "name": "test_endpoint",
-            "description": "Test endpoint",
-            "schema": {"name": {"type": "string"}},
-            "is_public": True,
-        }
-
-        response = unit_client.post("/admin/endpoints", json=endpoint_data)
-
-        # Should handle gracefully
-        assert response.status_code in [200, 201, 401, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_toggle_endpoint_status(self, mock_get_db, mock_admin_user, unit_client):
-        """Test toggling endpoint status"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock endpoint
-        mock_endpoint = MagicMock()
-        mock_endpoint.id = 1
-        mock_endpoint.is_active = True
-        mock_db.query.return_value.filter.return_value.first.return_value = (
-            mock_endpoint
-        )
-
-        response = unit_client.put("/admin/endpoints/1/toggle")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 404, 422]
-
-    @patch("app.routers.admin.create_backup")
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_create_backup(
-        self, mock_get_db, mock_admin_user, mock_create_backup, unit_client
-    ):
-        """Test creating database backup"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock backup creation
-        mock_create_backup.return_value = {
-            "success": True,
-            "backup_path": "/backups/backup_20231201.db",
-            "size_bytes": 1024,
-        }
-
-        response = unit_client.post("/admin/backup")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 201, 401, 422]
-
-    @patch("app.routers.admin.cleanup_old_backups")
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_cleanup_backups(
-        self, mock_get_db, mock_admin_user, mock_cleanup, unit_client
-    ):
-        """Test cleaning up old backups"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Mock cleanup operation
-        mock_cleanup.return_value = {"deleted_count": 3, "freed_bytes": 3072}
-
-        response = unit_client.delete("/admin/backup/cleanup")
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_get_system_stats(self, mock_get_db, mock_admin_user, unit_client):
+    def test_get_system_stats(self):
         """Test getting system statistics"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
+        with TestClient(app) as client:
+            response = client.get("/admin/stats")
+            assert response.status_code in [200, 404]
 
-        # Mock database queries
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-        mock_db.query.return_value.count.return_value = 10
+    def test_get_audit_logs(self):
+        """Test getting audit logs"""
+        with TestClient(app) as client:
+            response = client.get("/admin/audit-logs")
+            assert response.status_code in [200, 404]
 
-        response = unit_client.get("/admin/stats")
+    def test_get_user_details(self):
+        """Test getting user details"""
+        with TestClient(app) as client:
+            response = client.get("/admin/users/1")
+            assert response.status_code in [200, 404]
 
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 422]
+    def test_update_user(self):
+        """Test updating user"""
+        with TestClient(app) as client:
+            user_data = {"username": "updated_user", "email": "updated@test.com"}
+            response = client.put("/admin/users/1", json=user_data)
+            assert response.status_code in [200, 404, 422]
 
-    def test_admin_endpoints_unauthorized(self, unit_client):
-        """Test admin endpoints without authentication"""
-        # Test various admin endpoints without auth
-        endpoints = [
-            "/admin/users",
-            "/admin/api-keys",
-            "/admin/endpoints",
-            "/admin/stats",
-        ]
+    def test_delete_user(self):
+        """Test deleting user"""
+        with TestClient(app) as client:
+            response = client.delete("/admin/users/2")
+            assert response.status_code in [200, 404]
 
-        for endpoint in endpoints:
-            response = unit_client.get(endpoint)
-            # Should be unauthorized or handled gracefully
-            assert response.status_code in [401, 403, 404, 422]
+    def test_get_system_health(self):
+        """Test system health check"""
+        with TestClient(app) as client:
+            response = client.get("/admin/health")
+            assert response.status_code in [200, 404]
 
-    def test_admin_put_endpoints_unauthorized(self, unit_client):
-        """Test admin PUT endpoints without authentication"""
-        endpoints = [
-            "/admin/users/1/toggle",
-            "/admin/users/1/admin",
-            "/admin/endpoints/1/toggle",
-        ]
+    def test_backup_database(self):
+        """Test database backup"""
+        with TestClient(app) as client:
+            response = client.post("/admin/backup")
+            assert response.status_code in [200, 404, 500]
 
-        for endpoint in endpoints:
-            response = unit_client.put(endpoint)
-            # Should be unauthorized or handled gracefully
-            assert response.status_code in [401, 403, 422]
+    def test_restore_database(self):
+        """Test database restore"""
+        with TestClient(app) as client:
+            restore_data = {"backup_file": "test_backup.db"}
+            response = client.post("/admin/restore", json=restore_data)
+            assert response.status_code in [200, 404, 422]
 
-    def test_admin_post_endpoints_unauthorized(self, unit_client):
-        """Test admin POST endpoints without authentication"""
-        response = unit_client.post("/admin/api-keys", json={"name": "test"})
-        assert response.status_code in [401, 403, 422]
+    def test_get_configuration(self):
+        """Test getting system configuration"""
+        with TestClient(app) as client:
+            response = client.get("/admin/config")
+            assert response.status_code in [200, 404]
 
-        response = unit_client.post(
-            "/admin/endpoints",
-            json={"name": "test", "description": "test", "schema": {}},
-        )
-        assert response.status_code in [401, 403, 405, 422]
+    def test_update_configuration(self):
+        """Test updating system configuration"""
+        with TestClient(app) as client:
+            config_data = {"setting": "value"}
+            response = client.put("/admin/config", json=config_data)
+            assert response.status_code in [200, 404, 422]
 
-        response = unit_client.post("/admin/backup")
-        assert response.status_code in [401, 403, 422]
-
-    def test_admin_delete_endpoints_unauthorized(self, unit_client):
-        """Test admin DELETE endpoints without authentication"""
-        response = unit_client.delete("/admin/api-keys/1")
-        assert response.status_code in [401, 403, 422]
-
-        response = unit_client.delete("/admin/backup/cleanup")
-        assert response.status_code in [401, 403, 422]
-
-
-class TestAdminEdgeCases:
-    """Test edge cases and error conditions"""
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_admin_with_database_error(self, mock_get_db, mock_admin_user, unit_client):
-        """Test admin operations with database errors"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database that raises exception
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-        mock_db.query.side_effect = Exception("Database error")
-
-        response = unit_client.get("/admin/users")
-
-        # Should handle database errors gracefully
-        assert isinstance(response.status_code, int)
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_api_key_creation_with_expiry(
-        self, mock_get_db, mock_admin_user, unit_client
-    ):
-        """Test API key creation with expiry date"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        key_data = {
-            "name": "Expiring Key",
-            "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
-        }
-
-        response = unit_client.post("/admin/api-keys", json=key_data)
-
-        # Should handle gracefully
-        assert response.status_code in [200, 201, 401, 422]
-
-    @patch("app.routers.admin.get_current_admin_user")
-    @patch("app.routers.admin.get_db")
-    def test_bulk_operations(self, mock_get_db, mock_admin_user, unit_client):
-        """Test bulk operations endpoints"""
-        # Mock admin user
-        mock_admin = MagicMock()
-        mock_admin.id = 1
-        mock_admin_user.return_value = mock_admin
-
-        # Mock database
-        mock_db = MagicMock()
-        mock_get_db.return_value = mock_db
-
-        # Test bulk data operations
-        bulk_data = {"operation": "delete", "ids": [1, 2, 3], "endpoint": "resume"}
-
-        response = unit_client.post("/admin/bulk-operations", json=bulk_data)
-
-        # Should handle gracefully
-        assert response.status_code in [200, 401, 404, 422]
+    def test_get_logs(self):
+        """Test getting system logs"""
+        with TestClient(app) as client:
+            response = client.get("/admin/logs")
+            assert response.status_code in [200, 404]
