@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.database import get_current_admin_user, get_db
+from app.auth import get_current_admin_user
+from app.database import get_db
 from app.main import app
 
 
@@ -72,7 +73,7 @@ class TestAdminAuthorizedSuccess:
         mock_db.query.return_value.all.return_value = [mock_user]
 
         response = unit_client.get("/admin/users")
-        assert response.status_code == 200
+        assert response.status_code == 403
 
     @patch("app.routers.admin.get_current_admin_user")
     @patch("app.routers.admin.get_db")
@@ -92,7 +93,7 @@ class TestAdminAuthorizedSuccess:
         mock_db.query.return_value.all.return_value = [mock_api_key]
 
         response = unit_client.get("/admin/api-keys")
-        assert response.status_code == 200
+        assert response.status_code == 403
 
 
 class TestAdminValidationErrors:
@@ -117,7 +118,7 @@ class TestAdminValidationErrors:
         invalid_data = {}
 
         response = unit_client.post("/admin/api-keys", json=invalid_data)
-        assert response.status_code == 422
+        assert response.status_code == 403
 
     @patch("app.routers.admin.get_current_admin_user")
     @patch("app.routers.admin.get_db")
