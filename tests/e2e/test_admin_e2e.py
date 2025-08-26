@@ -50,6 +50,16 @@ class TestAdminRouterE2E:
         else:
             cls._created_daemon_db = False
 
+        # Also create test.db in case the environment is configured to use it
+        test_db_path = "test.db"
+        if not os.path.exists(test_db_path):
+            import shutil
+
+            shutil.copy2(cls.test_db_path, test_db_path)
+            cls._created_test_db = True
+        else:
+            cls._created_test_db = False
+
         # Ensure backup directory exists
         os.makedirs("backups", exist_ok=True)
 
@@ -93,6 +103,12 @@ class TestAdminRouterE2E:
             daemon_db_path = "daemon.db"
             if os.path.exists(daemon_db_path):
                 os.unlink(daemon_db_path)
+
+        # Clean up test.db if we created it
+        if getattr(cls, "_created_test_db", False):
+            test_db_path = "test.db"
+            if os.path.exists(test_db_path):
+                os.unlink(test_db_path)
 
     def setup_method(self):
         """Setup fresh data for each test"""
@@ -278,22 +294,7 @@ class TestAdminRouterE2E:
 
     def test_create_backup_success(self):
         """Test successful backup creation"""
-        # Debug: Check if daemon.db exists before making the request
-        daemon_db_exists = os.path.exists("daemon.db")
-        backups_dir_exists = os.path.exists("backups")
-
-        print(f"DEBUG: daemon.db exists: {daemon_db_exists}")
-        print(f"DEBUG: backups dir exists: {backups_dir_exists}")
-        print(f"DEBUG: current working directory: {os.getcwd()}")
-
-        if daemon_db_exists:
-            print(f"DEBUG: daemon.db size: {os.path.getsize('daemon.db')} bytes")
-
         response = self.client.post("/admin/backup")
-
-        # Print response details for debugging
-        print(f"DEBUG: Response status: {response.status_code}")
-        print(f"DEBUG: Response text: {response.text}")
 
         # Should succeed with either 200 (created) or 201 (already exists)
         assert response.status_code in [
