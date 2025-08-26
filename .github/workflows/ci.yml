@@ -52,15 +52,10 @@ jobs:
         db.close()
         "
 
-    - name: Run working tests for coverage (excluding unit tests until they are fixed)
+    - name: Run all tests with coverage
       run: |
-        # Run only working E2E tests that don't require complex setup
-        python -m pytest tests/e2e/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
-
-    - name: Run E2E tests only (excluding unit tests)
-      run: |
-        # Run E2E tests but exclude unit tests directory until they are fixed
-        python -m pytest tests/ --ignore=tests/unit/ -v --tb=short || echo "Some E2E tests failed but CI continues"
+        # Run all tests with coverage reporting
+        python -m pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html --tb=short
 
     - name: Generate coverage badge and summary
       if: matrix.python-version == '3.12'
