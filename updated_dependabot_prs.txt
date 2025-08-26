@@ -1,0 +1,7 @@
+8	chore(deps): bump actions/github-script from 6 to 7	dependabot/github_actions/actions/github-script-7	OPEN	2025-08-25T22:23:23Z
+6	chore(deps): bump python-jose[cryptography] from 3.3.0 to 3.5.0	dependabot/pip/python-jose-cryptography--3.5.0	OPEN	2025-08-25T01:41:04Z
+5	chore(deps): bump uvicorn[standard] from 0.24.0 to 0.35.0	dependabot/pip/uvicorn-standard--0.35.0	OPEN	2025-08-25T01:40:47Z
+4	chore(deps): bump prometheus-client from 0.19.0 to 0.22.1	dependabot/pip/prometheus-client-0.22.1	OPEN	2025-08-25T01:40:45Z
+3	chore(deps): bump httpx from 0.25.2 to 0.28.1	dependabot/pip/httpx-0.28.1	OPEN	2025-08-25T01:40:17Z
+2	chore(deps): bump click from 8.1.7 to 8.1.8	dependabot/pip/click-8.1.8	OPEN	2025-08-25T01:40:14Z
+1	chore(deps): bump python from 3.11-slim to 3.13-slim	dependabot/docker/python-3.13-slim	OPEN	2025-08-25T01:39:15Z
