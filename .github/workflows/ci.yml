@@ -19,96 +19,96 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-    - name: Create test database
-      run: |
-        mkdir -p data
-        python -c "
-        from app.database import engine, Base, create_default_endpoints, SessionLocal
-        Base.metadata.create_all(bind=engine)
-        db = SessionLocal()
-        create_default_endpoints(db)
-        db.close()
-        "
+      - name: Create test database
+        run: |
+          mkdir -p data
+          python -c "
+          from app.database import engine, Base, create_default_endpoints, SessionLocal
+          Base.metadata.create_all(bind=engine)
+          db = SessionLocal()
+          create_default_endpoints(db)
+          db.close()
+          "
 
-    - name: Run working tests for coverage (excluding unit tests until they are fixed)
-      run: |
-        # Run only working E2E tests that don't require complex setup
-        python -m pytest tests/e2e/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
+      - name: Run working tests for coverage (excluding unit tests until they are fixed)
+        run: |
+          # Run only working E2E tests that don't require complex setup
+          python -m pytest tests/e2e/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
 
-    - name: Run E2E tests only (excluding unit tests)
-      run: |
-        # Run E2E tests but exclude unit tests directory until they are fixed
-        python -m pytest tests/ --ignore=tests/unit/ -v --tb=short || echo "Some E2E tests failed but CI continues"
+      - name: Run E2E tests only (excluding unit tests)
+        run: |
+          # Run E2E tests but exclude unit tests directory until they are fixed
+          python -m pytest tests/ --ignore=tests/unit/ -v --tb=short || echo "Some E2E tests failed but CI continues"
 
-    - name: Generate coverage badge and summary
-      if: matrix.python-version == '3.12'
-      run: |
-        # Extract coverage percentage
-        COVERAGE=$(python -c "
-        import xml.etree.ElementTree as ET
-        tree = ET.parse('coverage.xml')
-        root = tree.getroot()
-        line_rate = float(root.attrib['line-rate'])
-        print(f'{line_rate * 100:.1f}')
-        ")
-        echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
-        echo "Coverage: $COVERAGE%"
+      - name: Generate coverage badge and summary
+        if: matrix.python-version == '3.12'
+        run: |
+          # Extract coverage percentage
+          COVERAGE=$(python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          line_rate = float(root.attrib['line-rate'])
+          print(f'{line_rate * 100:.1f}')
+          ")
+          echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Coverage: $COVERAGE%"
 
-        # Create coverage summary
-        echo "## 📊 Coverage Report" > coverage-summary.md
-        echo "" >> coverage-summary.md
-        echo "**Total Coverage: $COVERAGE%**" >> coverage-summary.md
-        echo "" >> coverage-summary.md
-        echo "### Coverage by Module:" >> coverage-summary.md
-        echo "\`\`\`" >> coverage-summary.md
-        python -m coverage report --format=text >> coverage-summary.md
-        echo "\`\`\`" >> coverage-summary.md
+          # Create coverage summary
+          echo "## 📊 Coverage Report" > coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "**Total Coverage: $COVERAGE%**" >> coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "### Coverage by Module:" >> coverage-summary.md
+          echo "\`\`\`" >> coverage-summary.md
+          python -m coverage report --format=text >> coverage-summary.md
+          echo "\`\`\`" >> coverage-summary.md
 
-    - name: Upload coverage reports
-      if: matrix.python-version == '3.12'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-reports
-        path: |
-          coverage.xml
-          htmlcov/
-          coverage-summary.md
+      - name: Upload coverage reports
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov/
+            coverage-summary.md
 
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
 
-    - name: Comment coverage on PR
-      if: matrix.python-version == '3.12' && github.event_name == 'pull_request'
-      continue-on-error: true
-      uses: actions/github-script@v7
-      with:
+      - name: Comment coverage on PR
+        if: matrix.python-version == '3.12' && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
         script: |
           try {
             const fs = require('fs');
@@ -126,103 +126,103 @@ jobs:
             // Continue without failing the workflow
           }
 
-    - name: Check coverage threshold
-      if: matrix.python-version == '3.12'
-      run: |
-        COVERAGE=${{ env.COVERAGE_PERCENTAGE }}
-        THRESHOLD=40.0
-        echo "Current coverage: $COVERAGE%"
-        echo "Required threshold: $THRESHOLD%"
+      - name: Check coverage threshold
+        if: matrix.python-version == '3.12'
+        run: |
+          COVERAGE=${{ env.COVERAGE_PERCENTAGE }}
+          THRESHOLD=40.0
+          echo "Current coverage: $COVERAGE%"
+          echo "Required threshold: $THRESHOLD%"
 
-        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-          echo "❌ Coverage $COVERAGE% is below required threshold of $THRESHOLD%"
-          echo "Please add more tests to improve coverage."
-          exit 1
-        else
-          echo "✅ Coverage $COVERAGE% meets the required threshold of $THRESHOLD%"
-        fi
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below required threshold of $THRESHOLD%"
+            echo "Please add more tests to improve coverage."
+            exit 1
+          else
+            echo "✅ Coverage $COVERAGE% meets the required threshold of $THRESHOLD%"
+          fi
 
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-lint-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-lint-
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-lint-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-lint-
 
-    - name: Install linting dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+      - name: Install linting dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
 
-    - name: Run Black (code formatting check)
-      run: black --check --diff app/ tests/
+      - name: Run Black (code formatting check)
+        run: black --check --diff app/ tests/
 
-    - name: Run isort (import sorting check)
-      run: isort --check-only --diff app/ tests/
+      - name: Run isort (import sorting check)
+        run: isort --check-only --diff app/ tests/
 
-    - name: Run flake8 (linting)
-      run: flake8 app/ tests/
+      - name: Run flake8 (linting)
+        run: flake8 app/ tests/
 
-    - name: Run mypy (type checking)
-      run: mypy app/ --config-file=mypy-ci.ini
+      - name: Run mypy (type checking)
+        run: mypy app/ --config-file=mypy-ci.ini
 
-    - name: Run bandit (security linting)
-      run: bandit -r app/ -f json -o bandit-report.json || true
+      - name: Run bandit (security linting)
+        run: bandit -r app/ -f json -o bandit-report.json || true
 
-    - name: Upload bandit report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: bandit-security-report
-        path: bandit-report.json
+      - name: Upload bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
 
   security:
     name: Security Checks
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-    - name: Run safety (dependency vulnerability check)
-      run: safety check --json --output safety-report.json || true
+      - name: Run safety (dependency vulnerability check)
+        run: safety check --json --output safety-report.json || true
 
-    - name: Run pip-audit (dependency audit)
-      run: pip-audit --format=json --output=pip-audit-report.json || true
+      - name: Run pip-audit (dependency audit)
+        run: pip-audit --format=json --output=pip-audit-report.json || true
 
-    - name: Upload security reports
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-reports
-        path: |
-          safety-report.json
-          pip-audit-report.json
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            pip-audit-report.json
 
   docker:
     name: Docker Build
@@ -230,134 +230,134 @@ jobs:
     needs: [test, lint]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    # Fast build and test for pull requests (single platform, no push)
-    - name: Build and test Docker image (PR only)
-      if: github.event_name == 'pull_request'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64
-        load: true
-        tags: daemon:pr-test
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      # Fast build and test for pull requests (single platform, no push)
+      - name: Build and test Docker image (PR only)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: daemon:pr-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Test Docker image (PR only)
-      if: github.event_name == 'pull_request'
-      run: |
-        echo "🐳 Testing Docker image for PR..."
+      - name: Test Docker image (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🐳 Testing Docker image for PR..."
 
-        # Start container
-        docker run -d --name daemon-pr-test -p 8004:8004 daemon:pr-test
-        sleep 15
+          # Start container
+          docker run -d --name daemon-pr-test -p 8004:8004 daemon:pr-test
+          sleep 15
 
-        # Test endpoints
-        curl -f http://localhost:8004/health && echo "✅ Health check passed"
-        curl -f http://localhost:8004/docs && echo "✅ API docs accessible"
+          # Test endpoints
+          curl -f http://localhost:8004/health && echo "✅ Health check passed"
+          curl -f http://localhost:8004/docs && echo "✅ API docs accessible"
 
-        # Cleanup
-        docker stop daemon-pr-test && docker rm daemon-pr-test
-        echo "🎉 PR Docker tests passed!"
+          # Cleanup
+          docker stop daemon-pr-test && docker rm daemon-pr-test
+          echo "🎉 PR Docker tests passed!"
 
-    - name: Login to Docker Hub
-      id: docker_login
-      if: github.event_name != 'pull_request'
-      continue-on-error: true
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        id: docker_login
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata
-      id: meta
-      if: steps.docker_login.outcome == 'success'
-      uses: docker/metadata-action@v5
-      with:
-        images: |
-          ${{ secrets.DOCKER_USERNAME }}/daemon
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata
+        id: meta
+        if: steps.docker_login.outcome == 'success'
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKER_USERNAME }}/daemon
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: Build and push Docker image
-      if: steps.docker_login.outcome == 'success'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Docker image
+        if: steps.docker_login.outcome == 'success'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Build Docker image (no push)
-      if: steps.docker_login.outcome != 'success'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64  # Single platform for speed
-        load: true  # Load into Docker for testing
-        tags: daemon:test
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build Docker image (no push)
+        if: steps.docker_login.outcome != 'success'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64  # Single platform for speed
+          load: true  # Load into Docker for testing
+          tags: daemon:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Test Docker image
-      if: steps.docker_login.outcome != 'success'
-      run: |
-        echo "Testing Docker image functionality..."
+      - name: Test Docker image
+        if: steps.docker_login.outcome != 'success'
+        run: |
+          echo "Testing Docker image functionality..."
 
-        # Start container in background
-        docker run -d --name daemon-test -p 8004:8004 daemon:test
+          # Start container in background
+          docker run -d --name daemon-test -p 8004:8004 daemon:test
 
-        # Wait for container to be ready with proper health check loop
-        echo "Waiting for container to be ready..."
-        timeout=60
-        counter=0
-        while [ $counter -lt $timeout ]; do
-          if curl -s http://localhost:8004/health > /dev/null 2>&1; then
-            echo "✅ Container is ready after $counter seconds"
-            break
+          # Wait for container to be ready with proper health check loop
+          echo "Waiting for container to be ready..."
+          timeout=60
+          counter=0
+          while [ $counter -lt $timeout ]; do
+            if curl -s http://localhost:8004/health > /dev/null 2>&1; then
+              echo "✅ Container is ready after $counter seconds"
+              break
+            fi
+            echo "Waiting for health endpoint... ($counter/$timeout)"
+            sleep 2
+            counter=$((counter + 2))
+          done
+
+          if [ $counter -ge $timeout ]; then
+            echo "❌ Container failed to start within $timeout seconds"
+            echo "Container logs:"
+            docker logs daemon-test
+            docker stop daemon-test
+            docker rm daemon-test
+            exit 1
           fi
-          echo "Waiting for health endpoint... ($counter/$timeout)"
-          sleep 2
-          counter=$((counter + 2))
-        done
 
-        if [ $counter -ge $timeout ]; then
-          echo "❌ Container failed to start within $timeout seconds"
+          # Test health endpoint
+          echo "Testing health endpoint..."
+          curl -f http://localhost:8004/health || exit 1
+
+          # Test API docs endpoint
+          echo "Testing API docs..."
+          curl -f http://localhost:8004/docs || exit 1
+
+          # Check container logs
           echo "Container logs:"
           docker logs daemon-test
+
+          # Stop and cleanup
           docker stop daemon-test
           docker rm daemon-test
-          exit 1
-        fi
 
-        # Test health endpoint
-        echo "Testing health endpoint..."
-        curl -f http://localhost:8004/health || exit 1
-
-        # Test API docs endpoint
-        echo "Testing API docs..."
-        curl -f http://localhost:8004/docs || exit 1
-
-        # Check container logs
-        echo "Container logs:"
-        docker logs daemon-test
-
-        # Stop and cleanup
-        docker stop daemon-test
-        docker rm daemon-test
-
-        echo "✅ Docker image tests passed!"
+          echo "✅ Docker image tests passed!"
 
   # Note: Deployment jobs are disabled until server infrastructure is configured
   # deploy-staging:
@@ -415,48 +415,48 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Get version from pyproject.toml
-      id: version
-      run: |
-        VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
-        echo "version=v$VERSION" >> $GITHUB_OUTPUT
+      - name: Get version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
 
-    - name: Check if tag exists
-      id: tag_check
-      run: |
-        if git rev-parse "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "exists=false" >> $GITHUB_OUTPUT
-        fi
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git rev-parse "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Create Release
-      if: steps.tag_check.outputs.exists == 'false'
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.version.outputs.version }}
-        name: Release ${{ steps.version.outputs.version }}
-        body: |
-          ## What's Changed
+      - name: Create Release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## What's Changed
 
-          * Automated release from main branch
-          * All tests passing ✅
-          * Security checks completed ✅
-          * Successfully deployed to production ✅
+            * Automated release from main branch
+            * All tests passing [PASS]
+            * Security checks completed [PASS]
+            * Successfully deployed to production [PASS]
 
-          ## Docker Image
+            ## Docker Image
 
-          ```bash
-          docker pull ${{ secrets.DOCKER_USERNAME }}/daemon:${{ steps.version.outputs.version }}
-          ```
+            ```bash
+            docker pull ${{ secrets.DOCKER_USERNAME }}/daemon:${{ steps.version.outputs.version }}
+            ```
 
-          See [CHANGES.md](CHANGES.md) for detailed changelog.
+            See [CHANGES.md](CHANGES.md) for detailed changelog.
         draft: false
         prerelease: false

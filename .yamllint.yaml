@@ -42,3 +42,12 @@ rules:
   braces:
     min-spaces-inside: 0
     max-spaces-inside: 1
+
+  # Disable some strict checks that interfere with GitHub Actions content
+  quoted-strings: disable
+  truthy: disable
+
+# Ignore patterns for files with complex multi-line content
+ignore: |
+  # Ignore complex shell scripts in workflow files
+  *.yml:*:syntax
