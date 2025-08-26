@@ -38,6 +38,21 @@ class TestAdminRouterE2E:
         # Create tables
         Base.metadata.create_all(bind=cls.engine)
 
+        # Create the expected daemon.db file for backup functionality
+        # This ensures the backup function can find the database file
+        daemon_db_path = "daemon.db"
+        if not os.path.exists(daemon_db_path):
+            # Copy our test database to the expected location
+            import shutil
+
+            shutil.copy2(cls.test_db_path, daemon_db_path)
+            cls._created_daemon_db = True
+        else:
+            cls._created_daemon_db = False
+
+        # Ensure backup directory exists
+        os.makedirs("backups", exist_ok=True)
+
         # Override dependencies
         def override_get_db():
             try:
@@ -72,6 +87,12 @@ class TestAdminRouterE2E:
         # Close file descriptor and remove test database
         os.close(cls.test_db_fd)
         os.unlink(cls.test_db_path)
+
+        # Clean up daemon.db if we created it
+        if getattr(cls, "_created_daemon_db", False):
+            daemon_db_path = "daemon.db"
+            if os.path.exists(daemon_db_path):
+                os.unlink(daemon_db_path)
 
     def setup_method(self):
         """Setup fresh data for each test"""
