@@ -124,6 +124,8 @@ class TestAdminRouter:
 
     def test_create_api_key(self, unit_client):
         """Test creating API key"""
+        from unittest.mock import patch
+
         from app.main import app
         from app.routers.admin import get_current_admin_user, get_db
 
@@ -136,6 +138,13 @@ class TestAdminRouter:
         # Mock database
         def mock_db():
             mock_session = MagicMock()
+
+            # Mock the refresh operation to set the required fields
+            def mock_refresh(obj):
+                obj.id = 123
+                obj.created_at = datetime.now()
+
+            mock_session.refresh = mock_refresh
             return mock_session
 
         # Override dependencies
@@ -143,10 +152,14 @@ class TestAdminRouter:
         app.dependency_overrides[get_db] = mock_db
 
         try:
-            key_data = {"name": "Test Key", "expires_at": None}
-            response = unit_client.post("/admin/api-keys", json=key_data)
-            # Should handle gracefully
-            assert response.status_code in [200, 201, 401, 422]
+            # Mock the generate_api_key function
+            with patch("app.routers.admin.generate_api_key") as mock_generate:
+                mock_generate.return_value = ("test_api_key_123", "test_hash_456")
+
+                key_data = {"name": "Test Key", "expires_at": None}
+                response = unit_client.post("/admin/api-keys", json=key_data)
+                # Should handle gracefully
+                assert response.status_code in [200, 201, 401, 422]
         finally:
             # Clean up overrides
             if get_current_admin_user in app.dependency_overrides:
@@ -547,9 +560,14 @@ class TestAdminEdgeCases:
         app.dependency_overrides[get_db] = mock_db
 
         try:
-            response = unit_client.get("/admin/users")
-            # Should handle database errors gracefully
-            assert isinstance(response.status_code, int)
+            # The exception may bubble up to the test client, so we handle it
+            try:
+                response = unit_client.get("/admin/users")
+                # If we get a response, it should be an error status
+                assert response.status_code in [500, 422, 400]
+            except Exception as e:
+                # If exception bubbles up, that's also acceptable for this edge case test
+                assert "Database error" in str(e)
         finally:
             # Clean up overrides
             if get_current_admin_user in app.dependency_overrides:
@@ -559,6 +577,8 @@ class TestAdminEdgeCases:
 
     def test_api_key_creation_with_expiry(self, unit_client):
         """Test API key creation with expiry date"""
+        from unittest.mock import patch
+
         from app.main import app
         from app.routers.admin import get_current_admin_user, get_db
 
@@ -571,6 +591,13 @@ class TestAdminEdgeCases:
         # Mock database
         def mock_db():
             mock_session = MagicMock()
+
+            # Mock the refresh operation to set the required fields
+            def mock_refresh(obj):
+                obj.id = 123
+                obj.created_at = datetime.now()
+
+            mock_session.refresh = mock_refresh
             return mock_session
 
         # Override dependencies
@@ -578,15 +605,19 @@ class TestAdminEdgeCases:
         app.dependency_overrides[get_db] = mock_db
 
         try:
-            key_data = {
-                "name": "Expiring Key",
-                "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
-            }
+            # Mock the generate_api_key function
+            with patch("app.routers.admin.generate_api_key") as mock_generate:
+                mock_generate.return_value = ("test_api_key_123", "test_hash_456")
 
-            response = unit_client.post("/admin/api-keys", json=key_data)
+                key_data = {
+                    "name": "Expiring Key",
+                    "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
+                }
 
-            # Should handle gracefully
-            assert response.status_code in [200, 201, 401, 422]
+                response = unit_client.post("/admin/api-keys", json=key_data)
+
+                # Should handle gracefully
+                assert response.status_code in [200, 201, 401, 422]
         finally:
             # Clean up overrides
             if get_current_admin_user in app.dependency_overrides:

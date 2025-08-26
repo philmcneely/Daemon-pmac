@@ -2,6 +2,7 @@
 Management routes for admin operations
 """
 
+import logging
 import os
 import shutil
 from datetime import datetime, timedelta, timezone
@@ -24,6 +25,7 @@ from ..schemas import (
 from ..utils import cleanup_old_backups, create_backup
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
+logger = logging.getLogger(__name__)
 
 
 # User management
@@ -321,6 +323,22 @@ async def list_backups(current_user: User = Depends(get_current_admin_user)):
     backups.sort(key=lambda x: cast(datetime, x["created_at"]), reverse=True)
 
     return {"backups": backups}
+
+
+@router.delete("/backup/cleanup")
+async def cleanup_old_backup_files(
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Clean up old backup files based on retention policy"""
+    try:
+        result = cleanup_old_backups()
+        return result
+    except Exception as e:
+        logger.error(f"Backup cleanup failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Backup cleanup failed: {str(e)}",
+        )
 
 
 @router.post("/restore/{backup_filename}")

@@ -59,8 +59,9 @@ class TestResumeCommands:
         assert result.exit_code == 0
         assert "Resume management commands" in result.output
 
+    @patch("app.resume_loader.load_resume_from_file")
     @patch("app.resume_loader.check_resume_file_exists")
-    def test_resume_check_command(self, mock_check):
+    def test_resume_check_command(self, mock_check, mock_load):
         """Test resume check command"""
         runner = CliRunner()
         mock_check.return_value = {
@@ -68,6 +69,18 @@ class TestResumeCommands:
             "exists": True,
             "file_path": "/path/to/resume.json",
             "readable": True,
+            "size_bytes": 1024,
+            "last_modified": 1640995200.0,
+            "default_location": False,
+        }
+        mock_load.return_value = {
+            "success": True,
+            "data": {
+                "name": "Test User",
+                "title": "Software Engineer",
+                "experience": [{"company": "Test Corp"}],
+                "education": [{"school": "Test University"}],
+            },
         }
 
         result = runner.invoke(cli, ["resume", "check"])
@@ -75,8 +88,9 @@ class TestResumeCommands:
         assert result.exit_code == 0
         mock_check.assert_called_once()
 
+    @patch("app.resume_loader.load_resume_from_file")
     @patch("app.resume_loader.check_resume_file_exists")
-    def test_resume_check_with_file(self, mock_check):
+    def test_resume_check_with_file(self, mock_check, mock_load):
         """Test resume check command with specific file"""
         runner = CliRunner()
         mock_check.return_value = {
@@ -84,6 +98,18 @@ class TestResumeCommands:
             "exists": True,
             "file_path": "custom_resume.json",
             "readable": True,
+            "size_bytes": 2048,
+            "last_modified": 1640995200.0,
+            "default_location": False,
+        }
+        mock_load.return_value = {
+            "success": True,
+            "data": {
+                "name": "Custom User",
+                "title": "Senior Engineer",
+                "experience": [{"company": "Custom Corp"}],
+                "education": [{"school": "Custom University"}],
+            },
         }
 
         result = runner.invoke(cli, ["resume", "check", "--file", "custom_resume.json"])
@@ -98,9 +124,11 @@ class TestResumeCommands:
         mock_import.return_value = {
             "success": True,
             "message": "Resume imported successfully",
+            "file_path": "resume.json",
+            "entry_id": 123,
         }
 
-        result = runner.invoke(cli, ["resume", "import", "resume.json"])
+        result = runner.invoke(cli, ["resume", "import-file", "--file", "resume.json"])
 
         assert result.exit_code == 0
         assert "successfully" in result.output
@@ -109,12 +137,21 @@ class TestResumeCommands:
     def test_resume_import_with_replace(self, mock_import):
         """Test resume import with replace flag"""
         runner = CliRunner()
-        mock_import.return_value = {"success": True}
+        mock_import.return_value = {
+            "success": True,
+            "file_path": "resume.json",
+            "entry_id": 124,
+            "replaced_entries": 2,
+        }
 
-        result = runner.invoke(cli, ["resume", "import", "resume.json", "--replace"])
+        result = runner.invoke(
+            cli, ["resume", "import-file", "--file", "resume.json", "--replace"]
+        )
 
         assert result.exit_code == 0
-        mock_import.assert_called_with("resume.json", replace_existing=True)
+        mock_import.assert_called_with(
+            file_path="resume.json", user_id=None, replace_existing=True
+        )
 
     @patch("app.resume_loader.get_resume_from_database")
     def test_resume_show_command(self, mock_get):
@@ -122,7 +159,17 @@ class TestResumeCommands:
         runner = CliRunner()
         mock_get.return_value = {
             "success": True,
-            "data": {"personal": {"name": "Test User"}, "experience": []},
+            "count": 1,
+            "entries": [{"id": 1, "created_at": "2024-01-01 12:00:00"}],
+            "data": [
+                {
+                    "name": "Test User",
+                    "title": "Engineer",
+                    "experience": [{"company": "Test Corp"}],
+                    "education": [{"school": "Test University"}],
+                    "updated_at": "2024-01-01 12:00:00",
+                }
+            ],
         }
 
         result = runner.invoke(cli, ["resume", "show"])
@@ -143,29 +190,53 @@ class TestDatabaseCommands:
         assert result.exit_code == 0
         assert "Database management commands" in result.output
 
-    @patch("app.database.init_db")
-    def test_db_init_command(self, mock_init):
+    @patch("app.cli.create_default_endpoints")
+    @patch("app.cli.SessionLocal")
+    @patch("app.cli.init_db")
+    def test_db_init_command(
+        self, mock_init, mock_session_local, mock_create_endpoints
+    ):
         """Test database initialization command"""
         runner = CliRunner()
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
 
         result = runner.invoke(cli, ["db", "init"])
 
         assert result.exit_code == 0
         mock_init.assert_called_once()
+        mock_create_endpoints.assert_called_once_with(mock_db)
+        mock_db.close.assert_called_once()
 
-    @patch("app.database.init_db")
-    def test_db_reset_command_with_confirmation(self, mock_init):
+    @patch("app.cli.create_default_endpoints")
+    @patch("app.cli.SessionLocal")
+    @patch("app.cli.init_db")
+    @patch("os.remove")
+    @patch("os.path.exists")
+    def test_db_reset_command_with_confirmation(
+        self,
+        mock_exists,
+        mock_remove,
+        mock_init,
+        mock_session_local,
+        mock_create_endpoints,
+    ):
         """Test database reset with confirmation"""
         runner = CliRunner()
+        mock_exists.return_value = True
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
 
         # Simulate user typing 'yes'
         result = runner.invoke(cli, ["db", "reset"], input="yes\n")
 
         assert result.exit_code == 0
         assert "successfully" in result.output
+        mock_remove.assert_called_once()
         mock_init.assert_called_once()
+        mock_create_endpoints.assert_called_once_with(mock_db)
 
-    @patch("app.database.init_db")
+    @patch("app.cli.init_db")
     def test_db_reset_command_cancelled(self, mock_init):
         """Test database reset cancelled"""
         runner = CliRunner()
@@ -173,8 +244,8 @@ class TestDatabaseCommands:
         # Simulate user typing 'no'
         result = runner.invoke(cli, ["db", "reset"], input="no\n")
 
-        assert result.exit_code == 0
-        assert "cancelled" in result.output
+        assert result.exit_code == 1
+        assert "Aborted" in result.output
         mock_init.assert_not_called()
 
 
@@ -190,8 +261,8 @@ class TestUserCommands:
         assert result.exit_code == 0
         assert "User management commands" in result.output
 
-    @patch("app.database.SessionLocal")
-    @patch("app.auth.get_password_hash")
+    @patch("app.cli.SessionLocal")
+    @patch("app.cli.get_password_hash")
     def test_user_create_command(self, mock_hash, mock_session_factory):
         """Test user creation command"""
         runner = CliRunner()
@@ -200,14 +271,15 @@ class TestUserCommands:
         mock_session_factory.return_value = mock_session
         mock_hash.return_value = "hashed_password"
 
+        # Mock the User query to return None (no existing user)
+        mock_session.query.return_value.filter.return_value.first.return_value = None
+
         result = runner.invoke(
             cli,
             [
                 "user",
                 "create",
-                "--username",
                 "testuser",
-                "--email",
                 "test@example.com",
                 "--password",
                 "testpass123",
@@ -216,8 +288,8 @@ class TestUserCommands:
 
         assert result.exit_code == 0
 
-    @patch("app.database.SessionLocal")
-    @patch("app.auth.get_password_hash")
+    @patch("app.cli.SessionLocal")
+    @patch("app.cli.get_password_hash")
     def test_user_create_admin(self, mock_hash, mock_session_factory):
         """Test admin user creation"""
         runner = CliRunner()
@@ -226,14 +298,15 @@ class TestUserCommands:
         mock_session_factory.return_value = mock_session
         mock_hash.return_value = "hashed_password"
 
+        # Mock the User query to return None (no existing user)
+        mock_session.query.return_value.filter.return_value.first.return_value = None
+
         result = runner.invoke(
             cli,
             [
                 "user",
                 "create",
-                "--username",
                 "admin",
-                "--email",
                 "admin@example.com",
                 "--password",
                 "adminpass123",
@@ -243,17 +316,25 @@ class TestUserCommands:
 
         assert result.exit_code == 0
 
-    @patch("app.database.SessionLocal")
+    @patch("app.cli.SessionLocal")
     def test_user_list_command(self, mock_session_factory):
         """Test user listing command"""
         runner = CliRunner()
 
         mock_session = MagicMock()
         mock_user1 = MagicMock(
-            username="user1", email="user1@example.com", is_admin=False
+            id=1,
+            username="user1",
+            email="user1@example.com",
+            is_admin=False,
+            is_active=True,
         )
         mock_user2 = MagicMock(
-            username="admin", email="admin@example.com", is_admin=True
+            id=2,
+            username="admin",
+            email="admin@example.com",
+            is_admin=True,
+            is_active=True,
         )
         mock_session.query.return_value.all.return_value = [mock_user1, mock_user2]
         mock_session_factory.return_value = mock_session
