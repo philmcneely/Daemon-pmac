@@ -419,9 +419,31 @@ class TestEndpointCommands:
 
         assert result.exit_code == 0
 
-    def test_endpoint_list_command(self):
+    @patch("app.cli.SessionLocal")
+    def test_endpoint_list_command(self, mock_session):
         """Test endpoint listing command"""
         runner = CliRunner()
+
+        # Mock database session and endpoints
+        mock_db = MagicMock()
+        mock_session.return_value = mock_db
+
+        # Mock endpoint objects
+        mock_endpoint1 = MagicMock()
+        mock_endpoint1.id = 1
+        mock_endpoint1.name = "resume"
+        mock_endpoint1.description = "Resume data"
+        mock_endpoint1.is_active = True
+        mock_endpoint1.is_public = True
+
+        mock_endpoint2 = MagicMock()
+        mock_endpoint2.id = 2
+        mock_endpoint2.name = "skills"
+        mock_endpoint2.description = "Skills data"
+        mock_endpoint2.is_active = True
+        mock_endpoint2.is_public = False
+
+        mock_db.query.return_value.all.return_value = [mock_endpoint1, mock_endpoint2]
 
         result = runner.invoke(cli, ["endpoint", "list"])
 
@@ -518,16 +540,17 @@ class TestDataCommands:
 
         assert result.exit_code == 0
 
+    @patch("app.cli.SessionLocal")
     @patch("app.utils.export_endpoint_data")
-    def test_data_export_command(self, mock_export):
+    def test_data_export_command(self, mock_export, mock_session):
         """Test data export command"""
         runner = CliRunner()
 
-        mock_export.return_value = {
-            "success": True,
-            "data": [{"test": "data"}],
-            "count": 1,
-        }
+        # Mock database session
+        mock_db = MagicMock()
+        mock_session.return_value = mock_db
+
+        mock_export.return_value = "test data content"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output_file = os.path.join(temp_dir, "export.json")
@@ -538,16 +561,17 @@ class TestDataCommands:
 
             assert result.exit_code == 0
 
+    @patch("app.cli.SessionLocal")
     @patch("app.utils.export_endpoint_data")
-    def test_data_export_csv_format(self, mock_export):
+    def test_data_export_csv_format(self, mock_export, mock_session):
         """Test data export in CSV format"""
         runner = CliRunner()
 
-        mock_export.return_value = {
-            "success": True,
-            "data": [{"name": "Item", "value": 100}],
-            "count": 1,
-        }
+        # Mock database session
+        mock_db = MagicMock()
+        mock_session.return_value = mock_db
+
+        mock_export.return_value = "name,value\nItem,100"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output_file = os.path.join(temp_dir, "export.csv")
