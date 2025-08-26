@@ -465,8 +465,8 @@ class TestImportAllUsers:
         for i in range(2):
             user = User(
                 id=i + 1,
-                username=f"user{i+1}",
-                email=f"user{i+1}@example.com",
+                username=f"user{i + 1}",
+                email=f"user{i + 1}@example.com",
                 hashed_password="hashed",
                 is_active=True,
                 is_admin=False,
@@ -478,12 +478,12 @@ class TestImportAllUsers:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create directories and files for both users
             for i in range(2):
-                user_dir = os.path.join(temp_dir, f"user{i+1}")
+                user_dir = os.path.join(temp_dir, f"user{i + 1}")
                 os.makedirs(user_dir)
 
                 test_file = os.path.join(user_dir, "resume.json")
                 with open(test_file, "w") as f:
-                    json.dump({"name": f"User {i+1}"}, f)
+                    json.dump({"name": f"User {i + 1}"}, f)
 
             result = import_all_users_data(temp_dir)
             assert isinstance(result, dict)
