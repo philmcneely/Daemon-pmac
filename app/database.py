@@ -381,6 +381,43 @@ def create_default_endpoints(db: Session):
             },
         },
         {
+            "name": "projects",
+            "description": "Personal and professional projects with markdown support",
+            "schema": {
+                "title": {"type": "string", "required": True},
+                "description": {"type": "string"},
+                "content": {"type": "string"},  # Markdown content
+                "category": {"type": "string"},
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "planning",
+                        "in_progress",
+                        "completed",
+                        "on_hold",
+                        "cancelled",
+                    ],
+                },
+                "tags": {"type": "array", "items": {"type": "string"}},
+                "start_date": {"type": "string"},
+                "end_date": {"type": "string"},
+                "technologies": {"type": "array", "items": {"type": "string"}},
+                "links": {
+                    "type": "object",
+                    "properties": {
+                        "github": {"type": "string"},
+                        "demo": {"type": "string"},
+                        "documentation": {"type": "string"},
+                        "website": {"type": "string"},
+                    },
+                },
+                "team_size": {"type": "integer"},
+                "role": {"type": "string"},
+                "outcomes": {"type": "array", "items": {"type": "string"}},
+                "featured": {"type": "boolean"},
+            },
+        },
+        {
             "name": "looking_for",
             "description": "Things currently looking for or seeking",
             "schema": {

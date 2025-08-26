@@ -335,6 +335,7 @@ GET /api/v1/skills/users/pmac
 - `GET /api/v1/ideas` - Ideas and thoughts
 - `GET /api/v1/problems` - Problems seeking solutions
 - `GET /api/v1/looking_for` - What you're actively seeking
+- `GET /api/v1/projects` - Project portfolio and work examples
 
 ### 🔐 Privacy-Aware Endpoints
 
