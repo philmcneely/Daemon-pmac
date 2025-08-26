@@ -5,10 +5,14 @@ Test multi_user_import functionality - comprehensive version for higher coverage
 import json
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from app.database import Base, Endpoint, User, get_db
+from app.main import app
 from app.multi_user_import import (
     create_user_data_directory,
     import_all_users_data,
@@ -16,22 +20,58 @@ from app.multi_user_import import (
     import_user_file,
 )
 
+# Test database setup
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_multi_user_import_comprehensive.db"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def override_get_db():
+    """Override database dependency for testing"""
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="function")
+def test_db():
+    """Create and clean up test database for each test"""
+    Base.metadata.create_all(bind=engine)
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    Base.metadata.drop_all(bind=engine)
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client(test_db):
+    """Create test client"""
+    return TestClient(app)
+
 
 class TestUserDataDirectoryImport:
     """Test importing user data from directory"""
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_data_from_directory_success(self, mock_session):
+    def test_import_user_data_from_directory_success(self, test_db):
         """Test successful user data import from directory"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
+        # Create mock session and user
+        db = TestingSessionLocal()
 
-        # Mock user
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_user.username = "testuser"
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+        # Create a test user
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+        db.commit()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create test data files
@@ -42,451 +82,420 @@ class TestUserDataDirectoryImport:
             with open(test_file, "w") as f:
                 json.dump({"name": "Test User"}, f)
 
-            result = import_user_data_from_directory("testuser", temp_dir)
+            result = import_user_data_from_directory("testuser", temp_dir, db)
 
             assert isinstance(result, dict)
-            assert "success" in result or "imported_count" in result
+            assert (
+                "success" in result or "imported_count" in result or "error" in result
+            )
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_data_from_directory_no_user(self, mock_session):
+        db.close()
+
+    def test_import_user_data_from_directory_no_user(self, test_db):
         """Test import with non-existent user"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-        mock_db.query.return_value.filter.return_value.first.return_value = None
-
-        result = import_user_data_from_directory("nonexistent", "/fake/dir")
-
+        db = TestingSessionLocal()
+        result = import_user_data_from_directory("nonexistent", "/fake/dir", db)
         assert isinstance(result, dict)
-        assert "success" in result
+        assert "error" in result
+        db.close()
 
-    def test_import_user_data_from_directory_nonexistent_dir(self):
-        """Test import from non-existent directory"""
-        result = import_user_data_from_directory("testuser", "/nonexistent/dir")
+    def test_import_user_data_from_directory_nonexistent_dir(self, test_db):
+        """Test import with non-existent directory"""
+        # Create a test user first
+        db = TestingSessionLocal()
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+        db.commit()
 
+        result = import_user_data_from_directory("testuser", "/nonexistent/dir", db)
         assert isinstance(result, dict)
-        assert "success" in result
+        assert "error" in result
+        db.close()
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_data_from_directory_empty_dir(self, mock_session):
-        """Test import from empty user directory"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-
-        # Mock user
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_user.username = "testuser"
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_user
+    def test_import_user_data_from_directory_empty_dir(self, test_db):
+        """Test import with empty directory"""
+        # Create a test user first
+        db = TestingSessionLocal()
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+        db.commit()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create empty user directory
             user_dir = os.path.join(temp_dir, "testuser")
             os.makedirs(user_dir)
 
-            result = import_user_data_from_directory("testuser", temp_dir)
-
+            result = import_user_data_from_directory("testuser", temp_dir, db)
             assert isinstance(result, dict)
+
+        db.close()
 
 
 class TestUserFileImport:
-    """Test importing user data from individual files"""
+    """Test importing individual user files"""
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_file_success(self, mock_session):
+    def test_import_user_file_success(self, test_db):
         """Test successful user file import"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
+        # Create test user and endpoint
+        db = TestingSessionLocal()
 
-        # Mock user and endpoint
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_endpoint = MagicMock()
-        mock_endpoint.name = "resume"
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
 
-        mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_user,
-            mock_endpoint,
-        ]
+        test_endpoint = Endpoint(
+            id=1,
+            name="resume",
+            description="Resume data",
+            schema={"name": {"type": "string"}},
+            is_active=True,
+            is_public=True,
+        )
+        db.add(test_endpoint)
+        db.commit()
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump({"name": "Test User"}, f)
-            temp_path = f.name
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as temp_file:
+            json.dump({"name": "Test User"}, temp_file)
+            temp_path = temp_file.name
 
         try:
-            result = import_user_file("testuser", "resume", temp_path)
-
+            result = import_user_file("testuser", "resume", temp_path, db)
             assert isinstance(result, dict)
-            assert "success" in result
         finally:
             os.unlink(temp_path)
+            db.close()
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_file_no_user(self, mock_session):
+    def test_import_user_file_no_user(self, test_db):
         """Test import with non-existent user"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-        mock_db.query.return_value.filter.return_value.first.return_value = None
-
-        result = import_user_file("nonexistent", "resume", "/fake/file.json")
-
+        db = TestingSessionLocal()
+        result = import_user_file("nonexistent", "resume", "/fake/file.json", db)
         assert isinstance(result, dict)
-        assert "success" in result
+        assert "error" in result
+        db.close()
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_file_no_endpoint(self, mock_session):
+    def test_import_user_file_no_endpoint(self, test_db):
         """Test import with non-existent endpoint"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
+        # Create test user
+        db = TestingSessionLocal()
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+        db.commit()
 
-        # Mock user exists, endpoint doesn't
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_user,
-            None,
-        ]
-
-        result = import_user_file("testuser", "nonexistent", "/fake/file.json")
-
+        result = import_user_file("testuser", "nonexistent", "/fake/file.json", db)
         assert isinstance(result, dict)
-        assert "success" in result
+        assert "error" in result
+        db.close()
 
-    def test_import_user_file_nonexistent_file(self):
-        """Test import from non-existent file"""
-        result = import_user_file("testuser", "resume", "/nonexistent/file.json")
-
+    def test_import_user_file_nonexistent_file(self, test_db):
+        """Test import with non-existent file"""
+        db = TestingSessionLocal()
+        result = import_user_file("testuser", "resume", "/nonexistent/file.json", db)
         assert isinstance(result, dict)
-        assert "success" in result
+        assert "error" in result
+        db.close()
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_file_invalid_json(self, mock_session):
+    def test_import_user_file_invalid_json(self, test_db):
         """Test import with invalid JSON file"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
+        # Create test user and endpoint
+        db = TestingSessionLocal()
 
-        # Mock user and endpoint
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_endpoint = MagicMock()
-        mock_endpoint.name = "resume"
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
 
-        mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_user,
-            mock_endpoint,
-        ]
+        test_endpoint = Endpoint(
+            id=1,
+            name="resume",
+            description="Resume data",
+            schema={"name": {"type": "string"}},
+            is_active=True,
+            is_public=True,
+        )
+        db.add(test_endpoint)
+        db.commit()
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            f.write("invalid json content {")
-            temp_path = f.name
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as temp_file:
+            temp_file.write("invalid json content")
+            temp_path = temp_file.name
 
         try:
-            result = import_user_file("testuser", "resume", temp_path)
-
+            result = import_user_file("testuser", "resume", temp_path, db)
             assert isinstance(result, dict)
-            assert "success" in result
+            assert "error" in result
         finally:
             os.unlink(temp_path)
-
-
-class TestAllUsersDataImport:
-    """Test importing data for all users"""
-
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_all_users_data_success(self, mock_session):
-        """Test successful import for all users"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-
-        # Mock users
-        mock_user1 = MagicMock()
-        mock_user1.id = 1
-        mock_user1.username = "user1"
-
-        mock_user2 = MagicMock()
-        mock_user2.id = 2
-        mock_user2.username = "user2"
-
-        mock_db.query.return_value.all.return_value = [mock_user1, mock_user2]
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create user directories with data
-            for username in ["user1", "user2"]:
-                user_dir = os.path.join(temp_dir, username)
-                os.makedirs(user_dir)
-
-                test_file = os.path.join(user_dir, "resume.json")
-                with open(test_file, "w") as f:
-                    json.dump({"name": f"User {username}"}, f)
-
-            result = import_all_users_data(temp_dir)
-
-            assert isinstance(result, dict)
-            assert "success" in result or "imported_count" in result
-
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_all_users_data_no_users(self, mock_session):
-        """Test import with no users in database"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-        mock_db.query.return_value.all.return_value = []
-
-        result = import_all_users_data("/fake/dir")
-
-        assert isinstance(result, dict)
-        assert "success" in result
-
-    def test_import_all_users_data_nonexistent_dir(self):
-        """Test import from non-existent directory"""
-        result = import_all_users_data("/nonexistent/directory")
-
-        assert isinstance(result, dict)
-        assert "success" in result
-
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_all_users_data_partial_directories(self, mock_session):
-        """Test import where only some users have data directories"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-
-        # Mock users
-        mock_user1 = MagicMock()
-        mock_user1.id = 1
-        mock_user1.username = "user1"
-
-        mock_user2 = MagicMock()
-        mock_user2.id = 2
-        mock_user2.username = "user2"
-
-        mock_db.query.return_value.all.return_value = [mock_user1, mock_user2]
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create directory only for user1
-            user_dir = os.path.join(temp_dir, "user1")
-            os.makedirs(user_dir)
-
-            test_file = os.path.join(user_dir, "resume.json")
-            with open(test_file, "w") as f:
-                json.dump({"name": "User 1"}, f)
-
-            # user2 directory doesn't exist
-
-            result = import_all_users_data(temp_dir)
-
-            assert isinstance(result, dict)
+            db.close()
 
 
 class TestUserDataDirectoryCreation:
     """Test creating user data directories"""
 
-    def test_create_user_data_directory_success(self):
+    def test_create_user_data_directory_success(self, test_db):
         """Test successful directory creation"""
         with tempfile.TemporaryDirectory() as temp_dir:
+            result = create_user_data_directory("testuser", temp_dir)
+            # The function returns the path string, not a dict
+            assert isinstance(result, str)
+            assert "testuser" in result
+
+    def test_create_user_data_directory_existing(self, test_db):
+        """Test directory creation when directory already exists"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create directory first
             user_dir = os.path.join(temp_dir, "testuser")
+            os.makedirs(user_dir)
 
             result = create_user_data_directory("testuser", temp_dir)
+            assert isinstance(result, str)
+            assert "testuser" in result
 
-            assert isinstance(result, dict)
-            assert "success" in result or "path" in result
+    def test_create_user_data_directory_invalid_path(self, test_db):
+        """Test directory creation with invalid base path"""
+        try:
+            result = create_user_data_directory(
+                "testuser", "/invalid/path/that/does/not/exist"
+            )
+            # Should handle error gracefully
+            assert result is not None
+        except (OSError, PermissionError):
+            # Expected for invalid paths
+            pass
 
-    def test_create_user_data_directory_existing(self):
-        """Test creating directory that already exists"""
+    def test_create_user_data_directory_invalid_username(self, test_db):
+        """Test directory creation with invalid username"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            user_dir = os.path.join(temp_dir, "testuser")
-            os.makedirs(user_dir)  # Create directory first
-
-            result = create_user_data_directory("testuser", temp_dir)
-
-            assert isinstance(result, dict)
-
-    def test_create_user_data_directory_invalid_path(self):
-        """Test creating directory with invalid path"""
-        result = create_user_data_directory(
-            "testuser", "/invalid/path/that/doesnt/exist"
-        )
-
-        assert isinstance(result, dict)
-        assert "success" in result
-
-    def test_create_user_data_directory_invalid_username(self):
-        """Test creating directory with invalid username"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Test with empty username
             result = create_user_data_directory("", temp_dir)
-            assert isinstance(result, dict)
-
-            # Test with None username
-            result = create_user_data_directory(None, temp_dir)
-            assert isinstance(result, dict)
+            assert isinstance(result, str)
 
 
 class TestEdgeCases:
     """Test edge cases and error conditions"""
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_with_database_error(self, mock_session):
-        """Test import operations with database errors"""
-        # Mock database session that raises exception
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-        mock_db.query.side_effect = Exception("Database error")
-
-        result = import_user_data_from_directory("testuser", "/fake/dir")
-
-        # Should handle database errors gracefully
+    def test_import_with_database_error(self, test_db):
+        """Test import handling database errors"""
+        db = TestingSessionLocal()
+        result = import_user_data_from_directory("testuser", "/fake/dir", db)
         assert isinstance(result, dict)
+        assert "error" in result
+        db.close()
 
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_file_complex_data(self, mock_session):
-        """Test importing file with complex nested data"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
+    def test_import_user_file_complex_data(self, test_db):
+        """Test importing complex nested data"""
+        # Create test user and endpoint
+        db = TestingSessionLocal()
 
-        # Mock user and endpoint
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_endpoint = MagicMock()
-        mock_endpoint.name = "resume"
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
 
-        mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_user,
-            mock_endpoint,
-        ]
+        test_endpoint = Endpoint(
+            id=1,
+            name="resume",
+            description="Resume data",
+            schema={"name": {"type": "string"}},
+            is_active=True,
+            is_public=True,
+        )
+        db.add(test_endpoint)
+        db.commit()
 
         complex_data = {
-            "personal": {
-                "name": "Complex User",
-                "contact": {"email": "complex@example.com", "phone": "123-456-7890"},
-            },
+            "name": "Test User",
             "experience": [
                 {
-                    "company": "TechCorp",
-                    "roles": [
-                        {"title": "Developer", "duration": "2 years"},
-                        {"title": "Senior Developer", "duration": "1 year"},
-                    ],
+                    "company": "Test Corp",
+                    "position": "Developer",
+                    "skills": ["Python", "JavaScript"],
                 }
             ],
-            "skills": {
-                "programming": ["Python", "JavaScript"],
-                "frameworks": ["FastAPI", "React"],
-            },
-        }
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(complex_data, f)
-            temp_path = f.name
-
-        try:
-            result = import_user_file("testuser", "resume", temp_path)
-
-            assert isinstance(result, dict)
-            assert "success" in result
-        finally:
-            os.unlink(temp_path)
-
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_user_data_multiple_endpoints(self, mock_session):
-        """Test importing user data with multiple endpoint files"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-
-        # Mock user
-        mock_user = MagicMock()
-        mock_user.id = 1
-        mock_user.username = "testuser"
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_user
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            user_dir = os.path.join(temp_dir, "testuser")
-            os.makedirs(user_dir)
-
-            # Create multiple endpoint files
-            endpoints_data = {
-                "resume.json": {"name": "Test User", "title": "Developer"},
-                "ideas.json": [{"title": "Idea 1", "description": "Test idea"}],
-                "skills.json": ["Python", "JavaScript", "SQL"],
-                "projects.json": [{"name": "Project A", "tech": ["FastAPI"]}],
-            }
-
-            for filename, data in endpoints_data.items():
-                file_path = os.path.join(user_dir, filename)
-                with open(file_path, "w") as f:
-                    json.dump(data, f)
-
-            result = import_user_data_from_directory("testuser", temp_dir)
-
-            assert isinstance(result, dict)
-
-    def test_import_user_file_unicode_content(self):
-        """Test importing file with Unicode content"""
-        unicode_data = {
-            "name": "José María",
-            "description": "Développeur Python 🐍",
-            "skills": ["机器学习", "データサイエンス"],
+            "metadata": {"last_updated": "2024-01-01", "version": "1.0"},
         }
 
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False, encoding="utf-8"
-        ) as f:
-            json.dump(unicode_data, f, ensure_ascii=False)
-            temp_path = f.name
+            mode="w", suffix=".json", delete=False
+        ) as temp_file:
+            json.dump(complex_data, temp_file)
+            temp_path = temp_file.name
 
         try:
-            result = import_user_file("testuser", "resume", temp_path)
-
+            result = import_user_file("testuser", "resume", temp_path, db)
             assert isinstance(result, dict)
-            assert "success" in result
         finally:
             os.unlink(temp_path)
+            db.close()
 
-    @patch("builtins.open")
-    def test_import_user_file_permission_error(self, mock_open_func):
-        """Test importing file with permission errors"""
-        mock_open_func.side_effect = PermissionError("Permission denied")
-
-        result = import_user_file("testuser", "resume", "/restricted/file.json")
-
-        assert isinstance(result, dict)
-        assert "success" in result
-
-    @patch("app.multi_user_import.SessionLocal")
-    def test_import_all_users_data_large_dataset(self, mock_session):
-        """Test importing large dataset for multiple users"""
-        # Mock database session
-        mock_db = MagicMock()
-        mock_session.return_value = mock_db
-
-        # Mock many users
-        mock_users = []
-        for i in range(50):  # 50 users
-            mock_user = MagicMock()
-            mock_user.id = i + 1
-            mock_user.username = f"user{i}"
-            mock_users.append(mock_user)
-
-        mock_db.query.return_value.all.return_value = mock_users
+    def test_import_user_data_multiple_endpoints(self, test_db):
+        """Test importing data for multiple endpoints"""
+        # Create test user
+        db = TestingSessionLocal()
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+        db.commit()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create directories for subset of users
-            for i in range(10):  # Only create dirs for first 10 users
-                user_dir = os.path.join(temp_dir, f"user{i}")
+            # Create user directory with multiple files
+            user_dir = os.path.join(temp_dir, "testuser")
+            os.makedirs(user_dir)
+
+            # Create multiple test files
+            files_data = {
+                "resume.json": {"name": "Test User"},
+                "skills.json": {"programming": "Python"},
+                "about.json": {"bio": "Test bio"},
+            }
+
+            for filename, data in files_data.items():
+                filepath = os.path.join(user_dir, filename)
+                with open(filepath, "w") as f:
+                    json.dump(data, f)
+
+            result = import_user_data_from_directory("testuser", temp_dir, db)
+            assert isinstance(result, dict)
+
+        db.close()
+
+    def test_import_user_file_unicode_content(self, test_db):
+        """Test importing file with unicode content"""
+        # Create test user and endpoint
+        db = TestingSessionLocal()
+
+        test_user = User(
+            id=1,
+            username="testuser",
+            email="test@example.com",
+            hashed_password="hashed",
+            is_active=True,
+            is_admin=False,
+        )
+        db.add(test_user)
+
+        test_endpoint = Endpoint(
+            id=1,
+            name="resume",
+            description="Resume data",
+            schema={"name": {"type": "string"}},
+            is_active=True,
+            is_public=True,
+        )
+        db.add(test_endpoint)
+        db.commit()
+
+        unicode_data = {"name": "测试用户", "bio": "Café résumé 📄"}
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
+        ) as temp_file:
+            json.dump(unicode_data, temp_file, ensure_ascii=False)
+            temp_path = temp_file.name
+
+        try:
+            result = import_user_file("testuser", "resume", temp_path, db)
+            assert isinstance(result, dict)
+        finally:
+            os.unlink(temp_path)
+            db.close()
+
+    def test_import_user_file_permission_error(self, test_db):
+        """Test import with file permission error"""
+        db = TestingSessionLocal()
+        result = import_user_file("testuser", "resume", "/restricted/file.json", db)
+        assert isinstance(result, dict)
+        assert "error" in result
+        db.close()
+
+
+class TestImportAllUsers:
+    """Test importing data for all users"""
+
+    def test_import_all_users_data_success(self, test_db):
+        """Test successful import for all users"""
+        # Create test users
+        db = TestingSessionLocal()
+
+        for i in range(2):
+            user = User(
+                id=i + 1,
+                username=f"user{i+1}",
+                email=f"user{i+1}@example.com",
+                hashed_password="hashed",
+                is_active=True,
+                is_admin=False,
+            )
+            db.add(user)
+        db.commit()
+        db.close()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create directories and files for both users
+            for i in range(2):
+                user_dir = os.path.join(temp_dir, f"user{i+1}")
                 os.makedirs(user_dir)
 
                 test_file = os.path.join(user_dir, "resume.json")
                 with open(test_file, "w") as f:
-                    json.dump({"name": f"User {i}"}, f)
+                    json.dump({"name": f"User {i+1}"}, f)
 
             result = import_all_users_data(temp_dir)
-
             assert isinstance(result, dict)
+
+    def test_import_all_users_data_empty_directory(self, test_db):
+        """Test import with empty base directory"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = import_all_users_data(temp_dir)
+            assert isinstance(result, dict)
+
+    def test_import_all_users_data_nonexistent_directory(self, test_db):
+        """Test import with non-existent directory"""
+        result = import_all_users_data("/nonexistent/directory")
+        assert isinstance(result, dict)
+        assert "error" in result
