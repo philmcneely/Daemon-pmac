@@ -6,7 +6,7 @@ import json
 import os
 import shutil
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -277,10 +277,12 @@ class TestDataExport:
 
     # @patch("app.utils.DataEntry")
     # @patch("app.utils.Endpoint")
-    def test_export_endpoint_data_json(self):  # , mock_endpoint, mock_data_entry):
+    @patch("app.database.DataEntry")
+    @patch("app.database.Endpoint")
+    def test_export_endpoint_data_json(
+        self, mock_endpoint_class, mock_data_entry_class
+    ):
         """Test exporting endpoint data in JSON format"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
         # Mock database objects
         mock_db = MagicMock()
         mock_endpoint_obj = MagicMock()
@@ -308,12 +310,10 @@ class TestDataExport:
         assert "data" in data
         assert len(data["data"]) == 2
 
-    # @patch("app.utils.DataEntry")
-    # @patch("app.utils.Endpoint")
-    def test_export_endpoint_data_csv(self):  # , mock_endpoint, mock_data_entry):
+    @patch("app.database.DataEntry")
+    @patch("app.database.Endpoint")
+    def test_export_endpoint_data_csv(self, mock_endpoint_class, mock_data_entry_class):
         """Test exporting endpoint data in CSV format"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
         # Mock database objects
         mock_db = MagicMock()
         mock_endpoint_obj = MagicMock()
@@ -339,36 +339,29 @@ class TestDataExport:
         assert len(lines) >= 3  # Header + 2 data rows
         assert "id" in lines[0]  # Header should contain field names
 
-    # @patch("app.utils.DataEntry")
-    # @patch("app.utils.Endpoint")
+    @patch("app.database.DataEntry")
+    @patch("app.database.Endpoint")
     def test_export_endpoint_data_nonexistent_endpoint(
-        self,
-    ):  # , mock_endpoint, mock_data_entry):
+        self, mock_endpoint_class, mock_data_entry_class
+    ):
         """Test exporting data for non-existent endpoint"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
-        # Mock database objects
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = export_endpoint_data(mock_db, "nonexistent", "json")
-
-        # Should return empty result or error message
-        assert result is not None
+        with pytest.raises(ValueError, match="Endpoint 'nonexistent' not found"):
+            export_endpoint_data(mock_db, "nonexistent", "json")
 
 
 class TestDataImport:
     """Test data import functionality"""
 
-    # @patch("app.utils.DataEntry")
-    # @patch("app.utils.Endpoint")
-    # @patch("app.utils.User")
+    @patch("app.database.DataEntry")
+    @patch("app.database.Endpoint")
+    @patch("app.database.User")
     def test_import_endpoint_data_success(
-        self,
-    ):  # , mock_user, mock_endpoint, mock_data_entry):
+        self, mock_user_class, mock_endpoint_class, mock_data_entry_class
+    ):
         """Test successful data import"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
         # Mock database objects
         mock_db = MagicMock()
         mock_endpoint_obj = MagicMock()
@@ -377,35 +370,35 @@ class TestDataImport:
             mock_endpoint_obj
         )
 
-        # Mock data to import
-        data_to_import = [
-            {"id": 1, "name": "Item 1"},
-            {"id": 2, "name": "Item 2"},
-        ]
+        # Mock data to import (as JSON string)
+        data_to_import = json.dumps(
+            [
+                {"id": 1, "name": "Item 1"},
+                {"id": 2, "name": "Item 2"},
+            ]
+        )
 
         result = import_endpoint_data(
             mock_db, "test_endpoint", data_to_import, user_id=1
         )
 
-        assert result["success"] is True
+        assert "imported_count" in result
+        assert "error_count" in result
         assert result["imported_count"] == 2
+        assert result["error_count"] == 0
 
-    # @patch("app.utils.DataEntry")
-    # @patch("app.utils.Endpoint")
+    @patch("app.database.DataEntry")
+    @patch("app.database.Endpoint")
     def test_import_endpoint_data_nonexistent_endpoint(
-        self,
-    ):  # , mock_endpoint, mock_data_entry):
+        self, mock_endpoint_class, mock_data_entry_class
+    ):
         """Test import to non-existent endpoint"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
         # Mock database objects
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = import_endpoint_data(mock_db, "nonexistent", [{"test": "data"}])
-
-        assert result["success"] is False
-        assert "not found" in result["error"]
+        with pytest.raises(ValueError, match="Endpoint 'nonexistent' not found"):
+            import_endpoint_data(mock_db, "nonexistent", json.dumps([{"test": "data"}]))
 
 
 class TestSystemMetrics:
@@ -436,11 +429,9 @@ class TestSystemMetrics:
         assert isinstance(metrics["memory"]["percent"], (int, float))
 
     @patch("app.utils.get_system_metrics")
-    # @patch("app.utils.SessionLocal")
-    def test_health_check(self, mock_get_metrics):  # , mock_session):
+    @patch("app.database.SessionLocal")
+    def test_health_check(self, mock_session, mock_get_metrics):
         """Test health check functionality"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
         # Mock system metrics
         mock_get_metrics.return_value = {
             "cpu_percent": 30.0,
@@ -457,14 +448,29 @@ class TestSystemMetrics:
         assert "status" in health
         assert "timestamp" in health
         assert "checks" in health
-        assert "system_metrics" in health["checks"]
+        assert "backup_dir" in health["checks"]
         assert "database" in health["checks"]
+        assert "disk_space" in health["checks"]
 
     @patch("app.utils.datetime")
     def test_get_uptime(self, mock_datetime):
         """Test uptime calculation"""
-        # Skip this test - app_start_time not available at module level
-        pytest.skip("app_start_time not available at module level")
+        # Mock the current time and startup time (both timezone-aware)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+        # Mock datetime.now to return our test time
+        mock_datetime.now.return_value = mock_now
+
+        # Patch the _startup_time directly with a fixed value
+        with patch(
+            "app.utils._startup_time",
+            datetime(2023, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+        ):
+            uptime = get_uptime()
+
+        assert isinstance(uptime, float)
+        # Should be 2 hours difference (7200 seconds)
+        assert uptime == 7200.0
 
 
 class TestUtilityFunctions:
@@ -659,29 +665,73 @@ class TestSecurityFunctions:
 class TestSingleUserMode:
     """Test single user mode functionality"""
 
-    # @patch("app.utils.User")
-    def test_is_single_user_mode_true(self):  # , mock_user):
+    @patch("app.utils.settings")
+    @patch("app.database.User")
+    def test_is_single_user_mode_true(self, mock_user, mock_settings):
         """Test single user mode detection when true"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
+        # Mock settings for auto mode
+        mock_settings.multi_user_mode = "auto"
 
-    # @patch("app.utils.User")
-    def test_is_single_user_mode_false(self):  # , mock_user):
+        # Mock database session
+        mock_db = MagicMock()
+
+        # Mock query that returns count of 1 (single user)
+        mock_db.query.return_value.filter.return_value.count.return_value = 1
+
+        result = is_single_user_mode(mock_db)
+        assert result is True
+
+    @patch("app.utils.settings")
+    @patch("app.database.User")
+    def test_is_single_user_mode_false(self, mock_user, mock_settings):
         """Test single user mode detection when false"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
+        # Mock settings for auto mode
+        mock_settings.multi_user_mode = "auto"
 
-    # @patch("app.utils.User")
-    def test_get_single_user_exists(self):  # , mock_user):
+        # Mock database session
+        mock_db = MagicMock()
+
+        # Mock query that returns count of 3 (multiple users)
+        mock_db.query.return_value.filter.return_value.count.return_value = 3
+
+        result = is_single_user_mode(mock_db)
+        assert result is False
+
+    @patch("app.database.User")
+    def test_get_single_user_exists(self, mock_user):
         """Test getting single user when exists"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
+        # Mock database session
+        mock_db = MagicMock()
 
-    # @patch("app.utils.User")
-    def test_get_single_user_none(self):  # , mock_user):
+        # Mock user object
+        mock_user_obj = MagicMock()
+        mock_user_obj.id = 1
+        mock_user_obj.username = "single_user"
+
+        # Mock query chain for count (returns 1) and first() (returns user)
+        # The function calls query twice: once for count, once for first
+        mock_query = mock_db.query.return_value
+        mock_filter = mock_query.filter.return_value
+        mock_filter.count.return_value = 1
+        mock_filter.first.return_value = mock_user_obj
+
+        result = get_single_user(mock_db)
+        assert result == mock_user_obj
+        assert result.username == "single_user"
+
+    @patch("app.database.User")
+    def test_get_single_user_none(self, mock_user):
         """Test getting single user when none exists"""
-        # Skip this test - requires complex database mocking
-        pytest.skip("Complex database mocking required")
+        # Mock database session
+        mock_db = MagicMock()
+
+        # Mock query chain for count (returns 0)
+        mock_query = mock_db.query.return_value
+        mock_filter = mock_query.filter.return_value
+        mock_filter.count.return_value = 0
+
+        result = get_single_user(mock_db)
+        assert result is None
 
 
 class TestEdgeCases:
