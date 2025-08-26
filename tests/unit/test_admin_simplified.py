@@ -10,8 +10,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.auth import get_current_admin_user
-from app.database import Base, get_db
+from app.auth import get_current_admin_user, get_password_hash
+from app.database import ApiKey, Base, User, create_default_endpoints, get_db
 from app.main import app
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_admin_simplified.db"
@@ -46,7 +46,45 @@ app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_admin_user] = override_get_current_admin_user
 
 # Create tables
+Base.metadata.drop_all(bind=engine)  # Clear existing data
 Base.metadata.create_all(bind=engine)
+
+# Set up test data
+db = TestingSessionLocal()
+create_default_endpoints(db)
+
+# Create test users
+admin_user = User(
+    id=1,
+    username="admin",
+    email="admin@example.com",
+    hashed_password=get_password_hash("admin123"),
+    is_admin=True,
+    is_active=True,
+)
+regular_user = User(
+    id=2,
+    username="testuser",
+    email="test@example.com",
+    hashed_password=get_password_hash("test123"),
+    is_admin=False,
+    is_active=True,
+)
+db.add(admin_user)
+db.add(regular_user)
+
+# Create test API key
+test_api_key = ApiKey(
+    id=1,
+    name="test-key",
+    key_hash=get_password_hash("test-api-key"),
+    user_id=1,
+    is_active=True,
+)
+db.add(test_api_key)
+
+db.commit()
+db.close()
 
 client = TestClient(app)
 
@@ -64,7 +102,7 @@ class TestAdminRouter:
         """Test toggling user status successfully"""
         response = client.put("/admin/users/2/toggle")
         # Should handle gracefully (user may not exist in test DB)
-        assert response.status_code == 404
+        assert response.status_code == 200
 
     def test_toggle_user_status_not_found(self):
         """Test toggling status of non-existent user"""
@@ -76,13 +114,13 @@ class TestAdminRouter:
         """Test attempting to toggle own status"""
         response = client.put("/admin/users/1/toggle")
         # Should handle gracefully (may be forbidden or error)
-        assert response.status_code == 404
+        assert response.status_code == 400
 
     def test_toggle_admin_status(self):
         """Test toggling admin status"""
         response = client.put("/admin/users/2/admin")
         # Should handle gracefully (user may not exist)
-        assert response.status_code == 404
+        assert response.status_code == 200
 
     def test_list_api_keys(self):
         """Test listing API keys"""
@@ -100,7 +138,7 @@ class TestAdminRouter:
         """Test deleting API key"""
         response = client.delete("/admin/api-keys/1")
         # Should handle gracefully (key may not exist)
-        assert response.status_code == 404
+        assert response.status_code == 200
 
     def test_delete_api_key_not_found(self):
         """Test deleting non-existent API key"""
