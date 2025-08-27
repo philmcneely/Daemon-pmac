@@ -116,7 +116,6 @@ class TestMultiUserEndpoints:
         self._ensure_test_users(test_db_session)
         self._ensure_test_endpoints(test_db_session)
         self._ensure_test_data(test_db_session)
-        self.setup_method(client)
 
         response = client.get("/api/v1/resume")
 
