@@ -88,18 +88,69 @@ Daemon-pmac/
 - **Security headers**: OWASP recommended HTTP headers
 
 ### 📊 Core Endpoints (Based on Original Daemon Project)
-- `/api/v1/resume` - Professional resume and work history
+All endpoints use a standardized `content/meta` schema for flexible markdown content:
+
+- `/api/v1/resume` - Professional resume (structured schema for compatibility)
 - `/api/v1/about` - Personal/entity information
 - `/api/v1/ideas` - Ideas and thoughts
 - `/api/v1/skills` - Skills and expertise
 - `/api/v1/favorite_books` - Book recommendations
 - `/api/v1/problems` - Problems being solved
 - `/api/v1/hobbies` - Hobbies and interests
-- `/api/v1/looking_for` - Things currently seeking
+- `/api/v1/projects` - Personal and professional projects
+- `/api/v1/looking_for` - Things currently seeking (deprecated, use content/meta format)
+
+**Content/Meta Schema**: All endpoints (except resume) follow a consistent pattern:
+```json
+{
+  "content": "# Markdown content here...",
+  "meta": {
+    "title": "Optional title",
+    "date": "2025-08-27",
+    "tags": ["tag1", "tag2"],
+    "status": "active",
+    "visibility": "public"
+  }
+}
+```
+
+## 🏛️ API Architecture Design
+
+### Route Organization
+The API follows a clean separation of concerns with three distinct route namespaces:
+
+```
+/api/v1/*     - Versioned data API endpoints (public/user-facing)
+/admin/*      - Administrative functions (management operations)
+/auth/*       - Authentication and session management
+```
+
+### Design Rationale
+
+**Why `/admin/*` is separate from `/api/v1/admin/*`:**
+
+1. **Security Isolation**: Admin functions require different security policies, rate limiting, and access controls
+2. **Versioning Independence**: Admin operations don't need to follow the same versioning lifecycle as public APIs
+3. **Clear Separation of Concerns**: Data operations vs. administrative operations are fundamentally different
+4. **Industry Best Practice**: Follows patterns used by GitHub, AWS, and other major platforms
+5. **Documentation Clarity**: Admin endpoints can have separate OpenAPI documentation
+
+**Route Examples:**
+```
+Data API:     GET /api/v1/ideas          # User data operations
+Admin API:    GET /admin/users           # System administration
+Auth API:     POST /auth/login           # Authentication
+```
+
+This architecture makes it easier to:
+- Apply different middleware and security policies per namespace
+- Scale and deploy components independently
+- Maintain clear API boundaries for different user types
+- Implement namespace-specific monitoring and alerting
 
 ### 🔌 Extensibility
-- **Dynamic endpoints**: Create new endpoints via API or CLI
-- **Custom schemas**: Define validation rules for each endpoint
+- **Predefined endpoints**: Standard content/meta schema for flexible markdown content
+- **Custom schemas**: Define validation rules for each endpoint type
 - **Bulk operations**: Import/export data in JSON or CSV
 - **MCP support**: Model Context Protocol for AI integration
 
@@ -129,6 +180,22 @@ Daemon-pmac/
 - **Structured logging**: JSON logging with levels
 - **Performance tracking**: Request timing and resource usage
 - **System monitoring**: CPU, memory, and disk usage
+
+## 📋 Recent Architectural Changes
+
+### August 2025: Schema Standardization
+- **Removed Dynamic Endpoint Creation**: Simplified to predefined endpoints with flexible content/meta schema
+- **Standardized Content Format**: All endpoints (except resume) now use consistent markdown + metadata pattern
+- **Enhanced Type Safety**: Added comprehensive mypy checking to pre-commit hooks
+- **Improved Testing**: Full test coverage with security (OWASP) and unit tests
+- **Admin Route Clarification**: Documented separation of `/admin/*` from `/api/v1/*` for better architecture
+
+### Benefits of Current Architecture:
+- **Predictable API Surface**: Fixed set of endpoints reduces complexity
+- **Flexible Content**: Markdown support allows rich content while maintaining structure
+- **Better Security**: Clear separation between user data and admin functions
+- **Type Safety**: MyPy integration prevents runtime type errors
+- **Maintainability**: Simpler codebase with well-defined boundaries
 
 ## Quick Start Commands
 
