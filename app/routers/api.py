@@ -641,11 +641,99 @@ async def add_endpoint_data(
     )
     db.commit()
 
-    return {
+    # Include ownership information in response
+    response = {
         "id": data_entry.id,
         "message": f"Data added to {endpoint_name}",
         "data": data_entry.data,
     }
+
+    # Add created_by information if available
+    if data_entry.created_by:
+        response["created_by"] = data_entry.created_by.username
+
+    return response
+
+
+@router.get("/{endpoint_name}/{item_id}", response_model=Dict[str, Any])
+async def get_endpoint_item(
+    endpoint_name: str,
+    item_id: int,
+    privacy_level: Optional[str] = Query(
+        None,
+        description="Privacy filtering level",
+        enum=["business_card", "professional", "public_full", "ai_safe"],
+    ),
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Get a single item from an endpoint"""
+    from ..utils import get_single_user, is_single_user_mode
+
+    # Find endpoint
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
+    if not endpoint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Endpoint '{endpoint_name}' not found",
+        )
+
+    # Check if endpoint is public or user has access
+    if not endpoint.is_public and not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required for this endpoint",
+        )
+
+    # Find the specific data entry
+    query = db.query(DataEntry).filter(
+        DataEntry.endpoint_id == endpoint.id,
+        DataEntry.id == item_id,
+        DataEntry.is_active == True,
+    )
+
+    # Adaptive user filtering logic
+    if is_single_user_mode(db):
+        # Single-user mode: show all data regardless of owner
+        pass  # No user filtering
+    else:
+        # Multi-user mode: filter by user ownership
+        if current_user:
+            query = query.filter(DataEntry.user_id == current_user.id)
+        else:
+            # Public access in multi-user mode - only show public data
+            query = query.filter(DataEntry.is_public == True)
+
+    data_entry = query.first()
+
+    if not data_entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found in endpoint '{endpoint_name}'",
+        )
+
+    # Apply privacy filtering
+    data = data_entry.data
+    if privacy_level and current_user:
+        # Get user's privacy settings
+        privacy_settings = (
+            db.query(UserPrivacySettings)
+            .filter(UserPrivacySettings.user_id == data_entry.user_id)
+            .first()
+        )
+
+        if privacy_settings:
+            data = mask_sensitive_data(data, privacy_level, privacy_settings)
+
+    # Return item with ID and data fields merged for backward compatibility
+    result = {"id": data_entry.id}
+    result.update(data)
+    return result
 
 
 @router.put("/{endpoint_name}/{item_id}", response_model=Dict[str, Any])

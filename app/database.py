@@ -310,8 +310,24 @@ def create_default_endpoints(db: Session):
             "name": "ideas",
             "description": "Ideas, thoughts, and concepts",
             "schema": {
-                "title": {"type": "string", "required": True},
-                "description": {"type": "string", "required": True},
+                "content": {"type": "string", "required": True},  # Markdown content
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+                # Legacy fields for backward compatibility
+                "title": {"type": "string"},
+                "description": {"type": "string"},
                 "category": {"type": "string"},
                 "status": {
                     "type": "string",

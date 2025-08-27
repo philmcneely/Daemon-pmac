@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class UserBase(BaseModel):
@@ -229,26 +229,6 @@ class LookingForData(BaseModel):
     contact_method: Optional[str] = None
 
 
-# Mapping of endpoint names to their specific models
-ENDPOINT_MODELS = {
-    "resume": ResumeData,
-    "about": AboutData,
-    "ideas": IdeaData,
-    "skills": SkillData,
-    "favorite_books": BookData,
-    "problems": ProblemData,
-    "hobbies": HobbyData,
-    "looking_for": LookingForData,
-}
-
-
-def get_endpoint_model(endpoint_name: str) -> Optional[Type[BaseModel]]:
-    """Get the specific Pydantic model for an endpoint"""
-    from typing import cast
-
-    return cast(Optional[Type[BaseModel]], ENDPOINT_MODELS.get(endpoint_name))
-
-
 # Personal API Flexible Markdown Schemas
 
 
@@ -276,6 +256,59 @@ class PersonalItemUpdate(BaseModel):
 
     content: Optional[str] = Field(None, min_length=1, description="Markdown content")
     meta: Optional[PersonalItemMeta] = None
+
+
+class IdeaFlexibleData(BaseModel):
+    """Flexible schema for ideas supporting both structured and markdown formats"""
+
+    # New flexible markdown pattern (preferred)
+    content: Optional[str] = None
+    meta: Optional[PersonalItemMeta] = None
+
+    # Legacy structured pattern (for backward compatibility)
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    status: Optional[str] = Field(None, pattern=r"^(draft|developing|published)$")
+    tags: Optional[List[str]] = None
+
+    @model_validator(mode="after")
+    def validate_idea_data(self):
+        """Ensure at least content OR title+description is provided"""
+        import html
+
+        # Unescape HTML in content field for markdown
+        if self.content:
+            self.content = html.unescape(self.content)
+            return self
+        elif self.title and self.description:
+            # Legacy format - title and description required
+            return self
+        else:
+            raise ValueError(
+                "Either 'content' (markdown format) or both 'title' and "
+                "'description' (legacy format) must be provided"
+            )
+
+
+# Mapping of endpoint names to their specific models
+ENDPOINT_MODELS = {
+    "resume": ResumeData,
+    "about": AboutData,
+    "ideas": IdeaFlexibleData,  # Updated to use flexible model
+    "skills": SkillData,
+    "favorite_books": BookData,
+    "problems": ProblemData,
+    "hobbies": HobbyData,
+    "looking_for": LookingForData,
+}
+
+
+def get_endpoint_model(endpoint_name: str) -> Optional[Type[BaseModel]]:
+    """Get the specific Pydantic model for an endpoint"""
+    from typing import cast
+
+    return cast(Optional[Type[BaseModel]], ENDPOINT_MODELS.get(endpoint_name))
 
 
 class PersonalItemResponse(BaseModel):
