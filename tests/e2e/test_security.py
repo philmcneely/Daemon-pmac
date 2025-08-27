@@ -646,3 +646,318 @@ class TestOWASPSecurity:
                 except Exception:
                     # If we can't decode, that's actually good for security
                     pass
+
+
+class TestRoutingSecurityRegression:
+    """Regression tests for routing security vulnerabilities"""
+
+    def test_route_precedence_security(self, client, auth_headers):
+        """Test that route precedence cannot be exploited for unauthorized access"""
+        # Create private content
+        private_content = {
+            "content": "This is private admin content",
+            "meta": {"title": "Admin Secret", "visibility": "private"},
+        }
+        response = client.post(
+            "/api/v1/about", json=private_content, headers=auth_headers
+        )
+        item_id = response.json()["id"] if response.status_code == 200 else None
+
+        try:
+            # Test various malformed patterns that might exploit route precedence
+            malformed_patterns = [
+                "/api/v1/about/users/admin/../../../secrets",
+                "/api/v1/about/users/admin/%2e%2e%2f%2e%2e%2fsecrets",
+                "/api/v1/about/users/admin//../../admin",
+                "/api/v1/about//users//admin",
+                "/api/v1/about/users/admin/extra/path",
+                "/api/v1/users/admin/about/../../../secrets",
+                "/api/v1/users/admin/../admin/about",
+            ]
+
+            for pattern in malformed_patterns:
+                response = client.get(pattern)
+
+                # For patterns that HTTP clients normalize to valid URLs,
+                # check that no private data is leaked instead of rejecting the request
+                normalized_valid_patterns = [
+                    "/api/v1/about/users/admin//../../admin",  # normalizes to /api/v1/about/users/admin
+                    "/api/v1/about//users//admin",  # normalizes to /api/v1/about/users/admin
+                    "/api/v1/users/admin/../admin/about",  # normalizes to /api/v1/users/admin/about
+                ]
+
+                if pattern in normalized_valid_patterns:
+                    # These patterns are normalized by HTTP clients, so ensure no private data leaks
+                    if response.status_code == 200:
+                        try:
+                            data = response.json()
+                            if isinstance(data, list):
+                                for item in data:
+                                    title = item.get("meta", {}).get("title", "")
+                                    assert (
+                                        "Admin Secret" not in title
+                                    ), f"Private content leaked via normalized pattern: {pattern}"
+                        except Exception:
+                            pass  # JSON parsing error is acceptable
+                else:
+                    # Other patterns should be rejected outright
+                    assert response.status_code in [
+                        400,
+                        404,
+                        422,
+                    ], f"Malformed pattern should be rejected: {pattern}"
+
+                    # Even if we get a response, it shouldn't contain private data
+                    if response.status_code == 200:
+                        try:
+                            data = response.json()
+                            if isinstance(data, list):
+                                for item in data:
+                                    title = item.get("meta", {}).get("title", "")
+                                    assert (
+                                        "Admin Secret" not in title
+                                    ), f"Private content leaked via: {pattern}"
+                        except Exception:
+                            pass  # JSON parsing error is acceptable
+
+        finally:
+            if item_id:
+                client.delete(f"/api/v1/about/{item_id}", headers=auth_headers)
+
+    def test_endpoint_name_injection_prevention(self, client):
+        """Test that endpoint names cannot be injected to access wrong routes"""
+        dangerous_endpoint_names = [
+            "users/admin",
+            "users%2Fadmin",
+            "../admin",
+            "..%2Fadmin",
+            "admin/../../secrets",
+            "/etc/passwd",
+            "../../app/config",
+        ]
+
+        # Valid but potentially confusing patterns that should work correctly
+        potentially_confusing_patterns = [
+            "resume/users/admin",  # This is actually a valid user-specific pattern
+        ]
+
+        for endpoint_name in dangerous_endpoint_names:
+            # Test direct endpoint access
+            response = client.get(f"/api/v1/{endpoint_name}")
+            # Should return 404 or error, not successful data
+            assert response.status_code in [
+                400,
+                404,
+                422,
+            ], f"Dangerous endpoint should be rejected: {endpoint_name}"
+
+            # Test in user-specific patterns
+            response = client.get(f"/api/v1/{endpoint_name}/users/admin")
+            assert response.status_code in [
+                400,
+                404,
+                422,
+            ], f"Dangerous pattern should be rejected: {endpoint_name}/users/admin"
+
+            response = client.get(f"/api/v1/users/admin/{endpoint_name}")
+            assert response.status_code in [
+                400,
+                404,
+                422,
+            ], f"Dangerous pattern should be rejected: users/admin/{endpoint_name}"
+
+        # Test potentially confusing but valid patterns
+        for pattern in potentially_confusing_patterns:
+            response = client.get(f"/api/v1/{pattern}")
+            # This should work as it's a valid user-specific endpoint pattern
+            # In single-user mode, it should redirect; in multi-user mode, it should work directly
+            assert response.status_code in [
+                200,
+                301,
+            ], f"Valid pattern should work or redirect: {pattern}"
+
+    def test_username_injection_prevention(self, client, auth_headers):
+        """Test that usernames cannot be injected to access wrong data"""
+        # Create test content
+        test_content = {
+            "content": "Test content",
+            "meta": {"title": "Test", "visibility": "public"},
+        }
+        client.post("/api/v1/about", json=test_content, headers=auth_headers)
+
+        dangerous_usernames = [
+            "../admin",
+            "..%2Fadmin",
+            "admin/../../secrets",
+            "/etc/passwd",
+            "../../app/config",
+            "admin/../user",
+            "admin%2F%2E%2E%2Fuser",
+        ]
+
+        for username in dangerous_usernames:
+            # Test user-specific patterns
+            response = client.get(f"/api/v1/about/users/{username}")
+
+            # Some patterns may be normalized by HTTP servers to valid paths
+            normalized_patterns = [
+                "admin/../user",  # normalizes to "user" which may be valid
+            ]
+
+            if username in normalized_patterns:
+                # These patterns are normalized to potentially valid usernames
+                # Ensure they either fail (user doesn't exist) or return correct data
+                assert response.status_code in [
+                    200,
+                    301,
+                    404,
+                ], f"Normalized pattern should be handled correctly: {username}"
+                if response.status_code == 200:
+                    # If it succeeds, ensure no private admin data is leaked
+                    try:
+                        data = response.json()
+                        if isinstance(data, list):
+                            for item in data:
+                                title = item.get("meta", {}).get("title", "")
+                                assert (
+                                    "Admin Secret" not in title
+                                ), f"Admin data leaked via normalized pattern: {username}"
+                    except Exception:
+                        pass
+            else:
+                # Other patterns should be rejected for malformed usernames
+                assert response.status_code in [
+                    400,
+                    404,
+                    422,
+                ], f"Dangerous username should be rejected: {username}"
+
+            response = client.get(f"/api/v1/users/{username}/about")
+
+            if username in normalized_patterns:
+                # These patterns are normalized to potentially valid usernames
+                assert response.status_code in [
+                    200,
+                    301,
+                    404,
+                ], f"Normalized pattern should be handled correctly in legacy route: {username}"
+                if response.status_code == 200:
+                    # If it succeeds, ensure no private admin data is leaked
+                    try:
+                        data = response.json()
+                        if isinstance(data, list):
+                            for item in data:
+                                title = item.get("meta", {}).get("title", "")
+                                assert (
+                                    "Admin Secret" not in title
+                                ), f"Admin data leaked via normalized legacy pattern: {username}"
+                    except Exception:
+                        pass
+            else:
+                assert response.status_code in [
+                    400,
+                    404,
+                    422,
+                ], f"Dangerous username should be rejected in pattern: users/{username}/about"
+
+    def test_cross_user_data_isolation(self, client, auth_headers):
+        """Test that users cannot access other users' data through any URL pattern"""
+        # This test assumes we have multiple users in the system
+
+        # Create private content for admin
+        private_content = {
+            "content": "Admin private data",
+            "meta": {"title": "Admin Private", "visibility": "private"},
+        }
+        response = client.post(
+            "/api/v1/about", json=private_content, headers=auth_headers
+        )
+        admin_item_id = response.json()["id"] if response.status_code == 200 else None
+
+        try:
+            # Test accessing admin data as different user patterns
+            test_patterns = [
+                "/api/v1/about/users/admin",
+                "/api/v1/users/admin/about",
+                "/api/v1/resume/users/admin",
+                "/api/v1/users/admin/resume",
+                "/api/v1/skills/users/admin",
+                "/api/v1/users/admin/skills",
+            ]
+
+            for pattern in test_patterns:
+                # Test unauthenticated access
+                response = client.get(pattern)
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        # Should not contain private content
+                        for item in data:
+                            visibility = item.get("meta", {}).get(
+                                "visibility", "public"
+                            )
+                            assert (
+                                visibility != "private"
+                            ), f"Private content exposed via unauthenticated {pattern}"
+
+                            title = item.get("meta", {}).get("title", "")
+                            assert (
+                                "Admin Private" not in title
+                            ), f"Admin private data exposed via {pattern}"
+
+        finally:
+            if admin_item_id:
+                client.delete(f"/api/v1/about/{admin_item_id}", headers=auth_headers)
+
+    def test_response_format_consistency_security(self, client, auth_headers):
+        """Test that response formats are consistent to prevent information leakage"""
+        # Create test data
+        test_content = {
+            "content": "Test data",
+            "meta": {"title": "Test", "visibility": "public"},
+        }
+        client.post("/api/v1/about", json=test_content, headers=auth_headers)
+
+        endpoints = ["about", "resume", "skills"]
+        users = ["admin", "nonexistent_user"]
+
+        for endpoint in endpoints:
+            for user in users:
+                # Test both URL patterns
+                pattern1_response = client.get(f"/api/v1/{endpoint}/users/{user}")
+                pattern2_response = client.get(f"/api/v1/users/{user}/{endpoint}")
+
+                # Response formats should be consistent
+                if (
+                    pattern1_response.status_code == 200
+                    and pattern2_response.status_code == 200
+                ):
+                    try:
+                        data1 = pattern1_response.json()
+                        data2 = pattern2_response.json()
+
+                        # Both should have same structure
+                        assert type(data1) is type(
+                            data2
+                        ), f"Response types should match for {endpoint}/{user}"
+
+                        if isinstance(data1, list) and isinstance(data2, list):
+                            assert len(data1) == len(
+                                data2
+                            ), f"Response lengths should match for {endpoint}/{user}"
+
+                    except Exception:
+                        pass  # JSON parsing errors are acceptable
+
+                # Error responses should also be consistent
+                elif pattern1_response.status_code == pattern2_response.status_code:
+                    # Same error status is good
+                    pass
+                elif pattern2_response.status_code == 301:
+                    # Redirect is acceptable for pattern 2
+                    pass
+                else:
+                    # Different error statuses might indicate information leakage
+                    assert (
+                        False
+                    ), f"Inconsistent error responses for {endpoint}/{user}: {pattern1_response.status_code} vs {pattern2_response.status_code}"

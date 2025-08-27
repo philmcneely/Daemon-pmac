@@ -1628,3 +1628,312 @@ def test_resume_multi_user_endpoint_patterns(
         # Should show user's data when user is authenticated
         user_data = user_auth_direct.json()
         assert isinstance(user_data, (list, dict))  # Basic structure check
+
+
+class TestURLPatternRegression:
+    """Regression tests for URL pattern consistency and security"""
+
+    def test_url_pattern_consistency(self, client, auth_headers, regular_user_headers):
+        """Test that both URL patterns work identically"""
+        # Ensure we have multiple users for multi-user mode
+        client.post(
+            "/api/v1/resume",
+            json={"name": "Test Admin", "title": "Administrator"},
+            headers=auth_headers,
+        )
+        client.post(
+            "/api/v1/resume",
+            json={"name": "Test User", "title": "User"},
+            headers=regular_user_headers,
+        )
+
+        users = ["admin", "user"]
+        endpoints = ["resume", "about", "skills"]
+
+        for user in users:
+            for endpoint in endpoints:
+                # Pattern 1: /api/v1/{endpoint}/users/{user} (canonical)
+                pattern1_url = f"/api/v1/{endpoint}/users/{user}"
+                # Pattern 2: /api/v1/users/{user}/{endpoint} (legacy redirect)
+                pattern2_url = f"/api/v1/users/{user}/{endpoint}"
+
+                # Test pattern 1 (canonical)
+                response1 = client.get(pattern1_url)
+
+                # Test pattern 2 (should redirect)
+                response2 = client.get(pattern2_url, follow_redirects=False)
+
+                # Pattern 2 should redirect to pattern 1
+                if response2.status_code == 301:
+                    redirect_location = response2.headers.get("Location", "")
+                    assert (
+                        pattern1_url in redirect_location
+                    ), f"Redirect should point to canonical pattern for {endpoint}/{user}"
+
+                    # Follow redirect and compare
+                    response2_follow = client.get(pattern2_url)
+                    assert (
+                        response1.status_code == response2_follow.status_code
+                    ), f"Status codes should match for {endpoint}/{user}"
+
+                    if (
+                        response1.status_code == 200
+                        and response2_follow.status_code == 200
+                    ):
+                        data1 = response1.json()
+                        data2 = response2_follow.json()
+
+                        # Remove timestamps for comparison as they may differ
+                        def clean_data_for_comparison(data):
+                            if isinstance(data, dict):
+                                return {
+                                    k: v for k, v in data.items() if k != "timestamp"
+                                }
+                            elif isinstance(data, list):
+                                return [
+                                    clean_data_for_comparison(item) for item in data
+                                ]
+                            return data
+
+                        clean_data1 = clean_data_for_comparison(data1)
+                        clean_data2 = clean_data_for_comparison(data2)
+                        assert (
+                            clean_data1 == clean_data2
+                        ), f"Data should be identical for {endpoint}/{user}"
+
+    def test_visibility_filtering_consistency(self, client, auth_headers):
+        """Test that visibility filtering works consistently across URL patterns"""
+        # Create test content with different visibility levels
+        test_content = [
+            {
+                "content": "Public content",
+                "meta": {"title": "Public Test", "visibility": "public"},
+            },
+            {
+                "content": "Private content",
+                "meta": {"title": "Private Test", "visibility": "private"},
+            },
+            {
+                "content": "Unlisted content",
+                "meta": {"title": "Unlisted Test", "visibility": "unlisted"},
+            },
+        ]
+
+        created_ids = []
+        for content in test_content:
+            response = client.post("/api/v1/about", json=content, headers=auth_headers)
+            if response.status_code == 200:
+                created_ids.append(response.json()["id"])
+
+        try:
+            # Test both URL patterns for visibility filtering
+            pattern1_response = client.get("/api/v1/about/users/admin")
+            pattern2_response = client.get("/api/v1/users/admin/about")
+
+            if (
+                pattern1_response.status_code == 200
+                and pattern2_response.status_code == 200
+            ):
+                data1 = pattern1_response.json()
+                data2 = pattern2_response.json()
+
+                # Count visible items
+                count1 = len(data1) if isinstance(data1, list) else 1
+                count2 = len(data2) if isinstance(data2, list) else 1
+
+                assert (
+                    count1 == count2
+                ), "Both patterns should show same number of visible items"
+
+                # Check that only public content is visible in unauthenticated requests
+                if isinstance(data1, list):
+                    public_count = sum(
+                        1
+                        for item in data1
+                        if item.get("meta", {}).get("visibility") == "public"
+                        or item.get("meta", {}).get("visibility") is None
+                    )
+                    assert public_count == len(
+                        data1
+                    ), "Only public content should be visible"
+
+        finally:
+            # Cleanup
+            for item_id in created_ids:
+                client.delete(f"/api/v1/about/{item_id}", headers=auth_headers)
+
+    def test_resume_special_behavior_consistency(
+        self, client, auth_headers, regular_user_headers
+    ):
+        """Test that resume endpoint special behavior works consistently"""
+        # Create resume data for both users
+        admin_resume = {
+            "name": "Admin User",
+            "title": "System Administrator",
+            "experience": [{"company": "Test Corp", "position": "Admin"}],
+            "education": [{"institution": "Test University", "degree": "BS"}],
+        }
+        user_resume = {
+            "name": "Regular User",
+            "title": "Developer",
+            "experience": [{"company": "Dev Corp", "position": "Developer"}],
+            "education": [{"institution": "Dev University", "degree": "MS"}],
+        }
+
+        client.post("/api/v1/resume", json=admin_resume, headers=auth_headers)
+        client.post("/api/v1/resume", json=user_resume, headers=regular_user_headers)
+
+        users = ["admin", "user"]
+        for user in users:
+            # Test both patterns
+            pattern1_response = client.get(f"/api/v1/resume/users/{user}")
+            pattern2_response = client.get(f"/api/v1/users/{user}/resume")
+
+            assert (
+                pattern1_response.status_code == 200
+            ), f"Pattern 1 should work for {user}"
+            assert (
+                pattern2_response.status_code == 200
+            ), f"Pattern 2 should work for {user}"
+
+            data1 = pattern1_response.json()
+            data2 = pattern2_response.json()
+
+            # Both should return structured resume data
+            if isinstance(data1, list) and len(data1) > 0:
+                resume1 = data1[0]
+                assert "name" in resume1, f"Resume should have name field for {user}"
+                assert (
+                    "experience" in resume1
+                ), f"Resume should have experience field for {user}"
+                assert (
+                    "education" in resume1
+                ), f"Resume should have education field for {user}"
+
+            if isinstance(data2, list) and len(data2) > 0:
+                resume2 = data2[0]
+                assert "name" in resume2, f"Resume should have name field for {user}"
+
+            # Data should be identical
+            assert (
+                data1 == data2
+            ), f"Resume data should be identical across patterns for {user}"
+
+    def test_privacy_level_parameters(self, client, auth_headers):
+        """Test that privacy level parameters work consistently"""
+        privacy_levels = ["business_card", "professional", "public_full", "ai_safe"]
+
+        # Create resume data
+        resume_data = {
+            "name": "Test User",
+            "title": "Engineer",
+            "contact": {"email": "test@example.com", "phone": "123-456-7890"},
+            "experience": [{"company": "Test Corp"}],
+        }
+        client.post("/api/v1/resume", json=resume_data, headers=auth_headers)
+
+        for level in privacy_levels:
+            # Test both patterns with privacy level
+            pattern1_response = client.get(f"/api/v1/resume/users/admin?level={level}")
+            pattern2_response = client.get(f"/api/v1/users/admin/resume?level={level}")
+
+            # Both should have same status
+            assert (
+                pattern1_response.status_code == pattern2_response.status_code
+            ), f"Status should match for privacy level {level}"
+
+            if pattern1_response.status_code == 200:
+                data1 = pattern1_response.json()
+                data2 = pattern2_response.json()
+                assert (
+                    data1 == data2
+                ), f"Privacy filtered data should be identical for level {level}"
+
+    def test_malformed_url_patterns_rejected(self, client):
+        """Test that malformed URL patterns are properly rejected"""
+        malformed_patterns = [
+            "/api/v1/resume/users/admin/extra",
+            "/api/v1/users/admin/resume/extra",
+            "/api/v1/resume/users/",
+            "/api/v1/users//resume",
+        ]
+
+        # Patterns that get normalized by HTTP servers but should still work securely
+        normalized_patterns = [
+            "/api/v1/resume/users/admin/../user",  # normalizes to /api/v1/resume/users/user
+            "/api/v1/users/admin/../user/resume",  # normalizes to /api/v1/users/user/resume
+        ]
+
+        for pattern in malformed_patterns:
+            response = client.get(pattern)
+            # Should return 404 or other error, not 200
+            assert (
+                response.status_code != 200
+            ), f"Malformed pattern should be rejected: {pattern}"
+            assert response.status_code in [
+                400,
+                404,
+                422,
+            ], f"Should return proper error for: {pattern}"
+
+        for pattern in normalized_patterns:
+            response = client.get(pattern)
+            # These patterns are normalized to valid paths, so they should work or redirect
+            # but should not expose unauthorized data
+            assert response.status_code in [
+                200,
+                301,
+                404,
+            ], f"Normalized pattern should work securely: {pattern}"
+
+    def test_user_isolation_enforcement(
+        self, client, auth_headers, regular_user_headers
+    ):
+        """Test that users cannot access each other's data through URL manipulation"""
+        # Create data for admin user
+        admin_content = {
+            "content": "Admin secret data",
+            "meta": {"title": "Admin Only", "visibility": "private"},
+        }
+        response = client.post(
+            "/api/v1/about", json=admin_content, headers=auth_headers
+        )
+        admin_item_id = response.json()["id"] if response.status_code == 200 else None
+
+        # Create data for regular user
+        user_content = {
+            "content": "User data",
+            "meta": {"title": "User Content", "visibility": "public"},
+        }
+        response = client.post(
+            "/api/v1/about", json=user_content, headers=regular_user_headers
+        )
+        user_item_id = response.json()["id"] if response.status_code == 200 else None
+
+        try:
+            # Test that regular user cannot see admin's private data through any pattern
+            patterns_to_test = [
+                "/api/v1/about/users/admin",
+                "/api/v1/users/admin/about",
+            ]
+
+            for pattern in patterns_to_test:
+                response = client.get(pattern, headers=regular_user_headers)
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        # Should not contain admin's private content
+                        for item in data:
+                            title = item.get("meta", {}).get("title", "")
+                            assert (
+                                "Admin Only" not in title
+                            ), f"Regular user should not see admin private data via {pattern}"
+
+        finally:
+            # Cleanup
+            if admin_item_id:
+                client.delete(f"/api/v1/about/{admin_item_id}", headers=auth_headers)
+            if user_item_id:
+                client.delete(
+                    f"/api/v1/about/{user_item_id}", headers=regular_user_headers
+                )

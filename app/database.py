@@ -305,7 +305,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -326,7 +325,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -347,7 +345,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -368,7 +365,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -389,7 +385,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -410,7 +405,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -431,7 +425,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -452,7 +445,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -474,7 +466,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -495,7 +486,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -516,7 +506,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -537,7 +526,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -558,7 +546,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -579,7 +566,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -600,7 +586,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -621,7 +606,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -642,7 +626,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -663,7 +646,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -684,7 +666,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -705,7 +686,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -726,7 +706,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -747,7 +726,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -768,7 +746,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -789,7 +766,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -810,7 +786,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -831,7 +806,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -852,7 +826,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -873,7 +846,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -894,7 +866,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -918,7 +889,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -942,7 +912,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],
@@ -965,7 +934,6 @@ def create_default_endpoints(db: Session):
                         "title": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
-                        "status": {"type": "string"},
                         "visibility": {
                             "type": "string",
                             "enum": ["public", "unlisted", "private"],

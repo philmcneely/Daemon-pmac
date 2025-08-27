@@ -227,7 +227,6 @@ class PersonalItemMeta(BaseModel):
     title: Optional[str] = None
     date: Optional[str] = None
     tags: Optional[List[str]] = None
-    status: Optional[str] = None
     visibility: Optional[str] = Field(
         default="public", pattern=r"^(public|unlisted|private)$"
     )

@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Type, cast
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -31,6 +32,7 @@ from ..schemas import (
     UserCreate,
     get_endpoint_model,
 )
+from ..security import SecurityError, validate_user_route_security
 from ..utils import mask_sensitive_data, sanitize_data_dict, validate_url
 
 router = APIRouter(
@@ -382,6 +384,298 @@ async def get_system_info(db: Session = Depends(get_db)):
     }
 
 
+# Universal endpoint routing - adapts between single and multi-user modes
+@router.get(
+    "/{endpoint_name}/users/{username}",
+    response_model=List[Dict[str, Any]],
+    summary="Get Public User Content (Clean View)",
+    description="""
+    **Get clean, user-friendly content without internal management IDs**
+
+    This is the **public endpoint** for content consumption. Perfect for displaying
+    content to visitors, embedding in websites, or API consumers who don't need
+    to manage content.
+
+    ### 📖 Content Consumption vs Management
+
+    **This endpoint (Public/Clean View)**:
+    ```
+    GET /api/v1/about/users/blackbeard
+    → Clean content WITHOUT item IDs
+    → No authentication required
+    → Returns: [{"content": "...", "meta": {...}}]
+    → Perfect for: websites, public APIs, content display
+    ```
+
+    **Management endpoint (Authenticated)**:
+    ```
+    GET /api/v1/about (with JWT token)
+    → Content WITH item IDs for management
+    → Authentication required
+    → Returns: {"items": [{"id": "42", "content": "...", ...}]}
+    → Perfect for: content creators, editing, updates
+    ```
+
+    ### 🔄 Adaptive Behavior
+
+    **Single User Mode (≤1 user)**: Redirects to simple endpoints
+    ```
+    /api/v1/about/users/john → redirects to → /api/v1/about
+    ```
+
+    **Multi-User Mode (2+ users)**: Direct access
+    ```
+    /api/v1/about/users/john → works directly
+    /api/v1/skills/users/jane → works directly
+    ```
+
+    ### 🔐 Privacy Filtering
+
+    Automatically applies privacy filtering based on user settings:
+    - **business_card**: Minimal networking info
+    - **professional**: Work-appropriate details
+    - **public_full**: Full public information (default)
+    - **ai_safe**: Safe for AI assistant access
+
+    ### 📊 Response Format
+
+    Returns clean content without internal IDs:
+    ```json
+    [
+      {
+        "content": "# About Me\\n\\nI am a software developer...",
+        "meta": {
+          "title": "About John Doe",
+          "date": "2025-08-27",
+          "tags": ["biography", "personal"],
+          "status": "active",
+          "visibility": "public"
+        }
+      }
+    ]
+    ```
+
+    No `id` field - this is for content consumption, not management.
+    """,
+)
+async def get_specific_user_data_universal(
+    endpoint_name: str,
+    username: str,
+    request: Request,
+    level: str = Query(
+        "public_full",
+        description="Privacy level: business_card, professional, public_full, ai_safe",
+    ),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(50, ge=1, le=100, description="Items per page"),
+    active_only: bool = Query(True, description="Filter active items only"),
+    db: Session = Depends(get_db),
+):
+    """
+    **Public endpoint for clean content display without management IDs**
+
+    Perfect for content consumption - no authentication required.
+    For content management (with item IDs), use the authenticated endpoint instead.
+    """
+    from ..privacy import get_privacy_filter
+    from ..utils import is_single_user_mode
+
+    # SECURITY: Validate endpoint_name and username for path traversal and injection
+    try:
+        validate_user_route_security(username, endpoint_name)
+    except SecurityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # Additional check for any non-alphanumeric characters except underscore and hyphen
+    import re
+
+    if not re.match(r"^[a-zA-Z0-9_-]+$", endpoint_name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Endpoint name contains invalid characters",
+        )
+
+    if not re.match(r"^[a-zA-Z0-9_-]+$", username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username contains invalid characters",
+        )
+
+    # In single-user mode, redirect to the simple endpoint
+    if is_single_user_mode(db):
+        # Preserve query parameters in redirect
+        query_string = str(request.url.query) if request.url.query else ""
+        location = f"/api/v1/{endpoint_name}"
+        if query_string:
+            location += f"?{query_string}"
+
+        raise HTTPException(
+            status_code=status.HTTP_301_MOVED_PERMANENTLY,
+            detail=f"In single-user mode, use /api/v1/{endpoint_name} instead",
+            headers={"Location": location},
+        )
+
+    # Find the user
+    user = (
+        db.query(User).filter(User.username == username, User.is_active == True).first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{username}' not found"
+        )
+
+    # Check AI assistant access permission
+    if level == "ai_safe":
+        privacy_settings = (
+            db.query(UserPrivacySettings)
+            .filter(UserPrivacySettings.user_id == user.id)
+            .first()
+        )
+        if privacy_settings and not privacy_settings.ai_assistant_access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AI assistant access not permitted for this user",
+            )
+
+    # Find endpoint
+    endpoint = (
+        db.query(Endpoint)
+        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
+        .first()
+    )
+
+    if not endpoint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Endpoint '{endpoint_name}' not found",
+        )
+
+    # Only allow access to public endpoints
+    if not endpoint.is_public:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is not publicly accessible",
+        )
+
+    # Query user's data
+    query = db.query(DataEntry).filter(
+        DataEntry.endpoint_id == endpoint.id, DataEntry.created_by_id == user.id
+    )
+
+    if active_only:
+        query = query.filter(DataEntry.is_active == True)
+
+    # Pagination
+    offset = (page - 1) * size
+    data_entries = query.offset(offset).limit(size).all()
+
+    # Apply privacy filtering
+    privacy_filter = get_privacy_filter(db, user)
+    filtered_data = []
+
+    for entry in data_entries:
+        # Check visibility in data.meta first - skip private/unlisted items
+        entry_data: dict[str, Any] = (
+            entry.data if entry.data and isinstance(entry.data, dict) else {}
+        )
+        entry_meta = entry_data.get("meta", {})
+        entry_visibility = entry_meta.get("visibility", "public")
+
+        # Skip private and unlisted items for public endpoints
+        if entry_visibility in ["private", "unlisted"]:
+            continue
+
+        filtered_entry = privacy_filter.filter_data(
+            cast(Dict[str, Any], entry.data),
+            privacy_level=level,
+            is_authenticated=False,
+        )
+        if filtered_entry:
+            # Apply additional sensitive data masking
+            masked_entry = mask_sensitive_data(filtered_entry, level)
+            filtered_data.append(masked_entry)
+
+    # If no visible content found, return appropriate message
+    if not filtered_data:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "No visible content available for this user",
+                "timestamp": datetime.now().isoformat(),
+            },
+        )
+
+    return filtered_data
+
+
+# Create adaptive routing helper
+def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
+    """Get information about how endpoints should be accessed based on user count"""
+    from ..utils import get_single_user, is_single_user_mode
+
+    single_user_mode = is_single_user_mode(db)
+
+    if single_user_mode:
+        single_user = get_single_user(db)
+        return {
+            "mode": "single_user",
+            "user": single_user.username if single_user else None,
+            "endpoint_pattern": "/api/v1/{endpoint_name}",
+            "example": "/api/v1/resume",
+        }
+    else:
+        users = db.query(User).filter(User.is_active == True).all()
+        return {
+            "mode": "multi_user",
+            "users": [user.username for user in users],
+            "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
+            "example": "/api/v1/resume/users/john",
+            "privacy_levels": [
+                "business_card",
+                "professional",
+                "public_full",
+                "ai_safe",
+            ],
+        }
+
+
+def filter_sensitive_data(
+    data: dict,
+    is_authenticated: bool = False,
+    user: Optional[User] = None,
+    db: Optional[Session] = None,
+) -> dict:
+    """
+    Legacy wrapper for the new privacy filtering system
+    Maintains backward compatibility while using enhanced filtering
+    """
+    if db and user:
+        from ..privacy import get_privacy_filter
+
+        privacy_filter = get_privacy_filter(db, user)
+        return privacy_filter.filter_data(
+            data, privacy_level="public_full", is_authenticated=is_authenticated
+        )
+    else:
+        # Fallback to basic filtering if no user context
+        if db is None:
+            # Return data with minimal pattern-based filtering when no db available
+            return {
+                k: v
+                for k, v in data.items()
+                if not any(
+                    pattern in k.lower()
+                    for pattern in ["password", "secret", "token", "key"]
+                )
+            }
+
+        from ..privacy import PrivacyFilter
+
+        basic_filter = PrivacyFilter(db, None)
+        return basic_filter._apply_sensitive_patterns(data)
+
+
 # Data management for endpoints
 @router.get(
     "/{endpoint_name}",
@@ -561,6 +855,14 @@ async def get_endpoint_data(
     """Get data for a specific endpoint"""
     from ..utils import get_single_user, is_single_user_mode
 
+    # SECURITY: Enhanced validation for endpoint_name
+    try:
+        from ..security import validate_endpoint_route_security
+
+        validate_endpoint_route_security(endpoint_name)
+    except SecurityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
     # Handle level parameter as alias for privacy_level (for redirect compatibility)
     if level and privacy_level is None:
         privacy_level = level
@@ -627,6 +929,17 @@ async def get_endpoint_data(
     # Pagination
     offset = (page - 1) * size
     data_entries = query.offset(offset).limit(size).all()
+
+    # Apply visibility filtering for unauthenticated users (including single-user mode)
+    if not current_user:
+        visible_entries = []
+        for entry in data_entries:
+            entry_data = cast(Dict[str, Any], entry.data)
+            meta = entry_data.get("meta", {})
+            visibility = meta.get("visibility", "public")
+            if visibility == "public":
+                visible_entries.append(entry)
+        data_entries = visible_entries
 
     # Apply privacy filtering based on privacy_level parameter or authentication status
     should_apply_privacy = privacy_level is not None or (
@@ -811,6 +1124,30 @@ async def add_endpoint_data(
         # Multi-user mode: always assign to current user
         user_id = current_user.id
 
+    # Auto-generate meta field if missing
+    if "meta" not in data or data["meta"] is None:
+        from datetime import datetime
+
+        data["meta"] = {
+            "title": data.get("meta", {}).get("title", ""),
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "tags": [],
+            "visibility": "public",
+        }
+    elif isinstance(data["meta"], dict):
+        # Ensure required meta fields have defaults
+        meta = data["meta"]
+        if "visibility" not in meta:
+            meta["visibility"] = "public"
+        if "date" not in meta:
+            from datetime import datetime
+
+            meta["date"] = datetime.now().strftime("%Y-%m-%d")
+        if "tags" not in meta:
+            meta["tags"] = []
+        if "title" not in meta:
+            meta["title"] = ""
+
     # Sanitize input
     sanitized_data = sanitize_data_dict(data)
 
@@ -866,7 +1203,7 @@ async def add_endpoint_data(
 @router.get("/{endpoint_name}/{item_id}", response_model=Dict[str, Any])
 async def get_endpoint_item(
     endpoint_name: str,
-    item_id: int,
+    item_id: str,  # Changed to str to validate before conversion
     privacy_level: Optional[str] = Query(
         None,
         description="Privacy filtering level",
@@ -877,6 +1214,27 @@ async def get_endpoint_item(
 ):
     """Get a single item from an endpoint"""
     from ..utils import get_single_user, is_single_user_mode
+
+    # SECURITY: Validate endpoint_name for security issues
+    try:
+        from ..security import InputValidator, validate_endpoint_route_security
+
+        validate_endpoint_route_security(endpoint_name)
+        # Validate item_id for dangerous patterns
+        InputValidator.validate_input_security(item_id, "item_id")
+    except SecurityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # Validate item_id: must be a positive integer
+    try:
+        item_id_int = int(item_id)
+        if item_id_int <= 0:
+            raise ValueError("Item ID must be positive")
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Item ID must be a positive integer",
+        )
 
     # Find endpoint
     endpoint = (
@@ -901,7 +1259,7 @@ async def get_endpoint_item(
     # Find the specific data entry
     query = db.query(DataEntry).filter(
         DataEntry.endpoint_id == endpoint.id,
-        DataEntry.id == item_id,
+        DataEntry.id == item_id_int,  # Use the validated integer
         DataEntry.is_active == True,
     )
 
@@ -923,11 +1281,21 @@ async def get_endpoint_item(
     if not data_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item {item_id} not found in endpoint '{endpoint_name}'",
+            detail=f"Item {item_id_int} not found in endpoint '{endpoint_name}'",
         )
 
     # Apply privacy filtering
     data: Dict[str, Any] = cast(Dict[str, Any], data_entry.data)
+
+    # Check meta.visibility for unauthenticated users
+    if not current_user:
+        meta = data.get("meta", {})
+        visibility = meta.get("visibility", "public")
+        if visibility in ["private", "unlisted"]:
+            return JSONResponse(
+                status_code=200, content={"message": "No visible content available"}
+            )
+
     if privacy_level:
         # Apply masking based on privacy level
         data = mask_sensitive_data(data, privacy_level)
@@ -1022,6 +1390,30 @@ async def update_endpoint_data(
 
     # Store old data for audit
     old_data = cast(Dict[str, Any], data_entry.data).copy()
+
+    # Auto-generate meta field if missing
+    if "meta" not in data or data["meta"] is None:
+        from datetime import datetime
+
+        data["meta"] = {
+            "title": data.get("meta", {}).get("title", ""),
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "tags": [],
+            "visibility": "public",
+        }
+    elif isinstance(data["meta"], dict):
+        # Ensure required meta fields have defaults
+        meta = data["meta"]
+        if "visibility" not in meta:
+            meta["visibility"] = "public"
+        if "date" not in meta:
+            from datetime import datetime
+
+            meta["date"] = datetime.now().strftime("%Y-%m-%d")
+        if "tags" not in meta:
+            meta["tags"] = []
+        if "title" not in meta:
+            meta["title"] = ""
 
     # Sanitize and validate new data
     sanitized_data = sanitize_data_dict(data)
@@ -1211,6 +1603,12 @@ async def get_user_public_data_legacy(
     Legacy user-specific endpoint access (DEPRECATED)
     Use /{endpoint_name}/users/{username} instead for better RESTful design
     """
+    # SECURITY: Validate username and endpoint_name for path traversal and injection
+    try:
+        validate_user_route_security(username, endpoint_name)
+    except SecurityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
     # Build redirect URL with query parameters
     query_params = f"?level={level}&page={page}&size={size}&active_only={active_only}"
     redirect_url = f"/api/v1/{endpoint_name}/users/{username}{query_params}"
@@ -1221,256 +1619,6 @@ async def get_user_public_data_legacy(
         detail=f"Use /api/v1/{endpoint_name}/users/{username} instead",
         headers={"Location": redirect_url},
     )
-
-
-# Universal endpoint routing - adapts between single and multi-user modes
-@router.get(
-    "/{endpoint_name}/users/{username}",
-    response_model=List[Dict[str, Any]],
-    summary="Get Public User Content (Clean View)",
-    description="""
-    **Get clean, user-friendly content without internal management IDs**
-
-    This is the **public endpoint** for content consumption. Perfect for displaying
-    content to visitors, embedding in websites, or API consumers who don't need
-    to manage content.
-
-    ### 📖 Content Consumption vs Management
-
-    **This endpoint (Public/Clean View)**:
-    ```
-    GET /api/v1/about/users/blackbeard
-    → Clean content WITHOUT item IDs
-    → No authentication required
-    → Returns: [{"content": "...", "meta": {...}}]
-    → Perfect for: websites, public APIs, content display
-    ```
-
-    **Management endpoint (Authenticated)**:
-    ```
-    GET /api/v1/about (with JWT token)
-    → Content WITH item IDs for management
-    → Authentication required
-    → Returns: {"items": [{"id": "42", "content": "...", ...}]}
-    → Perfect for: content creators, editing, updates
-    ```
-
-    ### 🔄 Adaptive Behavior
-
-    **Single User Mode (≤1 user)**: Redirects to simple endpoints
-    ```
-    /api/v1/about/users/john → redirects to → /api/v1/about
-    ```
-
-    **Multi-User Mode (2+ users)**: Direct access
-    ```
-    /api/v1/about/users/john → works directly
-    /api/v1/skills/users/jane → works directly
-    ```
-
-    ### 🔐 Privacy Filtering
-
-    Automatically applies privacy filtering based on user settings:
-    - **business_card**: Minimal networking info
-    - **professional**: Work-appropriate details
-    - **public_full**: Full public information (default)
-    - **ai_safe**: Safe for AI assistant access
-
-    ### 📊 Response Format
-
-    Returns clean content without internal IDs:
-    ```json
-    [
-      {
-        "content": "# About Me\\n\\nI am a software developer...",
-        "meta": {
-          "title": "About John Doe",
-          "date": "2025-08-27",
-          "tags": ["biography", "personal"],
-          "status": "active",
-          "visibility": "public"
-        }
-      }
-    ]
-    ```
-
-    No `id` field - this is for content consumption, not management.
-    """,
-)
-async def get_specific_user_data_universal(
-    endpoint_name: str,
-    username: str,
-    request: Request,
-    level: str = Query(
-        "public_full",
-        description="Privacy level: business_card, professional, public_full, ai_safe",
-    ),
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(50, ge=1, le=100, description="Items per page"),
-    active_only: bool = Query(True, description="Filter active items only"),
-    db: Session = Depends(get_db),
-):
-    """
-    **Public endpoint for clean content display without management IDs**
-
-    Perfect for content consumption - no authentication required.
-    For content management (with item IDs), use the authenticated endpoint instead.
-    """
-    from ..privacy import get_privacy_filter
-    from ..utils import is_single_user_mode
-
-    # In single-user mode, redirect to the simple endpoint
-    if is_single_user_mode(db):
-        # Preserve query parameters in redirect
-        query_string = str(request.url.query) if request.url.query else ""
-        location = f"/api/v1/{endpoint_name}"
-        if query_string:
-            location += f"?{query_string}"
-
-        raise HTTPException(
-            status_code=status.HTTP_301_MOVED_PERMANENTLY,
-            detail=f"In single-user mode, use /api/v1/{endpoint_name} instead",
-            headers={"Location": location},
-        )
-
-    # Find the user
-    user = (
-        db.query(User).filter(User.username == username, User.is_active == True).first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{username}' not found"
-        )
-
-    # Check AI assistant access permission
-    if level == "ai_safe":
-        privacy_settings = (
-            db.query(UserPrivacySettings)
-            .filter(UserPrivacySettings.user_id == user.id)
-            .first()
-        )
-        if privacy_settings and not privacy_settings.ai_assistant_access:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="AI assistant access not permitted for this user",
-            )
-
-    # Find endpoint
-    endpoint = (
-        db.query(Endpoint)
-        .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
-        .first()
-    )
-
-    if not endpoint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Endpoint '{endpoint_name}' not found",
-        )
-
-    # Only allow access to public endpoints
-    if not endpoint.is_public:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This endpoint is not publicly accessible",
-        )
-
-    # Query user's data
-    query = db.query(DataEntry).filter(
-        DataEntry.endpoint_id == endpoint.id, DataEntry.created_by_id == user.id
-    )
-
-    if active_only:
-        query = query.filter(DataEntry.is_active == True)
-
-    # Pagination
-    offset = (page - 1) * size
-    data_entries = query.offset(offset).limit(size).all()
-
-    # Apply privacy filtering
-    privacy_filter = get_privacy_filter(db, user)
-    filtered_data = []
-
-    for entry in data_entries:
-        filtered_entry = privacy_filter.filter_data(
-            cast(Dict[str, Any], entry.data),
-            privacy_level=level,
-            is_authenticated=False,
-        )
-        if filtered_entry:
-            # Apply additional sensitive data masking
-            masked_entry = mask_sensitive_data(filtered_entry, level)
-            filtered_data.append(masked_entry)
-
-    return filtered_data
-
-
-# Create adaptive routing helper
-def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
-    """Get information about how endpoints should be accessed based on user count"""
-    from ..utils import get_single_user, is_single_user_mode
-
-    single_user_mode = is_single_user_mode(db)
-
-    if single_user_mode:
-        single_user = get_single_user(db)
-        return {
-            "mode": "single_user",
-            "user": single_user.username if single_user else None,
-            "endpoint_pattern": "/api/v1/{endpoint_name}",
-            "example": "/api/v1/resume",
-        }
-    else:
-        users = db.query(User).filter(User.is_active == True).all()
-        return {
-            "mode": "multi_user",
-            "users": [user.username for user in users],
-            "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
-            "example": "/api/v1/resume/users/john",
-            "privacy_levels": [
-                "business_card",
-                "professional",
-                "public_full",
-                "ai_safe",
-            ],
-        }
-
-
-def filter_sensitive_data(
-    data: dict,
-    is_authenticated: bool = False,
-    user: Optional[User] = None,
-    db: Optional[Session] = None,
-) -> dict:
-    """
-    Legacy wrapper for the new privacy filtering system
-    Maintains backward compatibility while using enhanced filtering
-    """
-    if db and user:
-        from ..privacy import get_privacy_filter
-
-        privacy_filter = get_privacy_filter(db, user)
-        return privacy_filter.filter_data(
-            data, privacy_level="public_full", is_authenticated=is_authenticated
-        )
-    else:
-        # Fallback to basic filtering if no user context
-        if db is None:
-            # Return data with minimal pattern-based filtering when no db available
-            return {
-                k: v
-                for k, v in data.items()
-                if not any(
-                    pattern in k.lower()
-                    for pattern in ["password", "secret", "token", "key"]
-                )
-            }
-
-        from ..privacy import PrivacyFilter
-
-        basic_filter = PrivacyFilter(db, None)
-        return basic_filter._apply_sensitive_patterns(data)
 
 
 # Privacy settings management
