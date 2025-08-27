@@ -98,9 +98,10 @@ All endpoints use a standardized `content/meta` schema for flexible markdown con
 - `/api/v1/problems` - Problems being solved
 - `/api/v1/hobbies` - Hobbies and interests
 - `/api/v1/projects` - Personal and professional projects
-- `/api/v1/looking_for` - Things currently seeking (deprecated, use content/meta format)
-
-**Content/Meta Schema**: All endpoints (except resume) follow a consistent pattern:
+- `/api/v1/risks` - Personal and professional risks with analysis and mitigation strategies
+- `/api/v1/solutions` - Solutions and approaches to problems, both personal and broader challenges
+- `/api/v1/threats` - External threats and security concerns with impact assessment
+- `/api/v1/looking_for` - Things currently seeking (deprecated, use content/meta format)**Content/Meta Schema**: All endpoints (except resume) follow a consistent pattern:
 ```json
 {
   "content": "# Markdown content here...",

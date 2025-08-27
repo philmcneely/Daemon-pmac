@@ -906,7 +906,10 @@ def create_default_endpoints(db: Session):
         },
         {
             "name": "risks",
-            "description": "Risk logs or concerns with mitigation notes",
+            "description": (
+                "Personal and professional risks with analysis and "
+                "mitigation strategies"
+            ),
             "schema": {
                 "content": {"type": "string", "required": True},
                 "meta": {
@@ -927,7 +930,10 @@ def create_default_endpoints(db: Session):
         },
         {
             "name": "solutions",
-            "description": "Proposed solutions to stated problems",
+            "description": (
+                "Solutions and approaches to problems, both personal and "
+                "broader challenges"
+            ),
             "schema": {
                 "content": {"type": "string", "required": True},
                 "meta": {
@@ -948,7 +954,9 @@ def create_default_endpoints(db: Session):
         },
         {
             "name": "threats",
-            "description": "External threats and contextual narrative",
+            "description": (
+                "External threats and security concerns with impact assessment"
+            ),
             "schema": {
                 "content": {"type": "string", "required": True},
                 "meta": {
