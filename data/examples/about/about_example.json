@@ -4,7 +4,11 @@
     "meta": {
       "title": "About Alex Johnson",
       "date": "2024-01-15",
-      "tags": ["personal", "developer", "entrepreneur"],
+      "tags": [
+        "personal",
+        "developer",
+        "entrepreneur"
+      ],
       "status": "published",
       "visibility": "public"
     }
@@ -14,7 +18,11 @@
     "meta": {
       "title": "About DevCorp Solutions",
       "date": "2024-01-15",
-      "tags": ["company", "enterprise", "software"],
+      "tags": [
+        "company",
+        "enterprise",
+        "software"
+      ],
       "status": "published",
       "visibility": "public"
     }

@@ -198,17 +198,6 @@ class BookData(BaseModel):
     date_read: Optional[str] = None  # ISO date string
 
 
-class ProblemData(BaseModel):
-    title: str
-    description: str
-    domain: Optional[str] = None
-    status: Optional[str] = Field(
-        None, pattern=r"^(identifying|researching|solving|solved)$"
-    )
-    priority: Optional[str] = Field(None, pattern=r"^(low|medium|high|critical)$")
-    approach: Optional[str] = None
-
-
 class HobbyData(BaseModel):
     name: str
     description: Optional[str] = None
