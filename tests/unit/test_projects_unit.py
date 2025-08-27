@@ -154,7 +154,6 @@ def create_project(content: str):
                     "title": {"type": "string"},
                     "date": {"type": "string"},
                     "tags": {"type": "array", "items": {"type": "string"}},
-                    "status": {"type": "string"},
                     "visibility": {
                         "type": "string",
                         "enum": ["public", "unlisted", "private"],
@@ -196,7 +195,7 @@ def create_project(content: str):
 
     @patch("app.data_loader.get_db")
     def test_import_projects_validation_error(self, mock_get_db):
-        """Test handling validation errors during projects import"""
+        """Test projects import with validation errors"""
         # Mock database session
         mock_db = MagicMock()
         mock_get_db.return_value = iter([mock_db])  # get_db returns a generator
@@ -213,7 +212,6 @@ def create_project(content: str):
                     "title": {"type": "string"},
                     "date": {"type": "string"},
                     "tags": {"type": "array", "items": {"type": "string"}},
-                    "status": {"type": "string"},
                     "visibility": {
                         "type": "string",
                         "enum": ["public", "unlisted", "private"],

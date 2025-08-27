@@ -25,7 +25,6 @@ class TestProblemsEndpoint:
             "meta": {
                 "title": "Newsletter Churn Problem",
                 "tags": ["product", "retention", "email"],
-                "status": "researching",
                 "priority": "high",
                 "visibility": "private",
             },
@@ -41,7 +40,6 @@ class TestProblemsEndpoint:
         assert response_data["data"]["content"] == problem_data["content"]
         assert response_data["data"]["meta"]["title"] == "Newsletter Churn Problem"
         assert "product" in response_data["data"]["meta"]["tags"]
-        assert response_data["data"]["meta"]["status"] == "researching"
         assert response_data["data"]["meta"]["visibility"] == "private"
 
     def test_problems_markdown_formatting(self, client: TestClient, auth_headers):
@@ -124,11 +122,11 @@ users = session.query(User).filter(
         problems = [
             {
                 "content": "### Problem: User Onboarding\n\nUsers struggle with initial setup process",
-                "meta": {"title": "Onboarding Issue", "status": "identifying"},
+                "meta": {"title": "Onboarding Issue"},
             },
             {
                 "content": "### Problem: Mobile Performance\n\nApp loading times on mobile devices",
-                "meta": {"title": "Mobile Speed", "status": "researching"},
+                "meta": {"title": "Mobile Speed"},
             },
         ]
 
@@ -189,7 +187,7 @@ users = session.query(User).filter(
         # Create initial problem
         initial_data = {
             "content": "### Problem: Database Backup\n\nDaily backups are failing intermittently",
-            "meta": {"title": "Backup Failures", "status": "identifying"},
+            "meta": {"title": "Backup Failures"},
         }
 
         response = client.post(
@@ -238,14 +236,13 @@ Daily backups were failing intermittently due to disk space limitations.
         response_data = response.json()
         assert "RESOLVED" in response_data["data"]["content"]
         assert "✅ Updated retention policy" in response_data["data"]["content"]
-        assert response_data["data"]["meta"]["status"] == "solved"
         assert "resolved" in response_data["data"]["meta"]["tags"]
 
     def test_problems_delete(self, client: TestClient, auth_headers):
         """Test deleting a problem"""
         problem_data = {
             "content": "### Problem: Temporary Issue\n\nThis problem is no longer relevant",
-            "meta": {"title": "Temp Problem", "status": "identifying"},
+            "meta": {"title": "Temp Problem"},
         }
 
         # Create problem
@@ -480,5 +477,4 @@ Customer support response times have increased significantly, leading to custome
         meta = response_data["data"]["meta"]
         assert meta["title"] == "Customer Support Response Time Crisis"
         assert "customer-support" in meta["tags"]
-        assert meta["status"] == "researching"
         assert meta["visibility"] == "unlisted"

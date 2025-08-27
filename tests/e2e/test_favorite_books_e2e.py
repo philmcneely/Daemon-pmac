@@ -144,7 +144,6 @@ class TestFavoriteBooksEndpoint:
             "meta": {
                 "title": "Updated Title",
                 "author": "Updated Author",
-                "status": "completed",
             },
         }
 
@@ -159,7 +158,6 @@ class TestFavoriteBooksEndpoint:
         assert updated_book["data"]["content"] == updated_data["content"]
         assert updated_book["data"]["meta"]["title"] == updated_data["meta"]["title"]
         assert updated_book["data"]["meta"]["author"] == updated_data["meta"]["author"]
-        assert updated_book["data"]["meta"]["status"] == updated_data["meta"]["status"]
 
     def test_favorite_books_delete_item(self, client: TestClient, auth_headers):
         """Test deleting a favorite book"""

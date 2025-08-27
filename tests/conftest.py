@@ -441,7 +441,6 @@ def sample_idea_data():
         "title": "Test Idea",
         "description": "This is a test idea",
         "category": "technology",
-        "status": "draft",
         "tags": ["test", "api"],
     }
 

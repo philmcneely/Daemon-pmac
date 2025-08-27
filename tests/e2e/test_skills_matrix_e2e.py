@@ -223,7 +223,6 @@ class TestSkillsMatrixEndpoint:
             "meta": {
                 "title": "DevOps Skills - Updated",
                 "tags": ["devops", "kubernetes", "docker"],
-                "status": "current",
             },
         }
 
@@ -237,7 +236,6 @@ class TestSkillsMatrixEndpoint:
         updated_matrix = response.json()
         assert updated_matrix["data"]["content"] == updated_data["content"]
         assert updated_matrix["data"]["meta"]["title"] == "DevOps Skills - Updated"
-        assert updated_matrix["data"]["meta"]["status"] == "current"
         assert "Terraform" in updated_matrix["data"]["content"]
 
         # Cleanup
@@ -415,7 +413,6 @@ kubectl apply -f deployment.yaml
             "meta": {
                 "title": "Complete Skills Assessment 2025",
                 "tags": ["comprehensive", "technical", "leadership"],
-                "status": "current",
                 "visibility": "public",
             },
         }

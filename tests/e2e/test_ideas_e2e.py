@@ -67,7 +67,6 @@ class TestIdeasEndpoint:
             "meta": {
                 "title": "Micro-course on Productivity",
                 "tags": ["productivity", "education", "habits"],
-                "status": "planning",
                 "visibility": "public",
             },
         }
@@ -122,7 +121,7 @@ class TestIdeasEndpoint:
         # Create an idea
         original_data = {
             "content": "### Original Idea\n\nThis is the original version.",
-            "meta": {"title": "Original", "status": "draft"},
+            "meta": {"title": "Original"},
         }
 
         create_response = client.post(
@@ -134,7 +133,7 @@ class TestIdeasEndpoint:
         # Update it
         updated_data = {
             "content": "### Updated Idea\n\nThis is the updated version with more details.",
-            "meta": {"title": "Updated", "status": "published"},
+            "meta": {"title": "Updated"},
         }
 
         update_response = client.put(
@@ -147,7 +146,6 @@ class TestIdeasEndpoint:
         updated_idea = update_response.json()
         assert updated_idea["data"]["content"] == updated_data["content"]
         assert updated_idea["data"]["meta"]["title"] == updated_data["meta"]["title"]
-        assert updated_idea["data"]["meta"]["status"] == updated_data["meta"]["status"]
 
     def test_ideas_delete_item(self, client: TestClient, auth_headers):
         """Test deleting an idea"""
