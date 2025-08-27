@@ -3,11 +3,12 @@
 Test Privacy Filtering - Verify security fixes work correctly
 """
 
-import requests
+import pytest
+from fastapi.testclient import TestClient
 
-BASE_URL = "http://localhost:8005"
-USERNAME = "admin"
-PASSWORD = "admin123"
+from app.main import app
+
+client = TestClient(app)
 
 
 def test_security_fixes():
@@ -22,7 +23,7 @@ def test_security_fixes():
     ]
 
     for pattern in test_patterns:
-        response = requests.get(f"{BASE_URL}{pattern}")
+        response = client.get(pattern)
         print(f"Pattern: {pattern}")
         print(f"  Status: {response.status_code}")
 
@@ -49,7 +50,7 @@ def test_normal_endpoints():
     ]
 
     for pattern in normal_patterns:
-        response = requests.get(f"{BASE_URL}{pattern}")
+        response = client.get(pattern)
         print(f"Pattern: {pattern}")
         print(f"  Status: {response.status_code}")
 

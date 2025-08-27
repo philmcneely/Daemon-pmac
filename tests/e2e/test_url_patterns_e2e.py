@@ -7,10 +7,15 @@ Verify that both URL patterns work identically for visibility and special behavi
 import json
 import sys
 
-import requests
+import pytest
+from fastapi.testclient import TestClient
 
-# API Configuration
-BASE_URL = "http://localhost:8005"
+from app.main import app
+
+# Test client
+client = TestClient(app)
+
+# Test configuration
 USERNAME = "admin"
 PASSWORD = "admin123"
 
@@ -19,7 +24,7 @@ def login():
     """Login and get JWT token"""
     login_data = {"username": USERNAME, "password": PASSWORD}
 
-    response = requests.post(f"{BASE_URL}/auth/login", data=login_data)
+    response = client.post("/api/v1/auth/login", json=login_data)
     if response.status_code == 200:
         token = response.json()["access_token"]
         print(f"✅ Login successful")
@@ -60,9 +65,7 @@ def create_test_content(token):
     ]
 
     for name, content in content_types:
-        response = requests.post(
-            f"{BASE_URL}/api/v1/about", json=content, headers=headers
-        )
+        response = requests.post("/api/v1/about", json=content, headers=headers)
         if response.status_code == 200:
             item_id = response.json()["id"]
             results[name] = item_id
@@ -81,20 +84,20 @@ def test_pattern_consistency(endpoint, username):
     print(f"\n🔍 Testing pattern consistency for {endpoint}/{username}:")
 
     # Pattern 1: /api/v1/{endpoint}/users/{username}
-    pattern1_url = f"{BASE_URL}/api/v1/{endpoint}/users/{username}"
+    pattern1_url = "/api/v1/{endpoint}/users/{username}"
 
     # Pattern 2: /api/v1/users/{username}/{endpoint} (should redirect)
-    pattern2_url = f"{BASE_URL}/api/v1/users/{username}/{endpoint}"
+    pattern2_url = "/api/v1/users/{username}/{endpoint}"
 
     print(f"   Pattern 1: {pattern1_url}")
     print(f"   Pattern 2: {pattern2_url}")
 
     # Test pattern 1
-    response1 = requests.get(pattern1_url)
+    response1 = client.get(pattern1_url)
     print(f"   Pattern 1 Status: {response1.status_code}")
 
     # Test pattern 2
-    response2 = requests.get(pattern2_url, allow_redirects=False)
+    response2 = client.get(pattern2_url)
     print(f"   Pattern 2 Status: {response2.status_code}")
 
     if response2.status_code == 301:
@@ -102,7 +105,7 @@ def test_pattern_consistency(endpoint, username):
         print(f"   Pattern 2 Redirect: {redirect_location}")
 
         # Follow redirect
-        response2_follow = requests.get(pattern2_url)
+        response2_follow = client.get(pattern2_url)
         print(f"   Pattern 2 After Redirect: {response2_follow.status_code}")
 
         # Compare data
@@ -141,12 +144,12 @@ def test_visibility_filtering():
             print(f"\n--- Testing {endpoint} for user {user} ---")
 
             # Test both patterns
-            pattern1_url = f"{BASE_URL}/api/v1/{endpoint}/users/{user}"
-            pattern2_url = f"{BASE_URL}/api/v1/users/{user}/{endpoint}"
+            pattern1_url = "/api/v1/{endpoint}/users/{user}"
+            pattern2_url = "/api/v1/users/{user}/{endpoint}"
 
             # Test unauthenticated access
-            response1 = requests.get(pattern1_url)
-            response2 = requests.get(pattern2_url)  # This should redirect and follow
+            response1 = client.get(pattern1_url)
+            response2 = client.get(pattern2_url)  # This should redirect and follow
 
             print(f"Pattern 1 ({endpoint}/users/{user}): {response1.status_code}")
             print(f"Pattern 2 (users/{user}/{endpoint}): {response2.status_code}")
@@ -187,11 +190,11 @@ def test_special_resume_behavior():
         print(f"\n--- Testing resume for user {user} ---")
 
         # Test both patterns
-        pattern1_url = f"{BASE_URL}/api/v1/resume/users/{user}"
-        pattern2_url = f"{BASE_URL}/api/v1/users/{user}/resume"
+        pattern1_url = "/api/v1/resume/users/{user}"
+        pattern2_url = "/api/v1/users/{user}/resume"
 
-        response1 = requests.get(pattern1_url)
-        response2 = requests.get(pattern2_url)
+        response1 = client.get(pattern1_url)
+        response2 = client.get(pattern2_url)
 
         print(f"Pattern 1: {response1.status_code}")
         print(f"Pattern 2: {response2.status_code}")
@@ -235,9 +238,7 @@ def cleanup_test_content(token, item_ids):
     headers = {"Authorization": f"Bearer {token}"}
 
     for visibility, item_id in item_ids.items():
-        response = requests.delete(
-            f"{BASE_URL}/api/v1/about/{item_id}", headers=headers
-        )
+        response = requests.delete("/api/v1/about/{item_id}", headers=headers)
         if response.status_code == 200:
             print(f"   Deleted {visibility} content {item_id} ✅")
         else:
