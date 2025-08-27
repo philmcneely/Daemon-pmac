@@ -254,6 +254,14 @@ class BookItemMeta(PersonalItemMeta):
     date_read: Optional[str] = None
 
 
+class SkillItemMeta(PersonalItemMeta):
+    """Extended metadata for skill items"""
+
+    category: Optional[str] = None
+    level: Optional[str] = None
+    years_experience: Optional[int] = Field(None, ge=0)
+
+
 class PersonalItemCreate(BaseModel):
     """Create/Update request for personal API items"""
 
@@ -338,12 +346,46 @@ class FavoriteBooksFlexibleData(BaseModel):
             )
 
 
+class SkillsFlexibleData(BaseModel):
+    """Flexible schema for skills supporting structured and markdown formats"""
+
+    # New flexible markdown pattern (preferred)
+    content: Optional[str] = None
+    meta: Optional[SkillItemMeta] = None
+
+    # Legacy structured pattern (for backward compatibility)
+    name: Optional[str] = None
+    category: Optional[str] = None
+    level: Optional[str] = None
+    years_experience: Optional[int] = Field(None, ge=0)
+    description: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_skill_data(self):
+        """Ensure at least content OR name is provided"""
+        import html
+
+        # Double-unescape HTML for markdown (handles sanitizer double-escaping)
+        if self.content:
+            # First unescape: sanitizer escaping, second: original entities
+            self.content = html.unescape(html.unescape(self.content))
+            return self
+        elif self.name:
+            # Legacy format - name required
+            return self
+        else:
+            raise ValueError(
+                "Either 'content' (markdown format) or 'name' (legacy format) "
+                "must be provided"
+            )
+
+
 # Mapping of endpoint names to their specific models
 ENDPOINT_MODELS = {
     "resume": ResumeData,
     "about": AboutData,
     "ideas": IdeaFlexibleData,  # Updated to use flexible model
-    "skills": SkillData,
+    "skills": SkillsFlexibleData,  # Updated to use flexible model
     "favorite_books": FavoriteBooksFlexibleData,  # Updated to use flexible model
     "problems": ProblemData,
     "hobbies": HobbyData,

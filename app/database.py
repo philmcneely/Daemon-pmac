@@ -340,7 +340,25 @@ def create_default_endpoints(db: Session):
             "name": "skills",
             "description": "Skills and areas of expertise",
             "schema": {
-                "name": {"type": "string", "required": True},
+                "content": {"type": "string", "required": True},  # Markdown content
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "category": {"type": "string"},
+                        "level": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+                # Legacy fields for backward compatibility
+                "name": {"type": "string"},
                 "category": {"type": "string"},
                 "level": {
                     "type": "string",
