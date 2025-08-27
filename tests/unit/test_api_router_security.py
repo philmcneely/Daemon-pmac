@@ -34,7 +34,7 @@ class TestAPIRouterSecurity:
             )
 
         assert exc_info.value.status_code == 400
-        assert "Security validation failed" in str(exc_info.value.detail)
+        assert "Dangerous pattern detected in username" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
     async def test_get_specific_user_data_endpoint_security_validation(self):
@@ -57,7 +57,9 @@ class TestAPIRouterSecurity:
             )
 
         assert exc_info.value.status_code == 400
-        assert "Security validation failed" in str(exc_info.value.detail)
+        assert "Dangerous pattern detected in endpoint_name" in str(
+            exc_info.value.detail
+        )
 
     @pytest.mark.asyncio
     async def test_get_endpoint_data_security_validation(self):
@@ -71,11 +73,13 @@ class TestAPIRouterSecurity:
         # Test with dangerous endpoint name
         with pytest.raises(HTTPException) as exc_info:
             await get_endpoint_data(
-                endpoint_name="../admin", db=mock_db, current_admin_user=mock_admin_user
+                endpoint_name="../admin", db=mock_db, current_user=mock_admin_user
             )
 
         assert exc_info.value.status_code == 400
-        assert "Security validation failed" in str(exc_info.value.detail)
+        assert "Dangerous pattern detected in endpoint_name" in str(
+            exc_info.value.detail
+        )
 
     def test_security_validation_edge_cases(self):
         """Test security validation with edge cases"""
