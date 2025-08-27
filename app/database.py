@@ -354,8 +354,25 @@ def create_default_endpoints(db: Session):
             "name": "favorite_books",
             "description": "Favorite books and reading recommendations",
             "schema": {
-                "title": {"type": "string", "required": True},
-                "author": {"type": "string", "required": True},
+                "content": {"type": "string", "required": True},  # Markdown content
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "author": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
+                # Legacy fields for backward compatibility
+                "title": {"type": "string"},
+                "author": {"type": "string"},
                 "isbn": {"type": "string"},
                 "rating": {"type": "integer", "minimum": 1, "maximum": 5},
                 "review": {"type": "string"},

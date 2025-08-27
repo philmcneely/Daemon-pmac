@@ -1,29 +1,57 @@
 [
   {
-    "title": "The DevOps Handbook",
-    "author": "Gene Kim, Jez Humble, Patrick Debois, John Willis",
-    "isbn": "978-1942788003",
-    "rating": 5,
-    "review": "Essential reading for anyone involved in software delivery. Provides practical guidance on implementing DevOps principles and transforming organizational culture.",
-    "genres": ["technology", "business", "devops"],
-    "date_read": "2023-03-15"
+    "content": "### Atomic Habits — James Clear\n\n*Notes:* Practical frameworks for habit formation. Key takeaway: system design beats motivation.\n\n**Why I love this book:**\n- Clear, actionable advice on building good habits\n- Scientific backing without being dry\n- The 1% better concept is genuinely life-changing\n\n**Rating:** ⭐⭐⭐⭐⭐\n\n**Key Quotes:**\n> \"You do not rise to the level of your goals. You fall to the level of your systems.\"\n\n**Recommended for:** Anyone looking to improve their daily routines and long-term outcomes.",
+    "meta": {
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "date": "2024-08-15",
+      "tags": [
+        "productivity",
+        "psychology",
+        "self-improvement"
+      ],
+      "visibility": "public"
+    }
   },
   {
-    "title": "Clean Code",
-    "author": "Robert C. Martin",
-    "isbn": "978-0132350884",
-    "rating": 5,
-    "review": "Timeless principles for writing maintainable, readable code. Every developer should read this book multiple times throughout their career.",
-    "genres": ["programming", "software-engineering"],
-    "date_read": "2022-08-20"
+    "content": "### The DevOps Handbook — Gene Kim, Jez Humble, Patrick Debois, John Willis\n\n**Essential reading for anyone involved in software delivery.**\n\nThis book provides practical guidance on implementing DevOps principles and transforming organizational culture. What sets it apart is the focus on real-world case studies and actionable strategies.\n\n#### Key Takeaways:\n- **Culture over tools**: Technology is secondary to organizational culture\n- **Flow optimization**: Focus on the entire value stream, not individual silos\n- **Fast feedback loops**: Shorter cycles lead to better outcomes\n\n#### Implementation Notes:\n1. Start with culture change, not tool adoption\n2. Measure everything that matters\n3. Automate repetitive tasks first\n\n**My experience applying these principles:**\nImplemented several concepts at my current company, resulting in 40% faster deployment cycles and fewer production incidents.\n\n*Read this if you're struggling with slow, error-prone deployments.*",
+    "meta": {
+      "title": "The DevOps Handbook",
+      "author": "Gene Kim, Jez Humble, Patrick Debois, John Willis",
+      "date": "2023-03-15",
+      "tags": [
+        "devops",
+        "technology",
+        "business",
+        "leadership"
+      ],
+      "visibility": "public"
+    }
+  },
+  {
+    "content": "### Clean Code — Robert C. Martin\n\n*\"Any fool can write code that a computer can understand. Good programmers write code that humans can understand.\"*\n\n#### Why This Book Changed My Programming:\n\n**Before reading Clean Code:**\n- Wrote functional but messy code\n- Struggled with maintaining large codebases\n- Spent too much time debugging\n\n**After applying its principles:**\n- Code reviews became discussions, not battles\n- Debugging time reduced by ~60%\n- New team members onboard faster\n\n#### Most Impactful Chapters:\n1. **Functions** - Single responsibility principle\n2. **Naming** - Intent-revealing names\n3. **Comments** - When to use them (and when not to)\n\n#### Quick Reference Rules:\n- Functions should do one thing\n- Names should reveal intent\n- Comments explain *why*, not *what*\n- Keep it simple (KISS principle)\n\n**Reread frequency:** Every 2-3 years to reinforce habits",
+    "meta": {
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "date": "2022-08-20",
+      "tags": [
+        "programming",
+        "software-engineering",
+        "best-practices"
+      ],
+      "visibility": "public"
+    }
   },
   {
     "title": "The Pragmatic Programmer",
     "author": "Andrew Hunt, David Thomas",
     "isbn": "978-0135957059",
     "rating": 5,
-    "review": "Updated edition of the classic. Excellent advice on becoming a more effective programmer and building better software systems.",
-    "genres": ["programming", "career-development"],
+    "review": "Updated edition of the classic. Excellent advice on becoming a more effective programmer and building better software systems. The DRY principle alone is worth the price of admission.",
+    "genres": [
+      "programming",
+      "career-development"
+    ],
     "date_read": "2023-01-10"
   },
   {
@@ -32,16 +60,11 @@
     "isbn": "978-1942788331",
     "rating": 4,
     "review": "Data-driven insights into what makes high-performing technology organizations. Great for understanding DevOps metrics and organizational capabilities.",
-    "genres": ["technology", "business", "data-science"],
+    "genres": [
+      "technology",
+      "business",
+      "data-science"
+    ],
     "date_read": "2023-06-22"
-  },
-  {
-    "title": "Test Driven Development: By Example",
-    "author": "Kent Beck",
-    "isbn": "978-0321146533",
-    "rating": 4,
-    "review": "Classic introduction to TDD with practical examples. Shows how test-first development can improve code quality and design.",
-    "genres": ["testing", "programming", "methodology"],
-    "date_read": "2022-11-05"
   }
 ]

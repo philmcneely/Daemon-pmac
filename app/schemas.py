@@ -244,6 +244,16 @@ class PersonalItemMeta(BaseModel):
     )
 
 
+class BookItemMeta(PersonalItemMeta):
+    """Extended metadata for book items"""
+
+    author: Optional[str] = None
+    isbn: Optional[str] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    genres: Optional[List[str]] = None
+    date_read: Optional[str] = None
+
+
 class PersonalItemCreate(BaseModel):
     """Create/Update request for personal API items"""
 
@@ -277,9 +287,10 @@ class IdeaFlexibleData(BaseModel):
         """Ensure at least content OR title+description is provided"""
         import html
 
-        # Unescape HTML in content field for markdown
+        # Double-unescape HTML for markdown (handles sanitizer double-escaping)
         if self.content:
-            self.content = html.unescape(self.content)
+            # First unescape: sanitizer escaping, second: original entities
+            self.content = html.unescape(html.unescape(self.content))
             return self
         elif self.title and self.description:
             # Legacy format - title and description required
@@ -291,13 +302,49 @@ class IdeaFlexibleData(BaseModel):
             )
 
 
+class FavoriteBooksFlexibleData(BaseModel):
+    """Flexible schema for favorite books supporting structured and markdown formats"""
+
+    # New flexible markdown pattern (preferred)
+    content: Optional[str] = None
+    meta: Optional[BookItemMeta] = None
+
+    # Legacy structured pattern (for backward compatibility)
+    title: Optional[str] = None
+    author: Optional[str] = None
+    isbn: Optional[str] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    review: Optional[str] = None
+    genres: Optional[List[str]] = None
+    date_read: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_book_data(self):
+        """Ensure at least content OR title+author is provided"""
+        import html
+
+        # Double-unescape HTML for markdown (handles sanitizer double-escaping)
+        if self.content:
+            # First unescape: sanitizer escaping, second: original entities
+            self.content = html.unescape(html.unescape(self.content))
+            return self
+        elif self.title and self.author:
+            # Legacy format - title and author required
+            return self
+        else:
+            raise ValueError(
+                "Either 'content' (markdown format) or both 'title' and "
+                "'author' (legacy format) must be provided"
+            )
+
+
 # Mapping of endpoint names to their specific models
 ENDPOINT_MODELS = {
     "resume": ResumeData,
     "about": AboutData,
     "ideas": IdeaFlexibleData,  # Updated to use flexible model
     "skills": SkillData,
-    "favorite_books": BookData,
+    "favorite_books": FavoriteBooksFlexibleData,  # Updated to use flexible model
     "problems": ProblemData,
     "hobbies": HobbyData,
     "looking_for": LookingForData,
