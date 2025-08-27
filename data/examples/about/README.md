@@ -1,19 +1,21 @@
 # About Data Examples
 
-This directory contains examples for the "about" endpoint, which stores basic information about a person or entity.
+This directory contains examples for the "about" endpoint, which stores basic information about a person or entity using the content/meta format.
 
 ## Schema
 
-The about endpoint supports the following fields:
+The about endpoint uses the flexible content/meta schema:
 
 ```json
 {
-  "name": "string (required)",
-  "title": "string (optional)",
-  "bio": "string (optional)",
-  "location": "string (optional)",
-  "website": "string (optional)",
-  "social_links": "object (optional)"
+  "content": "string (required) - Markdown content with about information",
+  "meta": {
+    "title": "string (optional) - Entry title",
+    "date": "string (optional) - Date in YYYY-MM-DD format",
+    "tags": "array (optional) - Array of tags for categorization",
+    "status": "string (optional) - Entry status (draft, published, etc.)",
+    "visibility": "string (optional) - public, unlisted, or private"
+  }
 }
 ```
 
@@ -21,33 +23,29 @@ The about endpoint supports the following fields:
 
 The `about_example.json` file contains sample data showing:
 
-1. **Personal Profile**: Individual developer with social links
-2. **Company Profile**: Business entity with multiple locations
+1. **Personal Profile**: Individual developer with contact links in markdown
+2. **Company Profile**: Business entity with structured information
 
-## Field Descriptions
+## Content Structure
 
-- **name**: Full name of person or entity (required)
-- **title**: Job title, role, or company description
-- **bio**: Detailed biography or description
-- **location**: Geographic location or address
-- **website**: Primary website URL
-- **social_links**: Object containing social media and professional links
+The `content` field supports rich markdown formatting including:
 
-## Social Links Structure
+- **Headers**: Use `#` for main sections
+- **Links**: `[Text](URL)` for social links and websites
+- **Emphasis**: `**bold**` and `*italic*` text
+- **Lists**: Use `-` for bullet points
+- **Emojis**: 📍 🌐 💼 for visual elements
 
-```json
-{
-  "social_links": {
-    "linkedin": "https://linkedin.com/in/username",
-    "github": "https://github.com/username",
-    "twitter": "https://twitter.com/username",
-    "mastodon": "https://mastodon.social/@username",
-    "blog": "https://blog.example.com",
-    "youtube": "https://youtube.com/@channel",
-    "instagram": "https://instagram.com/username"
-  }
-}
-```
+## Meta Field Descriptions
+
+- **title**: Display title for the about entry
+- **date**: When the information was last updated
+- **tags**: Categories like ["personal", "developer", "company"]
+- **status**: Content status (draft, published, archived)
+- **visibility**:
+  - `public`: Visible to everyone
+  - `unlisted`: Accessible via direct link only
+  - `private`: Only visible to owner
 
 ## Usage
 
@@ -74,9 +72,9 @@ curl "http://localhost:8000/api/v1/about/users/username"
 
 The about endpoint supports privacy filtering:
 
-- **business_card**: Name, title, basic contact
-- **professional**: Full professional information
-- **public_full**: All information marked as public
+- **business_card**: Minimal public information only
+- **professional**: Standard professional details
+- **public_full**: All public information
 - **ai_safe**: Safe for AI assistants (removes sensitive data)
 
 **Examples:** `data/examples/about/`
