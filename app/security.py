@@ -121,7 +121,8 @@ class InputValidator:
         # Check format
         if not cls.VALID_ENDPOINT_PATTERN.match(endpoint_name):
             raise SecurityError(
-                "Endpoint name must contain only letters, numbers, hyphens, and underscores"
+                "Endpoint name must contain only letters, numbers, hyphens, "
+                "and underscores"
             )
 
         # Length check
