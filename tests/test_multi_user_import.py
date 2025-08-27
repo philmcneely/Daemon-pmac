@@ -43,10 +43,21 @@ class TestImportUserDataFromDirectory:
 
     def test_import_user_data_missing_directory(self):
         """Test import with missing directory"""
-        result = import_user_data_from_directory("test_user", "/nonexistent/directory")
+        with patch("app.multi_user_import.get_db") as mock_get_db:
+            mock_db = MagicMock()
+            mock_get_db.return_value = mock_db
 
-        assert result["success"] is False
-        assert "Data directory not found" in result["error"]
+            # Mock user exists
+            mock_user = MagicMock()
+            mock_user.username = "test_user"
+            mock_db.query().filter().first.return_value = mock_user
+
+            result = import_user_data_from_directory(
+                "test_user", "/nonexistent/directory"
+            )
+
+            assert result["success"] is False
+            assert "Data directory not found" in result["error"]
 
 
 class TestImportUserFile:
