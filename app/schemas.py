@@ -380,12 +380,33 @@ class SkillsFlexibleData(BaseModel):
             )
 
 
+class SkillsMatrixData(BaseModel):
+    """Schema for skills matrix supporting flexible markdown format"""
+
+    content: str = Field(
+        ..., min_length=1, description="Markdown content for skills matrix"
+    )
+    meta: Optional[PersonalItemMeta] = None
+
+    @model_validator(mode="after")
+    def validate_skills_matrix_data(self):
+        """Apply HTML unescaping for markdown content"""
+        import html
+
+        # Double-unescape HTML for markdown (handles sanitizer double-escaping)
+        if self.content:
+            # First unescape: sanitizer escaping, second: original entities
+            self.content = html.unescape(html.unescape(self.content))
+        return self
+
+
 # Mapping of endpoint names to their specific models
 ENDPOINT_MODELS = {
     "resume": ResumeData,
     "about": AboutData,
     "ideas": IdeaFlexibleData,  # Updated to use flexible model
     "skills": SkillsFlexibleData,  # Updated to use flexible model
+    "skills_matrix": SkillsMatrixData,  # Added skills matrix model
     "favorite_books": FavoriteBooksFlexibleData,  # Updated to use flexible model
     "problems": ProblemData,
     "hobbies": HobbyData,
