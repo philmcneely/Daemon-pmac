@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
 
 from .database import DataEntry, Endpoint, SessionLocal, get_db
-from .schemas import ENDPOINT_MODELS
+from .schemas import get_endpoint_model
 
 # Default data directory
 DEFAULT_DATA_DIR = "data"
@@ -97,7 +97,7 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
             }
 
         # Validate each item if we have a specific model
-        endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
+        endpoint_model: Optional[Type[BaseModel]] = get_endpoint_model(endpoint_name)
         validated_items = []
 
         for i, item in enumerate(data_items):

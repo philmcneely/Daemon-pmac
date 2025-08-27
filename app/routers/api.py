@@ -20,7 +20,6 @@ from ..auth import (
 )
 from ..database import AuditLog, DataEntry, Endpoint, User, UserPrivacySettings, get_db
 from ..schemas import (
-    ENDPOINT_MODELS,
     DataEntryCreate,
     DataEntryResponse,
     DataEntryUpdate,
@@ -30,6 +29,7 @@ from ..schemas import (
     PersonalItemListResponse,
     PersonalItemResponse,
     UserCreate,
+    get_endpoint_model,
 )
 from ..utils import mask_sensitive_data, sanitize_data_dict, validate_url
 
@@ -697,7 +697,7 @@ async def add_endpoint_data(
     sanitized_data = sanitize_data_dict(data)
 
     # Validate data against endpoint schema if we have a specific model
-    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = get_endpoint_model(endpoint_name)
     if endpoint_model:
         try:
             validated_data = endpoint_model(**sanitized_data)
@@ -868,7 +868,7 @@ async def update_endpoint_data(
 
     # Sanitize and validate new data
     sanitized_data = sanitize_data_dict(data)
-    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = get_endpoint_model(endpoint_name)
     if endpoint_model:
         try:
             validated_data = endpoint_model(**sanitized_data)
@@ -996,7 +996,7 @@ async def bulk_add_endpoint_data(
     errors = []
     created_items = []
 
-    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = get_endpoint_model(endpoint_name)
 
     for i, data in enumerate(data_list):
         try:
