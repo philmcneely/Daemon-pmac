@@ -132,7 +132,41 @@ The API automatically adapts based on the number of users:
 - `GET /api/v1/ideas/users/{username}`
 - `GET /api/v1/skills/users/{username}`
 
-### 🔐 Privacy Levels
+### � Content Management
+
+**Two types of endpoints for different use cases:**
+
+**Public Endpoints** (Clean view for consumers):
+- `GET /api/v1/{endpoint}/users/{username}` - User-friendly content without internal IDs
+- Perfect for displaying content to visitors
+
+**Authenticated Endpoints** (Management view for creators):
+- `GET /api/v1/{endpoint}` - Content with item IDs for management
+- `POST /api/v1/{endpoint}` - Create new content
+- `PUT /api/v1/{endpoint}/{item_id}` - Update specific content
+- `DELETE /api/v1/{endpoint}/{item_id}` - Delete content
+
+**Content Management Workflow:**
+1. `POST /auth/login` → Get JWT token
+2. `GET /api/v1/{endpoint}` → Find your content with item IDs
+3. `PUT /api/v1/{endpoint}/{item_id}` → Update specific content
+
+**Example Content Update:**
+```bash
+# Login
+curl -X POST "/auth/login" -d "username=user&password=pass"
+
+# Get content with IDs (authenticated)
+curl -H "Authorization: Bearer <token>" "/api/v1/about"
+
+# Update specific content
+curl -X PUT -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     "/api/v1/about/42" \
+     -d '{"content": "Updated content...", "meta": {...}}'
+```
+
+### �🔐 Privacy Levels
 
 All endpoints support privacy filtering:
 - `business_card` - Minimal information for networking
@@ -142,29 +176,55 @@ All endpoints support privacy filtering:
 
 ### 📚 Available Endpoints
 
-Core personal data endpoints:
-- **resume** - Professional resume and work history
-- **skills** - Technical and soft skills
-- **ideas** - Ideas and thoughts
-- **favorite_books** - Book recommendations
-- **hobbies** - Hobbies and interests
-- **problems** - Problems seeking solutions
-- **looking_for** - What you're actively seeking
+**Content/Meta Schema Endpoints** (Flexible markdown content):
 - **about** - Personal/entity information
+- **ideas** - Ideas and thoughts
+- **skills** - Skills and competencies
+- **favorite_books** - Book recommendations
+- **hobbies** - Personal interests and hobbies
+- **looking_for** - What you're seeking (jobs, opportunities, etc.)
+- **projects** - Personal and professional projects
+- **values** - Personal values and principles
+- **quotes** - Favorite quotes or sayings
+- **contact_info** - Contact information
+- **events** - Important events or milestones
+- **achievements** - Accomplishments and achievements
+- **goals** - Personal and professional goals
+- **learning** - Current learning activities
+- **problems** - Problems you're trying to solve
+- **personal_story** - Your personal story or journey
+- **recommendations** - Recommendations you've received
+
+**Structured Schema Endpoints**:
+- **resume** - Professional resume (structured format)
 
 ### 🔗 Useful Links
 
 - **Authentication**: Use `/auth/login` to get JWT tokens
+- **Content Management**: See `/static/CONTENT_MANAGEMENT.md` for detailed guide
 - **System Info**: Check `/api/v1/system/info` for current mode
 - **Health Check**: Monitor system status at `/health`
 - **Create Endpoints**: Admin users can create custom endpoints
 
 ### 💡 Getting Started
 
+**For Content Consumers:**
+1. Browse public endpoints: `/api/v1/{endpoint}/users/{username}`
+2. No authentication required for public content
+
+**For Content Creators:**
 1. **Login**: Use `/auth/login` to get your JWT token
-2. **Explore**: Browse available endpoints at `/api/v1/endpoints`
-3. **Create Data**: Add your information to various endpoints
-4. **Customize**: Create custom endpoints for your specific needs
+2. **Explore**: Browse your content at `/api/v1/{endpoint}` (authenticated)
+3. **Create**: POST new content to any endpoint
+4. **Update**: PUT changes using item IDs from authenticated responses
+5. **Delete**: DELETE content using item IDs
+
+**Security Notes:**
+- JWT tokens expire automatically for security
+- Users can only modify their own content (unless admin)
+- All operations are logged in audit trail
+- Public endpoints show clean views without internal IDs
+- Authenticated endpoints show management views with item IDs
 
 *Inspired by [Daniel Miessler's Daemon project](https://github.com/danielmiessler/Daemon)*
     """,

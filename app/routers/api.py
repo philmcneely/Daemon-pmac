@@ -33,20 +33,46 @@ from ..schemas import (
 )
 from ..utils import mask_sensitive_data, sanitize_data_dict, validate_url
 
-router = APIRouter(prefix="/api/v1", tags=["Daemon API"])
+router = APIRouter(
+    prefix="/api/v1", tags=["📊 Content API - Adaptive Multi-User System"]
+)
 
 
 def get_current_user_optional(
     request: Request, db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user from JWT or API key, but don't require authentication"""
+    from ..auth import verify_token
+
     # Try API key first
     user = get_user_from_api_key(request, db)
     if user:
         return user
 
-    # Try JWT token (this would need to be implemented properly)
-    # For now, return None for public access
+    # Try JWT token from Authorization header
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        try:
+            # Verify the JWT token (without raising exceptions)
+            from jose import JWTError, jwt
+
+            from ..config import settings
+            from ..schemas import TokenData
+
+            payload = jwt.decode(
+                token, settings.secret_key, algorithms=[settings.algorithm]
+            )
+            username: Optional[str] = payload.get("sub")
+            if username:
+                user = db.query(User).filter(User.username == username).first()
+                if user and user.is_active:
+                    return user
+        except (JWTError, Exception):
+            # Invalid token, but this is optional auth, so continue
+            pass
+
+    # No valid authentication found
     return None
 
 
@@ -82,23 +108,42 @@ def log_audit_action(
     description="""
     **Get a complete list of all available endpoints in the system**
 
-    This returns both core endpoints and any custom endpoints you've created.
+    This returns all available endpoints with their current schema definitions.
 
     ### 📊 Core Endpoints (Available by default)
 
-    - **resume** - Professional resume and work history
-    - **skills** - Technical and soft skills with proficiency levels
-    - **ideas** - Ideas, thoughts, and concepts
-    - **favorite_books** - Book recommendations and reviews
-    - **hobbies** - Hobbies and personal interests
-    - **problems** - Problems you're working on or have solved
-    - **looking_for** - Things you're currently seeking
-    - **about** - Basic personal/entity information
+    - **resume** - Professional resume and work history (structured schema)
+    - **skills** - Technical and soft skills with proficiency levels (content/meta)
+    - **ideas** - Ideas, thoughts, and concepts (content/meta)
+    - **favorite_books** - Book recommendations and reviews (content/meta)
+    - **hobbies** - Hobbies and personal interests (content/meta)
+    - **problems** - Problems you're working on or have solved (content/meta)
+    - **looking_for** - Things you're currently seeking (content/meta)
+    - **about** - Basic personal/entity information (content/meta)
 
-    ### 🎯 Custom Endpoints
+    ### 📝 Schema Types
 
-    You can create custom endpoints via `POST /api/v1/endpoints` (admin only).
-    Each endpoint can have its own validation schema and be public or private.
+    **Content/Meta Schema**: Most endpoints use a flexible content + metadata pattern:
+    ```json
+    {
+      "content": "Markdown content (required)",
+      "meta": {
+        "title": "Optional title",
+        "date": "Optional date",
+        "tags": ["optional", "tags"],
+        "status": "Optional status",
+        "visibility": "public|unlisted|private"
+      }
+    }
+    ```
+
+    **Structured Schema**: Resume endpoint uses a fixed structure with specific fields.
+
+    ### 🎯 Dynamic Endpoints
+
+    All endpoints are configurable via the database. Admins can modify schemas
+    and add new endpoints. Each endpoint can have its own validation schema
+    and be public or private.
 
     ### 🔗 Using Endpoints
 
@@ -341,44 +386,95 @@ async def get_system_info(db: Session = Depends(get_db)):
 @router.get(
     "/{endpoint_name}",
     response_model=PersonalItemListResponse,
-    summary="Get endpoint data",
+    summary="Get Content with Management IDs (Authenticated)",
     description="""
-    **Get data from any endpoint with privacy filtering**
+    **Get content data with item IDs for content management**
 
-    This endpoint works with all dynamic endpoints in the system:
-    - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies,
-      problems, looking_for, about
-    - **Custom endpoints**: Any endpoints you create via `/api/v1/endpoints`
+    This endpoint shows content with internal item IDs needed for content management
+    operations (create, update, delete). Perfect for content creators and editors.
 
-    ### 🔄 Adaptive Behavior
+    ### 📝 Content Management Workflow
 
-    **Single User Mode**: Direct access (when only 1 user exists)
+    **This endpoint is part of the content management workflow:**
+    1. **Login**: `/auth/login` → Get JWT token
+    2. **List Content**: `GET /api/v1/{endpoint}` (this endpoint) → Get item IDs
+    3. **Update**: `PUT /api/v1/{endpoint}/{item_id}` → Update specific content
+    4. **Delete**: `DELETE /api/v1/{endpoint}/{item_id}` → Remove content
+
+    ### 🔄 Two Endpoint Types
+
+    **Authenticated (Management View)** - This endpoint:
     ```
-    GET /api/v1/resume
-    GET /api/v1/skills
-    GET /api/v1/ideas
+    GET /api/v1/about
+    → Shows content WITH item IDs for management
+    → Requires JWT authentication
+    → Returns: {"items": [{"id": "42", "content": "...", ...}]}
     ```
 
-    **Multi-User Mode**: Use user-specific endpoints (when 2+ users exist)
+    **Public (Clean View)** - For consumers:
     ```
-    GET /api/v1/resume/users/{username}
-    GET /api/v1/skills/users/{username}
-    GET /api/v1/ideas/users/{username}
+    GET /api/v1/about/users/{username}
+    → Shows clean content WITHOUT item IDs
+    → No authentication required
+    → Returns: [{"content": "...", "meta": {...}}]
     ```
+
+    ### 🔐 Authentication Required
+
+    This endpoint requires JWT authentication. Include token in Authorization header:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+
+    ### 📊 Available Content Endpoints
+
+    **Content/Meta Schema** (Flexible markdown content):
+    - **about** - Personal/entity information
+    - **ideas** - Ideas and thoughts
+    - **skills** - Skills and competencies
+    - **projects** - Personal and professional projects
+    - **values** - Personal values and principles
+    - **goals** - Personal and professional goals
+    - **learning** - Current learning activities
+    - And many more...
+
+    **Structured Schema**:
+    - **resume** - Professional resume (structured format)
 
     ### 🔐 Privacy Levels
 
-    - **business_card**: Minimal networking info (name, title, basic contact)
-    - **professional**: Work-appropriate details (experience, skills, public projects)
-    - **public_full**: Full public information (respects user privacy settings)
-    - **ai_safe**: AI-assistant safe (automatically removes sensitive data)
+    - **business_card**: Minimal networking info
+    - **professional**: Work-appropriate details
+    - **public_full**: Full public information
+    - **ai_safe**: AI-assistant safe (no sensitive data)
 
-    ### 📊 Examples
+    ### 📊 Response Format
 
-    Try these endpoints:
-    - `GET /api/v1/resume?privacy_level=business_card`
-    - `GET /api/v1/skills?page=1&size=10`
-    - `GET /api/v1/ideas?privacy_level=ai_safe`
+    Returns content with item IDs for management:
+    ```json
+    {
+      "items": [
+        {
+          "id": "42",
+          "content": "# My Content\\n\\nMarkdown content here...",
+          "meta": {
+            "title": "Content Title",
+            "date": "2025-08-27",
+            "tags": ["tag1", "tag2"],
+            "visibility": "public"
+          },
+          "data": { /* full content structure */ },
+          "created_at": "2025-08-27T10:30:00Z",
+          "updated_at": "2025-08-27T15:45:00Z"
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "size": 50
+    }
+    ```
+
+    The `id` field is what you need for update/delete operations.
     """,
     responses={
         200: {
@@ -504,6 +600,28 @@ async def get_endpoint_data(
                 | (DataEntry.created_by_id.is_(None))
             )
         else:
+            # In multi-user mode without authentication, check if data exists
+            total_entries = (
+                db.query(DataEntry).filter(DataEntry.endpoint_id == endpoint.id).count()
+            )
+            if total_entries > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error": "Multi-user mode: User-specific endpoint required",
+                        "message": (
+                            f"This system has multiple users. To access "
+                            f"{endpoint_name} data, use the user-specific "
+                            f"endpoint format:"
+                        ),
+                        "pattern": f"/api/v1/{endpoint_name}/users/{{username}}",
+                        "example": f"/api/v1/{endpoint_name}/users/your_username",
+                        "note": (
+                            "Replace 'your_username' with the actual username. "
+                            "Alternatively, authenticate to access your own data."
+                        ),
+                    },
+                )
             query = query.filter(DataEntry.created_by_id.is_(None))
 
     # Pagination
@@ -580,7 +698,7 @@ async def get_endpoint_data(
     This endpoint allows you to add data to any endpoint in the system:
     - **Core endpoints**: resume, skills, ideas, favorite_books, hobbies,
       problems, looking_for, about
-    - **Custom endpoints**: Any endpoints you create
+    - **Dynamic endpoints**: All endpoints support content/meta or structured schemas
 
     ### 🔄 Adaptive Behavior
 
@@ -820,7 +938,12 @@ async def get_endpoint_item(
     return result
 
 
-@router.put("/{endpoint_name}/{item_id}", response_model=Dict[str, Any])
+@router.put(
+    "/{endpoint_name}/{item_id}",
+    response_model=Dict[str, Any],
+    summary="Update Content Item",
+    description="Update specific content using item ID (requires authentication)",
+)
 async def update_endpoint_data(
     endpoint_name: str,
     item_id: int,
@@ -829,7 +952,41 @@ async def update_endpoint_data(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Update data in an endpoint (authenticated users only)"""
+    """
+    Update specific content item by ID (authenticated users only).
+
+    **Content Management Workflow:**
+    1. Login via `/auth/login` to get JWT token
+    2. Find item ID via authenticated GET `/api/v1/{endpoint_name}`
+    3. Update content using this endpoint with the item ID
+
+    **Request Body:**
+    ```json
+    {
+      "content": "# Updated Markdown Content\\n\\nYour updated content here...",
+      "meta": {
+        "title": "Updated Title",
+        "date": "2025-08-27",
+        "tags": ["tag1", "tag2"],
+        "status": "active",
+        "visibility": "public"
+      }
+    }
+    ```
+
+    **Security:**
+    - Requires valid JWT token in Authorization header
+    - Users can only update their own content (unless admin)
+    - All updates are logged in audit trail
+
+    **Example:**
+    ```bash
+    curl -X PUT "/api/v1/about/42" \\
+         -H "Authorization: Bearer <token>" \\
+         -H "Content-Type: application/json" \\
+         -d '{"content": "Updated content...", "meta": {...}}'
+    ```
+    """
     # Find endpoint
     endpoint = (
         db.query(Endpoint)
@@ -1067,7 +1224,79 @@ async def get_user_public_data_legacy(
 
 
 # Universal endpoint routing - adapts between single and multi-user modes
-@router.get("/{endpoint_name}/users/{username}", response_model=List[Dict[str, Any]])
+@router.get(
+    "/{endpoint_name}/users/{username}",
+    response_model=List[Dict[str, Any]],
+    summary="Get Public User Content (Clean View)",
+    description="""
+    **Get clean, user-friendly content without internal management IDs**
+
+    This is the **public endpoint** for content consumption. Perfect for displaying
+    content to visitors, embedding in websites, or API consumers who don't need
+    to manage content.
+
+    ### 📖 Content Consumption vs Management
+
+    **This endpoint (Public/Clean View)**:
+    ```
+    GET /api/v1/about/users/blackbeard
+    → Clean content WITHOUT item IDs
+    → No authentication required
+    → Returns: [{"content": "...", "meta": {...}}]
+    → Perfect for: websites, public APIs, content display
+    ```
+
+    **Management endpoint (Authenticated)**:
+    ```
+    GET /api/v1/about (with JWT token)
+    → Content WITH item IDs for management
+    → Authentication required
+    → Returns: {"items": [{"id": "42", "content": "...", ...}]}
+    → Perfect for: content creators, editing, updates
+    ```
+
+    ### 🔄 Adaptive Behavior
+
+    **Single User Mode (≤1 user)**: Redirects to simple endpoints
+    ```
+    /api/v1/about/users/john → redirects to → /api/v1/about
+    ```
+
+    **Multi-User Mode (2+ users)**: Direct access
+    ```
+    /api/v1/about/users/john → works directly
+    /api/v1/skills/users/jane → works directly
+    ```
+
+    ### 🔐 Privacy Filtering
+
+    Automatically applies privacy filtering based on user settings:
+    - **business_card**: Minimal networking info
+    - **professional**: Work-appropriate details
+    - **public_full**: Full public information (default)
+    - **ai_safe**: Safe for AI assistant access
+
+    ### 📊 Response Format
+
+    Returns clean content without internal IDs:
+    ```json
+    [
+      {
+        "content": "# About Me\\n\\nI am a software developer...",
+        "meta": {
+          "title": "About John Doe",
+          "date": "2025-08-27",
+          "tags": ["biography", "personal"],
+          "status": "active",
+          "visibility": "public"
+        }
+      }
+    ]
+    ```
+
+    No `id` field - this is for content consumption, not management.
+    """,
+)
 async def get_specific_user_data_universal(
     endpoint_name: str,
     username: str,
@@ -1082,9 +1311,10 @@ async def get_specific_user_data_universal(
     db: Session = Depends(get_db),
 ):
     """
-    Universal user-specific endpoint access
-    Works for any endpoint: /api/v1/{endpoint}/users/{username}
-    Examples: /api/v1/resume/users/john, /api/v1/skills/users/jane
+    **Public endpoint for clean content display without management IDs**
+
+    Perfect for content consumption - no authentication required.
+    For content management (with item IDs), use the authenticated endpoint instead.
     """
     from ..privacy import get_privacy_filter
     from ..utils import is_single_user_mode

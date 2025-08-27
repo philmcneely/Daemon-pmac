@@ -720,6 +720,20 @@ curl -X POST "http://localhost:8000/api/v1/ideas" \
   -d '{"title": "New Idea", "description": "A great concept"}'
 ```
 
+#### 📝 Content Management Guide
+
+For detailed instructions on creating, updating, and managing content, see the [Content Management Guide](CONTENT_MANAGEMENT.md).
+
+**Quick Content Management Workflow:**
+1. **Login**: `POST /auth/login` → Get JWT token
+2. **List Content**: `GET /api/v1/{endpoint}` (authenticated) → Get item IDs
+3. **Update Content**: `PUT /api/v1/{endpoint}/{item_id}` → Modify specific content
+4. **Public View**: `GET /api/v1/{endpoint}/users/{username}` → Clean display
+
+**Two Endpoint Types:**
+- **Authenticated**: Show content with item IDs for management
+- **Public**: Show clean content without IDs for consumption
+
 #### User Roles & Permissions
 
 **Admin Users:**

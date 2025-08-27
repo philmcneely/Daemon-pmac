@@ -20,14 +20,42 @@ from ..config import settings
 from ..database import User, get_db
 from ..schemas import Token, UserCreate, UserResponse
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["🔐 Authentication & Content Management"])
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, summary="Login for Content Management")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
-    """Login and get access token"""
+    """
+    Login and get JWT access token for content management operations.
+
+    **Content Management Workflow:**
+    1. **Login** (this endpoint) → Get JWT token
+    2. **List Content**: GET `/api/v1/{endpoint}` (authenticated) → See item IDs
+    3. **Create Content**: POST `/api/v1/{endpoint}` → Add new content
+    4. **Update Content**: PUT `/api/v1/{endpoint}/{item_id}` → Modify content
+    5. **Delete Content**: DELETE `/api/v1/{endpoint}/{item_id}` → Remove content
+
+    **Endpoint Types:**
+    - **Public**: `/api/v1/{endpoint}/users/{username}` - Clean view without IDs
+    - **Authenticated**: `/api/v1/{endpoint}` - Management view with item IDs
+
+    **Security:**
+    - Tokens expire automatically for security
+    - Users can only modify their own content (unless admin)
+    - All operations are logged in audit trail
+
+    **Example Usage:**
+    ```bash
+    # Login
+    curl -X POST "/auth/login" \
+         -d "username=your_username&password=your_password"
+
+    # Use token for content management
+    curl -H "Authorization: Bearer <token>" "/api/v1/about"
+    ```
+    """
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user or not isinstance(user, User):
         raise HTTPException(

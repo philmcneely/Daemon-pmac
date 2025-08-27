@@ -412,14 +412,22 @@ class ProblemData(BaseModel):
 # Mapping of endpoint names to their specific models
 ENDPOINT_MODELS = {
     "resume": ResumeData,
-    "about": AboutData,
+    "about": PersonalItemCreate,  # Updated to use flexible content/meta model
     "ideas": IdeaFlexibleData,  # Updated to use flexible model
     "skills": SkillsFlexibleData,  # Updated to use flexible model
     "skills_matrix": SkillsMatrixData,  # Added skills matrix model
     "favorite_books": FavoriteBooksFlexibleData,  # Updated to use flexible model
     "problems": ProblemData,
-    "hobbies": HobbyData,
-    "looking_for": LookingForData,
+    "hobbies": PersonalItemCreate,  # Updated to use flexible content/meta model
+    "looking_for": PersonalItemCreate,  # Updated to use flexible content/meta model
+    "projects": PersonalItemCreate,  # Content/meta model
+    "values": PersonalItemCreate,  # Content/meta model
+    "quotes": PersonalItemCreate,  # Content/meta model
+    "contact_info": PersonalItemCreate,  # Content/meta model
+    "events": PersonalItemCreate,  # Content/meta model
+    "achievements": PersonalItemCreate,  # Content/meta model
+    "goals": PersonalItemCreate,  # Content/meta model
+    "learning": PersonalItemCreate,  # Content/meta model
 }
 
 
