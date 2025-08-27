@@ -298,12 +298,21 @@ def create_default_endpoints(db: Session):
             "name": "about",
             "description": "Basic information about the person or entity",
             "schema": {
-                "name": {"type": "string", "required": True},
-                "title": {"type": "string"},
-                "bio": {"type": "string"},
-                "location": {"type": "string"},
-                "website": {"type": "string"},
-                "social_links": {"type": "object"},
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
+                },
             },
         },
         {
@@ -451,13 +460,6 @@ def create_default_endpoints(db: Session):
                         },
                     },
                 },
-                # Legacy fields for backward compatibility
-                "type": {"type": "string"},
-                "description": {"type": "string"},
-                "category": {"type": "string"},
-                "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
-                "criteria": {"type": "string"},
-                "contact_method": {"type": "string"},
             },
         },
         # New flexible markdown endpoints

@@ -1,28 +1,22 @@
 [
   {
-    "name": "Alex Johnson",
-    "title": "Full-Stack Developer & Tech Entrepreneur",
-    "bio": "Passionate software developer with 10+ years of experience building scalable web applications and leading technical teams. I love solving complex problems and creating solutions that make a real impact. When I'm not coding, you'll find me exploring new technologies, contributing to open source projects, or mentoring aspiring developers.",
-    "location": "San Francisco, CA",
-    "website": "https://alexjohnson.dev",
-    "social_links": {
-      "linkedin": "https://linkedin.com/in/alexjohnson",
-      "github": "https://github.com/alexjohnson",
-      "twitter": "https://twitter.com/alexjohnsondev",
-      "mastodon": "https://mastodon.social/@alexjohnson",
-      "blog": "https://alexjohnson.dev/blog"
+    "content": "# Alex Johnson\n\n**Full-Stack Developer & Tech Entrepreneur**\n\nPassionate software developer with 10+ years of experience building scalable web applications and leading technical teams. I love solving complex problems and creating solutions that make a real impact.\n\nWhen I'm not coding, you'll find me exploring new technologies, contributing to open source projects, or mentoring aspiring developers.\n\n## Contact & Links\n\n- 📍 San Francisco, CA\n- 🌐 [Website](https://alexjohnson.dev)\n- 💼 [LinkedIn](https://linkedin.com/in/alexjohnson)\n- 🐙 [GitHub](https://github.com/alexjohnson)\n- 🐦 [Twitter](https://twitter.com/alexjohnsondev)\n- 🐘 [Mastodon](https://mastodon.social/@alexjohnson)\n- 📝 [Blog](https://alexjohnson.dev/blog)",
+    "meta": {
+      "title": "About Alex Johnson",
+      "date": "2024-01-15",
+      "tags": ["personal", "developer", "entrepreneur"],
+      "status": "published",
+      "visibility": "public"
     }
   },
   {
-    "name": "DevCorp Solutions",
-    "title": "Enterprise Software Development Company",
-    "bio": "DevCorp Solutions is a leading software development company specializing in enterprise applications, cloud infrastructure, and digital transformation. Founded in 2015, we've helped over 200 companies modernize their technology stack and accelerate their digital initiatives.",
-    "location": "Multiple offices: SF, NYC, Austin",
-    "website": "https://devcorp-solutions.com",
-    "social_links": {
-      "linkedin": "https://linkedin.com/company/devcorp-solutions",
-      "twitter": "https://twitter.com/devCorpSolutions",
-      "youtube": "https://youtube.com/@devCorpSolutions"
+    "content": "# DevCorp Solutions\n\n**Enterprise Software Development Company**\n\nDevCorp Solutions is a leading software development company specializing in enterprise applications, cloud infrastructure, and digital transformation.\n\nFounded in 2015, we've helped over 200 companies modernize their technology stack and accelerate their digital initiatives.\n\n## Our Presence\n\n- 🏢 Multiple offices: SF, NYC, Austin\n- 🌐 [Website](https://devcorp-solutions.com)\n- 💼 [LinkedIn](https://linkedin.com/company/devcorp-solutions)\n- 🐦 [Twitter](https://twitter.com/devCorpSolutions)\n- 📺 [YouTube](https://youtube.com/@devCorpSolutions)",
+    "meta": {
+      "title": "About DevCorp Solutions",
+      "date": "2024-01-15",
+      "tags": ["company", "enterprise", "software"],
+      "status": "published",
+      "visibility": "public"
     }
   }
 ]

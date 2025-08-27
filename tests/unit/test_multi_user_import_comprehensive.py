@@ -391,7 +391,10 @@ class TestEdgeCases:
             files_data = {
                 "resume.json": {"name": "Test User"},
                 "skills.json": {"programming": "Python"},
-                "about.json": {"bio": "Test bio"},
+                "about.json": {
+                    "content": "Test bio content in markdown format",
+                    "meta": {"title": "About Test User", "visibility": "public"},
+                },
             }
 
             for filename, data in files_data.items():
