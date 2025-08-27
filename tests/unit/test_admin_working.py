@@ -296,8 +296,18 @@ class TestAdminRouter:
             mock_admin.is_admin = True
             return mock_admin
 
+        # Mock database session
+        def mock_get_db():
+            mock_db = MagicMock()
+            # Mock the query chain for endpoints
+            mock_db.query().all.return_value = []  # Return empty list of endpoints
+            # Mock the query chain for users
+            mock_db.query().count.return_value = 1  # Return count of 1 user
+            return mock_db
+
         # Override dependencies
         app.dependency_overrides[get_current_admin_user] = mock_get_admin
+        app.dependency_overrides[get_db] = mock_get_db
 
         try:
             client = TestClient(app)

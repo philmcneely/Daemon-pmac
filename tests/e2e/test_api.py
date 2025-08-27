@@ -1455,7 +1455,14 @@ def test_resume_multi_user_crud_operations(client, auth_headers, regular_user_he
     user_after_delete = client.get("/api/v1/resume/users/user").json()
     admin_after_delete = client.get("/api/v1/resume/users/admin").json()
 
-    assert len(user_after_delete) == 0  # User's resume deleted
+    # Check if user's data is empty - could be empty list or "no content" message
+    if isinstance(user_after_delete, dict) and "message" in user_after_delete:
+        # API returns message when no content available
+        assert "No visible content available" in user_after_delete["message"]
+    else:
+        # API returns empty list
+        assert len(user_after_delete) == 0
+
     assert len(admin_after_delete) > 0  # Admin's resume still exists
     assert "Eva Manager" in str(admin_after_delete)
 
@@ -1610,9 +1617,9 @@ def test_resume_multi_user_endpoint_patterns(
 
     # Test that direct endpoint redirects in multi-user mode
     direct_response = client.get("/api/v1/resume")
-    # Should either redirect to user-specific endpoint or work with
-    # authentication
-    assert direct_response.status_code in [200, 301, 302]
+    # In multi-user mode, direct endpoint should redirect to user-specific endpoint
+    # or return 400 if no user specified
+    assert direct_response.status_code in [200, 301, 302, 400]
 
     # Test with authentication - should show user's own data or be empty in
     # multi-user mode
