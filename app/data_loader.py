@@ -6,7 +6,9 @@ Extends the resume loader to handle any endpoint with JSON data files
 import glob
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from pydantic import BaseModel
 
 from .database import DataEntry, Endpoint, SessionLocal, get_db
 from .schemas import ENDPOINT_MODELS
@@ -95,14 +97,16 @@ def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str
             }
 
         # Validate each item if we have a specific model
-        endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
+        endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
         validated_items = []
 
         for i, item in enumerate(data_items):
             try:
                 if endpoint_model:
                     validated_item = endpoint_model(**item)
-                    validated_items.append(validated_item.dict(exclude_unset=True))
+                    validated_items.append(
+                        validated_item.model_dump(exclude_unset=True)
+                    )
                 else:
                     # No specific model, just ensure it's a dict
                     if not isinstance(item, dict):

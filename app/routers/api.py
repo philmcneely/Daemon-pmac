@@ -5,9 +5,10 @@ Core API routes for daemon endpoints
 import json
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -696,7 +697,7 @@ async def add_endpoint_data(
     sanitized_data = sanitize_data_dict(data)
 
     # Validate data against endpoint schema if we have a specific model
-    endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
     if endpoint_model:
         try:
             validated_data = endpoint_model(**sanitized_data)
@@ -867,7 +868,7 @@ async def update_endpoint_data(
 
     # Sanitize and validate new data
     sanitized_data = sanitize_data_dict(data)
-    endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
     if endpoint_model:
         try:
             validated_data = endpoint_model(**sanitized_data)
@@ -995,7 +996,7 @@ async def bulk_add_endpoint_data(
     errors = []
     created_items = []
 
-    endpoint_model = ENDPOINT_MODELS.get(endpoint_name)
+    endpoint_model: Optional[Type[BaseModel]] = ENDPOINT_MODELS.get(endpoint_name)
 
     for i, data in enumerate(data_list):
         try:
