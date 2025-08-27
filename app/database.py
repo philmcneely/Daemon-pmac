@@ -310,7 +310,7 @@ def create_default_endpoints(db: Session):
             "name": "ideas",
             "description": "Ideas, thoughts, and concepts",
             "schema": {
-                "content": {"type": "string", "required": True},  # Markdown content
+                "content": {"type": "string", "required": True},
                 "meta": {
                     "type": "object",
                     "properties": {
@@ -325,28 +325,17 @@ def create_default_endpoints(db: Session):
                         },
                     },
                 },
-                # Legacy fields for backward compatibility
-                "title": {"type": "string"},
-                "description": {"type": "string"},
-                "category": {"type": "string"},
-                "status": {
-                    "type": "string",
-                    "enum": ["draft", "developing", "published"],
-                },
-                "tags": {"type": "array", "items": {"type": "string"}},
             },
         },
         {
             "name": "skills",
             "description": "Skills and areas of expertise",
             "schema": {
-                "content": {"type": "string", "required": True},  # Markdown content
+                "content": {"type": "string", "required": True},
                 "meta": {
                     "type": "object",
                     "properties": {
                         "title": {"type": "string"},
-                        "category": {"type": "string"},
-                        "level": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
                         "status": {"type": "string"},
@@ -357,27 +346,17 @@ def create_default_endpoints(db: Session):
                         },
                     },
                 },
-                # Legacy fields for backward compatibility
-                "name": {"type": "string"},
-                "category": {"type": "string"},
-                "level": {
-                    "type": "string",
-                    "enum": ["beginner", "intermediate", "advanced", "expert"],
-                },
-                "years_experience": {"type": "integer"},
-                "description": {"type": "string"},
             },
         },
         {
             "name": "favorite_books",
             "description": "Favorite books and reading recommendations",
             "schema": {
-                "content": {"type": "string", "required": True},  # Markdown content
+                "content": {"type": "string", "required": True},
                 "meta": {
                     "type": "object",
                     "properties": {
                         "title": {"type": "string"},
-                        "author": {"type": "string"},
                         "date": {"type": "string"},
                         "tags": {"type": "array", "items": {"type": "string"}},
                         "status": {"type": "string"},
@@ -388,84 +367,69 @@ def create_default_endpoints(db: Session):
                         },
                     },
                 },
-                # Legacy fields for backward compatibility
-                "title": {"type": "string"},
-                "author": {"type": "string"},
-                "isbn": {"type": "string"},
-                "rating": {"type": "integer", "minimum": 1, "maximum": 5},
-                "review": {"type": "string"},
-                "genres": {"type": "array", "items": {"type": "string"}},
-                "date_read": {"type": "string", "format": "date"},
             },
         },
         {
             "name": "problems",
             "description": "Problems being worked on or solved",
             "schema": {
-                "title": {"type": "string", "required": True},
-                "description": {"type": "string", "required": True},
-                "domain": {"type": "string"},
-                "status": {
-                    "type": "string",
-                    "enum": ["identifying", "researching", "solving", "solved"],
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
                 },
-                "priority": {
-                    "type": "string",
-                    "enum": ["low", "medium", "high", "critical"],
-                },
-                "approach": {"type": "string"},
             },
         },
         {
             "name": "hobbies",
             "description": "Hobbies and personal interests",
             "schema": {
-                "name": {"type": "string", "required": True},
-                "description": {"type": "string"},
-                "category": {"type": "string"},
-                "skill_level": {
-                    "type": "string",
-                    "enum": ["beginner", "intermediate", "advanced"],
+                "content": {"type": "string", "required": True},
+                "meta": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
+                    },
                 },
-                "time_invested": {"type": "string"},
-                "favorite_aspects": {"type": "array", "items": {"type": "string"}},
             },
         },
         {
             "name": "projects",
             "description": "Personal and professional projects with markdown support",
             "schema": {
-                "title": {"type": "string", "required": True},
-                "description": {"type": "string"},
-                "content": {"type": "string"},  # Markdown content
-                "category": {"type": "string"},
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "planning",
-                        "in_progress",
-                        "completed",
-                        "on_hold",
-                        "cancelled",
-                    ],
-                },
-                "tags": {"type": "array", "items": {"type": "string"}},
-                "start_date": {"type": "string"},
-                "end_date": {"type": "string"},
-                "technologies": {"type": "array", "items": {"type": "string"}},
-                "links": {
+                "content": {"type": "string", "required": True},
+                "meta": {
                     "type": "object",
                     "properties": {
-                        "github": {"type": "string"},
-                        "demo": {"type": "string"},
-                        "documentation": {"type": "string"},
-                        "website": {"type": "string"},
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "status": {"type": "string"},
+                        "visibility": {
+                            "type": "string",
+                            "enum": ["public", "unlisted", "private"],
+                            "default": "public",
+                        },
                     },
                 },
-                "team_size": {"type": "integer"},
-                "role": {"type": "string"},
-                "outcomes": {"type": "array", "items": {"type": "string"}},
-                "featured": {"type": "boolean"},
             },
         },
         {

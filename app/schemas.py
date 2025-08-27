@@ -400,6 +400,26 @@ class SkillsMatrixData(BaseModel):
         return self
 
 
+class ProblemData(BaseModel):
+    """Schema for problems supporting flexible markdown format"""
+
+    content: str = Field(
+        ..., min_length=1, description="Markdown content for problem description"
+    )
+    meta: Optional[PersonalItemMeta] = None
+
+    @model_validator(mode="after")
+    def validate_problem_data(self):
+        """Apply HTML unescaping for markdown content"""
+        import html
+
+        # Double-unescape HTML for markdown (handles sanitizer double-escaping)
+        if self.content:
+            # First unescape: sanitizer escaping, second: original entities
+            self.content = html.unescape(html.unescape(self.content))
+        return self
+
+
 # Mapping of endpoint names to their specific models
 ENDPOINT_MODELS = {
     "resume": ResumeData,
@@ -427,6 +447,7 @@ class PersonalItemResponse(BaseModel):
     id: str
     content: str
     meta: Optional[PersonalItemMeta] = None
+    data: Optional[Dict[str, Any]] = None  # Full data for backward compatibility
     updated_at: datetime
     created_at: datetime
 

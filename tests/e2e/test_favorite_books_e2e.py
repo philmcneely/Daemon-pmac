@@ -86,8 +86,10 @@ class TestFavoriteBooksEndpoint:
         list_response = client.get("/api/v1/favorite_books")
         assert list_response.status_code == 200
 
-        books = list_response.json()
-        assert isinstance(books, list)
+        books_response = list_response.json()
+        assert isinstance(books_response, dict)
+        assert "items" in books_response
+        books = books_response["items"]
         assert len(books) >= 1
 
         # Check that our created book is in the list
@@ -261,48 +263,48 @@ class TestFavoriteBooksEndpoint:
         assert pub_book_data["data"]["meta"]["visibility"] == "public"
         assert priv_book_data["data"]["meta"]["visibility"] == "private"
 
-    def test_favorite_books_backward_compatibility(
+    def test_favorite_books_flexible_markdown_compatibility(
         self, client: TestClient, auth_headers
     ):
-        """Test that legacy and new formats can coexist"""
-        # Create one book with legacy format
-        legacy_book = {
-            "title": "Legacy Book",
-            "author": "Legacy Author",
-            "rating": 4,
-            "review": "Good book using old format.",
+        """Test flexible markdown format compatibility"""
+        # Create books with flexible markdown format
+        book1 = {
+            "content": "### Legacy-Style Book\n\n**Author:** Legacy Author\n**Rating:** 4/5\n\nGood book using flexible markdown format.",
+            "meta": {"title": "Legacy-Style Book", "tags": ["classic"]},
         }
 
-        # Create one book with new format
-        new_book = {
+        book2 = {
             "content": "### New Format Book\n\nUsing flexible markdown content.",
-            "meta": {"title": "New Book", "author": "New Author"},
+            "meta": {"title": "New Book", "tags": ["modern"]},
         }
 
         # Both should work
-        legacy_response = client.post(
-            "/api/v1/favorite_books", json=legacy_book, headers=auth_headers
+        book1_response = client.post(
+            "/api/v1/favorite_books", json=book1, headers=auth_headers
         )
-        new_response = client.post(
-            "/api/v1/favorite_books", json=new_book, headers=auth_headers
+        book2_response = client.post(
+            "/api/v1/favorite_books", json=book2, headers=auth_headers
         )
 
-        assert legacy_response.status_code == 200
-        assert new_response.status_code == 200
+        assert book1_response.status_code == 200
+        assert book2_response.status_code == 200
 
         # Verify both are retrievable
         books_response = client.get("/api/v1/favorite_books")
         assert books_response.status_code == 200
-        books = books_response.json()
+        books_data = books_response.json()
+        books = books_data["items"]
 
         # Should have both books
-        legacy_found = any(book.get("title") == "Legacy Book" for book in books)
-        new_found = any(
+        book1_found = any(
+            "Legacy-Style Book" in book.get("content", "") for book in books
+        )
+        book2_found = any(
             book.get("content", "").startswith("### New Format Book") for book in books
         )
 
-        assert legacy_found
-        assert new_found
+        assert book1_found
+        assert book2_found
 
     def test_favorite_books_multi_user_support(self, client: TestClient, auth_headers):
         """Test multi-user support for favorite books"""
@@ -337,7 +339,8 @@ class TestFavoriteBooksEndpoint:
         # Verify all books are retrievable
         list_response = client.get("/api/v1/favorite_books")
         assert list_response.status_code == 200
-        books = list_response.json()
+        books_data = list_response.json()
+        books = books_data["items"]
         assert len(books) >= len(bulk_books)
 
     def test_favorite_books_pagination(self, client: TestClient, auth_headers):

@@ -31,8 +31,10 @@ def test_get_empty_projects_data(client):
     response = client.get("/api/v1/projects")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 0
+    assert isinstance(data, dict)
+    assert "items" in data
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) == 0
 
 
 def test_create_project_unauthenticated(client):
@@ -200,8 +202,10 @@ def test_get_projects_after_creation(client, auth_headers):
     response = client.get("/api/v1/projects")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2  # At least the ones we just created
+    assert isinstance(data, dict)
+    assert "items" in data
+    projects_list = data["items"]
+    assert len(projects_list) >= 2  # At least the ones we just created
 
 
 def test_projects_pagination(client, auth_headers):
@@ -242,8 +246,9 @@ def test_projects_search_by_content(client, auth_headers):
     response = client.get("/api/v1/projects?search=Python")
     assert response.status_code == 200
     data = response.json()
+    projects_list = data["items"]
     # Should find projects containing "Python"
-    python_projects = [p for p in data if "Python" in p.get("content", "")]
+    python_projects = [p for p in projects_list if "Python" in p.get("content", "")]
     assert len(python_projects) >= 2
 
 
@@ -261,7 +266,8 @@ def test_projects_single_user_vs_multi_user(client, auth_headers):
     response = client.get("/api/v1/projects")
     assert response.status_code == 200
     data = response.json()
-    assert any("System Mode Test" in item.get("content", "") for item in data)
+    projects_list = data["items"]
+    assert any("System Mode Test" in item.get("content", "") for item in projects_list)
 
 
 def test_projects_markdown_special_characters(client, auth_headers):

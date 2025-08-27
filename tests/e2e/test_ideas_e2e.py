@@ -14,7 +14,10 @@ class TestIdeasEndpoint:
         response = client.get("/api/v1/ideas")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert len(data["items"]) == 0
 
     def test_ideas_create_traditional_schema(self, client: TestClient, auth_headers):
         """Test creating ideas with traditional structured schema"""
@@ -186,7 +189,8 @@ class TestIdeasEndpoint:
         response = client.get("/api/v1/ideas?page=1&size=3")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) <= 3  # Should respect the size limit
+        assert "items" in data
+        assert len(data["items"]) <= 3  # Should respect the size limit
 
     def test_ideas_search_by_content(self, client: TestClient, auth_headers):
         """Test searching ideas by content"""
@@ -206,7 +210,8 @@ class TestIdeasEndpoint:
         # Search for specific content (if search is implemented)
         response = client.get("/api/v1/ideas")
         assert response.status_code == 200
-        ideas = response.json()
+        ideas_response = response.json()
+        ideas = ideas_response["items"]
 
         # Verify we can find our created ideas
         contents = [idea.get("content", "") for idea in ideas]
@@ -240,7 +245,8 @@ class TestIdeasEndpoint:
         # Test unauthenticated access
         response = client.get("/api/v1/ideas")
         assert response.status_code == 200
-        public_ideas = response.json()
+        public_ideas_response = response.json()
+        public_ideas = public_ideas_response["items"]
 
         # Should only see public ideas when not authenticated
         visible_contents = [idea.get("content", "") for idea in public_ideas]

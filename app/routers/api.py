@@ -26,6 +26,8 @@ from ..schemas import (
     EndpointResponse,
     EndpointUpdate,
     PaginatedResponse,
+    PersonalItemListResponse,
+    PersonalItemResponse,
     UserCreate,
 )
 from ..utils import mask_sensitive_data, sanitize_data_dict, validate_url
@@ -238,7 +240,7 @@ async def create_endpoint(
 # Data management for endpoints
 @router.get(
     "/{endpoint_name}",
-    response_model=List[Dict[str, Any]],
+    response_model=PersonalItemListResponse,
     summary="Get endpoint data",
     description="""
     **Get data from any endpoint with privacy filtering**
@@ -394,18 +396,14 @@ async def get_endpoint_data(
 
     # Adaptive user filtering logic
     if is_single_user_mode(db):
-        # Single-user mode: show all data regardless of owner
         pass  # No user filtering
     else:
-        # Multi-user mode: filter by user ownership
         if current_user:
-            # Authenticated user: show their data + public data
             query = query.filter(
                 (DataEntry.created_by_id == current_user.id)
-                | (DataEntry.created_by_id.is_(None))  # Public/system data
+                | (DataEntry.created_by_id.is_(None))
             )
         else:
-            # Unauthenticated user: show only public data
             query = query.filter(DataEntry.created_by_id.is_(None))
 
     # Pagination
@@ -413,71 +411,63 @@ async def get_endpoint_data(
     data_entries = query.offset(offset).limit(size).all()
 
     # Apply privacy filtering based on privacy_level parameter or authentication status
-    should_apply_privacy = (
-        privacy_level is not None  # Explicit privacy level requested
-        or (
-            not current_user and not is_single_user_mode(db)
-        )  # Unauthenticated in multi-user mode
+    should_apply_privacy = privacy_level is not None or (
+        not current_user and not is_single_user_mode(db)
     )
 
-    if should_apply_privacy:
-        # Determine the privacy level to apply
-        if privacy_level is None:
-            privacy_level = "public_full"  # Default for unauthenticated users
-
-        filtered_data = []
-        for entry in data_entries:
-            # Determine which user's data this is for privacy filtering
-            entry_user = None
+    items = []
+    for entry in data_entries:
+        # Privacy filtering and masking
+        data = entry.data
+        if should_apply_privacy:
+            if privacy_level is None:
+                privacy_level = "public_full"
             if entry.created_by_id:
                 entry_user = (
                     db.query(User).filter(User.id == entry.created_by_id).first()
                 )
-
-            if entry_user:
-                from ..privacy import get_privacy_filter
-
-                privacy_filter = get_privacy_filter(db, entry_user)
-                filtered_entry = privacy_filter.filter_data(
-                    cast(Dict[str, Any], entry.data), privacy_level=privacy_level
-                )
-                # Apply additional sensitive data masking
-                filtered_entry["data"] = mask_sensitive_data(
-                    filtered_entry.get("data", {}), privacy_level
-                )
-                if filtered_entry:
-                    filtered_data.append(filtered_entry)
-            else:
-                # System data - apply basic filtering if privacy level requested
-                if privacy_level and privacy_level != "none":
+                if entry_user:
                     from ..privacy import get_privacy_filter
 
-                    privacy_filter = get_privacy_filter(db)
-                    filtered_entry = privacy_filter.filter_data(
-                        cast(Dict[str, Any], entry.data),
-                        privacy_level=privacy_level,
-                        is_authenticated=current_user is not None,
+                    privacy_filter = get_privacy_filter(db, entry_user)
+                    filtered_data = privacy_filter.filter_data(
+                        cast(Dict[str, Any], data), privacy_level=privacy_level
                     )
-                    # Apply additional sensitive data masking
-                    filtered_entry = mask_sensitive_data(filtered_entry, privacy_level)
-                    filtered_data.append(filtered_entry)
-                else:
-                    # Still apply basic masking even without privacy filter
-                    masked_data = mask_sensitive_data(
-                        cast(Dict[str, Any], entry.data), privacy_level or "public_full"
-                    )
-                    filtered_data.append(masked_data)
-        return filtered_data
-    else:
-        # No explicit privacy filtering requested, but still apply basic masking
-        # for sensitive data
-        basic_filtered_data = []
-        for entry in data_entries:
-            masked_data = mask_sensitive_data(
-                cast(Dict[str, Any], entry.data), "public_full"
-            )
-            basic_filtered_data.append(masked_data)
-        return basic_filtered_data
+                    data = filtered_data.get("data", filtered_data)
+            else:
+                from ..privacy import get_privacy_filter
+
+                privacy_filter = get_privacy_filter(db)
+                filtered_data = privacy_filter.filter_data(
+                    cast(Dict[str, Any], data),
+                    privacy_level=privacy_level,
+                    is_authenticated=current_user is not None,
+                )
+                data = filtered_data
+            data = mask_sensitive_data(data, privacy_level)
+        else:
+            data = mask_sensitive_data(data, "public_full")
+
+        # Extract content and meta for flexible markdown endpoints
+        content = data.get("content") if isinstance(data, dict) else None
+        meta = data.get("meta") if isinstance(data, dict) else None
+
+        # Handle updated_at field - use created_at if updated_at is None
+        updated_at = entry.created_at
+        if hasattr(entry, "updated_at") and entry.updated_at is not None:
+            updated_at = entry.updated_at
+
+        item = PersonalItemResponse(
+            id=str(entry.id),
+            content=content if content is not None else "",
+            meta=meta,
+            data=data if isinstance(data, dict) else {},
+            updated_at=updated_at,
+            created_at=entry.created_at,
+        )
+        items.append(item)
+
+    return PersonalItemListResponse(items=items)
 
 
 @router.post(

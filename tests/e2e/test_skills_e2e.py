@@ -88,7 +88,10 @@ class TestSkillsEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert isinstance(data, list)
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert len(data["items"]) == 0
 
     def test_skills_list_with_items(self, client: TestClient, auth_headers):
         """Test listing skills after creating some"""
@@ -120,9 +123,20 @@ class TestSkillsEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert len(data) >= 2
-        assert any(item.get("content", "").startswith("### React") for item in data)
-        assert any(item.get("name") == "Python" for item in data)
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert len(data["items"]) >= 2
+
+        # Check that the skills exist in the items list
+        skills_data = data["items"]
+        assert any(
+            item.get("content", "").startswith("### React") for item in skills_data
+        )
+        assert any(
+            "data" in item and item["data"].get("name") == "Python"
+            for item in skills_data
+        )
 
         # Cleanup
         for skill_id in created_ids:
@@ -340,7 +354,8 @@ class TestSkillsEndpoint:
         # Both should be visible to authenticated user
         response = client.get("/api/v1/skills", headers=auth_headers)
         assert response.status_code == 200
-        skills_list = response.json()
+        skills_response = response.json()
+        skills_list = skills_response["items"]
 
         # Check if both skills exist in the list
         private_found = any(

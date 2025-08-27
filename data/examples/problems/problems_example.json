@@ -1,42 +1,46 @@
 [
   {
-    "title": "Flaky Test Detection and Resolution",
-    "description": "Addressing the persistent issue of unreliable automated tests that pass and fail intermittently, causing CI/CD pipeline delays and reducing team confidence in test results.",
-    "domain": "quality-engineering",
-    "status": "solving",
-    "priority": "high",
-    "approach": "Implementing statistical analysis of test results, identifying environmental dependencies, and creating more robust test isolation strategies"
+    "content": "### Problem: Reducing newsletter churn\n\n- **Observed**: 8% monthly churn rate\n- **Hypothesis**: Onboarding sequence lacks value framing\n- **Next steps**: Redesign welcome email series\n\n#### Background\nOur newsletter has grown to 10,000 subscribers but we're losing 800 users monthly.\n\n#### Research findings\n> Initial analysis shows users drop off after the 3rd email\n\n#### Proposed solutions\n1. Add clear value proposition in email #2\n2. Include case studies and testimonials in email #3\n3. Add interactive survey in email #4 to understand preferences",
+    "meta": {
+      "title": "Newsletter Churn Problem",
+      "tags": [
+        "product",
+        "retention",
+        "email",
+        "marketing"
+      ],
+      "status": "researching",
+      "visibility": "private"
+    }
   },
   {
-    "title": "Legacy System Testing Coverage",
-    "description": "Improving test coverage for legacy codebases that lack comprehensive automated testing, while maintaining system stability during refactoring efforts.",
-    "domain": "software-engineering",
-    "status": "researching",
-    "priority": "medium",
-    "approach": "Gradual introduction of characterization tests, API-level testing, and incremental modernization strategies"
+    "content": "### Problem: API Performance Degradation\n\n## Context\nOur API response times have increased by **40%** over the last month, affecting user experience.\n\n## Symptoms\n- Average response time: `250ms` → `350ms`\n- 95th percentile: `500ms` → `800ms`\n- Error rate: `0.1%` → `0.3%`\n- Timeout complaints from mobile app team\n\n## Investigation Timeline\n\n| Date | Action | Result |\n|---|---|---|\n| 2025-01-05 | Added monitoring | Identified DB bottleneck |\n| 2025-01-06 | Query optimization | 10% improvement |\n| 2025-01-07 | Index analysis | Found missing indexes |\n| 2025-01-08 | Load testing | Confirmed connection pool issue |\n\n## Code Analysis\n\n```python\n# Problematic query\nusers = session.query(User).filter(\n    User.created_at > datetime.now() - timedelta(days=30)\n).all()\n\n# Optimized version\nusers = session.query(User).filter(\n    User.created_at > datetime.now() - timedelta(days=30)\n).options(selectinload(User.profile)).all()\n```\n\n## Root Cause Hypothesis\n> Database connection pool exhaustion during peak hours (2-4 PM EST)\n\n### Evidence\n1. Connection pool metrics show 100% utilization during peak\n2. Query execution times correlate with pool saturation\n3. Recovery happens automatically after connection timeout\n4. Similar pattern observed in staging environment\n\n## Action Plan\n\n### Immediate (This Week)\n- [ ] Increase connection pool size from 10 to 25\n- [ ] Implement connection pooling monitoring\n- [x] Add circuit breaker pattern for DB calls\n- [ ] Set up automated scaling triggers\n\n### Short-term (Next Month)\n- [ ] Database query optimization audit\n- [ ] Implement read replicas for reporting queries\n- [ ] Add Redis caching layer for frequent queries\n- [ ] Performance testing automation\n\n### Long-term (Next Quarter)\n- [ ] Database sharding evaluation\n- [ ] Microservices architecture planning\n- [ ] Advanced monitoring and alerting\n\n---\n**Priority**: Critical | **Status**: Active Investigation\n**Stakeholders**: Engineering Team, DevOps, Product Team",
+    "meta": {
+      "title": "API Performance Investigation",
+      "tags": [
+        "performance",
+        "database",
+        "api",
+        "critical",
+        "infrastructure"
+      ],
+      "status": "solving",
+      "visibility": "unlisted"
+    }
   },
   {
-    "title": "Cross-Browser Compatibility at Scale",
-    "description": "Ensuring consistent user experience across multiple browsers and devices without exponentially increasing test execution time and infrastructure costs.",
-    "domain": "web-testing",
-    "status": "solved",
-    "priority": "medium",
-    "approach": "Implemented smart browser matrix selection, parallel execution optimization, and visual regression testing automation"
-  },
-  {
-    "title": "AI Model Testing and Validation",
-    "description": "Developing effective testing strategies for AI/ML models, including data quality validation, model performance monitoring, and bias detection.",
-    "domain": "ai-testing",
-    "status": "identifying",
-    "priority": "high",
-    "approach": "Researching specialized testing frameworks for ML pipelines and establishing model validation benchmarks"
-  },
-  {
-    "title": "Microservices Integration Testing",
-    "description": "Creating efficient testing strategies for distributed systems with multiple microservices, managing dependencies, and ensuring end-to-end functionality.",
-    "domain": "distributed-systems",
-    "status": "solving",
-    "priority": "high",
-    "approach": "Contract testing implementation, service virtualization, and comprehensive monitoring integration"
+    "content": "### Problem: Database Backup Failures (RESOLVED ✅)\n\n#### Original Issue\nDaily database backups were failing intermittently, creating a significant data loss risk for our production environment.\n\n#### Symptoms\n- 30% of nightly backups failing over 2 weeks\n- No consistent error pattern in logs\n- Manual backups worked successfully\n- Backup size growing significantly (2GB → 8GB over 6 months)\n\n#### Root Cause Analysis\n\n**Primary Issue**: Disk space limitations\n- Backup retention policy kept 90 days of backups\n- Daily backup size grew from 2GB to 8GB over 6 months\n- Available disk space: 500GB (insufficient for 90 × 8GB = 720GB)\n\n**Secondary Issues**:\n- No disk space monitoring alerts\n- Backup compression not enabled\n- No automated cleanup of old backup files\n\n#### Investigation Process\n\n```bash\n# Disk space analysis\ndf -h /backup\n# Result: 95% full (475GB/500GB used)\n\n# Backup size analysis\nls -lah /backup/*.sql.gz | tail -30\n# Result: Files ranging from 7.2GB to 8.4GB\n\n# Retention policy check\nfind /backup -name \"*.sql.gz\" | wc -l\n# Result: 87 files (should be max 90)\n```\n\n#### Solution Implemented\n\n##### Immediate Actions (Day 1)\n1. ✅ **Emergency cleanup**: Removed backups older than 30 days\n2. ✅ **Temporary solution**: Moved 60 days of backups to cold storage\n3. ✅ **Monitoring**: Added disk space alerts at 80% and 90%\n\n##### Short-term Fixes (Week 1)\n1. ✅ **Updated retention policy**: 90 days → 30 days\n2. ✅ **Enabled compression**: Reduced backup size by 60% (8GB → 3.2GB)\n3. ✅ **Automated cleanup**: Created cron job to remove old backups\n4. ✅ **Documentation**: Updated runbook with new procedures\n\n##### Long-term Improvements (Month 1)\n1. ✅ **Monitoring dashboard**: Added backup health metrics\n2. ✅ **Alerting system**: PagerDuty integration for backup failures\n3. ✅ **Cold storage**: Automated archival to S3 for backups >30 days\n4. ✅ **Testing procedure**: Weekly backup restoration tests\n\n#### Code Changes\n\n```bash\n#!/bin/bash\n# Updated backup script with compression and cleanup\n\n# Backup with compression\npg_dump -h localhost -U backup_user production_db | gzip > \"/backup/db_$(date +%Y%m%d_%H%M%S).sql.gz\"\n\n# Cleanup old backups (keep 30 days)\nfind /backup -name \"*.sql.gz\" -mtime +30 -delete\n\n# Check disk space and alert if > 80%\nUSED=$(df /backup | tail -1 | awk '{print $5}' | sed 's/%//')\nif [ $USED -gt 80 ]; then\n    echo \"Backup disk usage: ${USED}%\" | mail -s \"Backup Disk Alert\" admin@company.com\nfi\n```\n\n#### Results\n\n| Metric | Before | After | Improvement |\n|---|---|---|---|\n| Success Rate | 70% | 100% | +30% |\n| Backup Size | 8.0GB | 3.2GB | -60% |\n| Disk Usage | 95% | 45% | -50% |\n| Backup Time | 45 min | 32 min | -29% |\n\n#### Lessons Learned\n\n1. **Monitoring is Critical**: Disk space should be monitored proactively\n2. **Compression Wins**: Should have been enabled from day one\n3. **Retention Strategy**: Policy should account for data growth\n4. **Documentation**: Procedures must be updated when processes change\n\n#### Follow-up Actions\n\n- [x] **Quarterly review**: Add backup strategy to quarterly infrastructure review\n- [x] **Capacity planning**: Include backup storage in capacity planning\n- [x] **Knowledge sharing**: Present solution at next engineering all-hands\n- [x] **Monitoring template**: Create reusable monitoring for other services\n\n---\n**Problem Resolved**: January 9, 2025  \n**Resolution Time**: 2 weeks  \n**Status**: CLOSED ✅\n\n**Impact**: Zero data loss, improved reliability, reduced operational overhead\n**Team**: DevOps (lead), Database Team (support), Engineering (review)",
+    "meta": {
+      "title": "Database Backup Failures (RESOLVED)",
+      "tags": [
+        "database",
+        "backup",
+        "infrastructure",
+        "resolved",
+        "devops"
+      ],
+      "status": "solved",
+      "visibility": "public"
+    }
   }
 ]

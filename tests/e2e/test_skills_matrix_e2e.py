@@ -90,7 +90,10 @@ class TestSkillsMatrixEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert isinstance(data, list)
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert isinstance(data["items"], list)
+        assert len(data["items"]) == 0
 
     def test_skills_matrix_list_with_items(self, client: TestClient, auth_headers):
         """Test listing skills matrices after creating some"""
@@ -129,9 +132,14 @@ class TestSkillsMatrixEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert len(data) >= 2
-        assert any("Frontend Skills" in item.get("content", "") for item in data)
-        assert any("Backend Skills" in item.get("content", "") for item in data)
+        matrices_list = data["items"]
+        assert len(matrices_list) >= 2
+        assert any(
+            "Frontend Skills" in item.get("content", "") for item in matrices_list
+        )
+        assert any(
+            "Backend Skills" in item.get("content", "") for item in matrices_list
+        )
 
         # Cleanup
         for matrix_id in created_ids:
@@ -338,7 +346,8 @@ class TestSkillsMatrixEndpoint:
         # Both should be visible to authenticated user
         response = client.get("/api/v1/skills_matrix", headers=auth_headers)
         assert response.status_code == 200
-        matrices_list = response.json()
+        matrices_response = response.json()
+        matrices_list = matrices_response["items"]
 
         # Check if both matrices exist in the list
         private_found = any(

@@ -84,8 +84,9 @@ def test_get_empty_endpoint_data(client):
     response = client.get("/api/v1/ideas")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 0
+    assert "items" in data
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) == 0
 
 
 def test_create_endpoint_data_unauthenticated(client):
@@ -397,7 +398,8 @@ def test_get_endpoint_data_public(client):
     response = client.get("/api/v1/ideas")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert "items" in data
+    assert isinstance(data["items"], list)
 
 
 def test_add_endpoint_data(client, auth_headers, sample_idea_data):
@@ -844,7 +846,7 @@ def test_pagination_comprehensive(client, auth_headers):
         response = client.get(f"/api/v1/ideas?page=1&size={size}")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) <= size
+        assert len(data["items"]) <= size
 
     # Test pagination across pages
     page1 = client.get("/api/v1/ideas?page=1&size=5").json()
@@ -852,9 +854,9 @@ def test_pagination_comprehensive(client, auth_headers):
     page3 = client.get("/api/v1/ideas?page=3&size=5").json()
 
     # Verify no duplicate items across pages
-    page1_titles = {item["title"] for item in page1}
-    page2_titles = {item["title"] for item in page2}
-    page3_titles = {item["title"] for item in page3}
+    page1_titles = {item["title"] for item in page1["items"]}
+    page2_titles = {item["title"] for item in page2["items"]}
+    page3_titles = {item["title"] for item in page3["items"]}
 
     assert len(page1_titles & page2_titles) == 0  # No intersection
     assert len(page2_titles & page3_titles) == 0  # No intersection
@@ -912,7 +914,8 @@ def test_custom_endpoint_creation_and_usage(client, auth_headers):
     # Test retrieving data from custom endpoint
     get_response = client.get("/api/v1/test_custom_projects")
     assert get_response.status_code == 200
-    projects = get_response.json()
+    data = get_response.json()
+    projects = data["items"]
     assert len(projects) >= 1
     assert any(project["name"] == "Personal API Framework" for project in projects)
 
@@ -1080,19 +1083,20 @@ def test_resume_privacy_levels_comprehensive(client, auth_headers):
         response = client.get(f"/api/v1/resume?level={level}")
         assert response.status_code == 200
         responses[level] = response.json()
-        assert len(responses[level]) > 0
+        assert "items" in responses[level]
+        assert len(responses[level]["items"]) > 0
 
     # Extract first entries for testing
     entries = {}
     for level in levels:
         entries[level] = (
-            responses[level][0]
-            if isinstance(responses[level], list)
-            else responses[level]
+            responses[level]["items"][0]
+            if isinstance(responses[level]["items"], list)
+            else responses[level]["items"]
         )
 
     # === BUSINESS CARD LEVEL TESTS ===
-    business_card = entries["business_card"]
+    business_card = entries["business_card"]["data"]
 
     # Should have basic professional info
     assert "name" in business_card
@@ -1122,7 +1126,7 @@ def test_resume_privacy_levels_comprehensive(client, auth_headers):
     assert "salary" not in contact
 
     # === PROFESSIONAL LEVEL TESTS ===
-    professional = entries["professional"]
+    professional = entries["professional"]["data"]
 
     # Should have comprehensive professional info
     assert "name" in professional
@@ -1151,7 +1155,7 @@ def test_resume_privacy_levels_comprehensive(client, auth_headers):
     assert "salary" not in prof_contact
 
     # === PUBLIC FULL LEVEL TESTS ===
-    public_full = entries["public_full"]
+    public_full = entries["public_full"]["data"]
 
     # Should have most info
     assert "name" in public_full
@@ -1182,7 +1186,7 @@ def test_resume_privacy_levels_comprehensive(client, auth_headers):
     assert "salary" not in public_contact
 
     # === AI SAFE LEVEL TESTS ===
-    ai_safe = entries["ai_safe"]
+    ai_safe = entries["ai_safe"]["data"]
 
     # Should have comprehensive info for AI
     assert "name" in ai_safe

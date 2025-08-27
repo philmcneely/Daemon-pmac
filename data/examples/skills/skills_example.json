@@ -4,9 +4,12 @@
       "content": "### Python (Intermediate)\n\n- 5 years of practical use\n- Focus: data processing, web backends\n- Current learning: async programming\n\n**Recent Projects:**\n- FastAPI personal API system\n- Data pipeline automation\n- ML model deployment\n\n**Frameworks & Libraries:**\n- FastAPI, Django, Flask\n- pandas, NumPy, scikit-learn\n- SQLAlchemy, pytest\n\n**Next Steps:**\n- Advanced async patterns\n- Performance optimization\n- Microservices architecture",
       "meta": {
         "title": "Python",
-        "category": "Programming Languages",
-        "level": "Intermediate",
-        "tags": ["python", "backend", "apis", "data-science"],
+        "tags": [
+          "python",
+          "backend",
+          "apis",
+          "data-science"
+        ],
         "visibility": "public"
       }
     },
@@ -14,69 +17,72 @@
       "content": "### Docker & Kubernetes\n\nContainer orchestration expertise with production experience:\n\n#### Docker\n- **Development**: Multi-stage builds, compose workflows\n- **Production**: Optimized images, security scanning\n- **Networking**: Custom networks, service discovery\n\n#### Kubernetes\n- **Deployments**: Rolling updates, blue-green strategies\n- **Scaling**: HPA, VPA, cluster autoscaling\n- **Monitoring**: Prometheus, Grafana, alerting\n\n#### Recent Achievements\n- ✅ Reduced deployment time by 75%\n- ✅ Improved system reliability to 99.9% uptime\n- ✅ Mentored 5 team members on K8s best practices\n\n> *\"Containerization transformed our development workflow\"* — Team Lead\n\n**Next Focus Areas:**\n- Service mesh implementation (Istio)\n- Advanced security policies\n- Cost optimization strategies",
       "meta": {
         "title": "Docker & Kubernetes",
-        "category": "DevOps",
-        "level": "Advanced",
-        "tags": ["docker", "kubernetes", "devops", "containers"],
+        "tags": [
+          "docker",
+          "kubernetes",
+          "devops",
+          "containers"
+        ],
         "visibility": "public"
       }
     }
   },
   "legacy_format_examples": [
-  {
-    "name": "Python",
-    "category": "Programming Languages",
-    "level": "expert",
-    "years_experience": 15,
-    "description": "Advanced Python development including FastAPI, Django, automation frameworks, and testing tools"
-  },
-  {
-    "name": "Test Automation",
-    "category": "Quality Engineering",
-    "level": "expert",
-    "years_experience": 20,
-    "description": "Comprehensive test automation using Selenium, Playwright, Cypress, and custom frameworks"
-  },
-  {
-    "name": "Docker",
-    "category": "DevOps",
-    "level": "advanced",
-    "years_experience": 8,
-    "description": "Container orchestration, microservices architecture, and deployment automation"
-  },
-  {
-    "name": "JavaScript",
-    "category": "Programming Languages",
-    "level": "advanced",
-    "years_experience": 12,
-    "description": "Full-stack JavaScript development, Node.js, React, and testing frameworks"
-  },
-  {
-    "name": "CI/CD Pipeline Design",
-    "category": "DevOps",
-    "level": "expert",
-    "years_experience": 10,
-    "description": "Jenkins, GitHub Actions, CircleCI pipeline optimization and automation"
-  },
-  {
-    "name": "AWS Cloud Services",
-    "category": "Cloud Computing",
-    "level": "advanced",
-    "years_experience": 7,
-    "description": "EC2, Lambda, RDS, S3, and serverless architecture implementation"
-  },
-  {
-    "name": "Team Leadership",
-    "category": "Management",
-    "level": "expert",
-    "years_experience": 15,
-    "description": "Leading distributed engineering teams, mentoring, and technical strategy development"
-  },
-  {
-    "name": "Machine Learning",
-    "category": "AI/Data Science",
-    "level": "intermediate",
-    "years_experience": 2,
-    "description": "LLM integration, model deployment, and AI-assisted testing methodologies"
-  }
+    {
+      "name": "Python",
+      "category": "Programming Languages",
+      "level": "expert",
+      "years_experience": 15,
+      "description": "Advanced Python development including FastAPI, Django, automation frameworks, and testing tools"
+    },
+    {
+      "name": "Test Automation",
+      "category": "Quality Engineering",
+      "level": "expert",
+      "years_experience": 20,
+      "description": "Comprehensive test automation using Selenium, Playwright, Cypress, and custom frameworks"
+    },
+    {
+      "name": "Docker",
+      "category": "DevOps",
+      "level": "advanced",
+      "years_experience": 8,
+      "description": "Container orchestration, microservices architecture, and deployment automation"
+    },
+    {
+      "name": "JavaScript",
+      "category": "Programming Languages",
+      "level": "advanced",
+      "years_experience": 12,
+      "description": "Full-stack JavaScript development, Node.js, React, and testing frameworks"
+    },
+    {
+      "name": "CI/CD Pipeline Design",
+      "category": "DevOps",
+      "level": "expert",
+      "years_experience": 10,
+      "description": "Jenkins, GitHub Actions, CircleCI pipeline optimization and automation"
+    },
+    {
+      "name": "AWS Cloud Services",
+      "category": "Cloud Computing",
+      "level": "advanced",
+      "years_experience": 7,
+      "description": "EC2, Lambda, RDS, S3, and serverless architecture implementation"
+    },
+    {
+      "name": "Team Leadership",
+      "category": "Management",
+      "level": "expert",
+      "years_experience": 15,
+      "description": "Leading distributed engineering teams, mentoring, and technical strategy development"
+    },
+    {
+      "name": "Machine Learning",
+      "category": "AI/Data Science",
+      "level": "intermediate",
+      "years_experience": 2,
+      "description": "LLM integration, model deployment, and AI-assisted testing methodologies"
+    }
   ]
 }

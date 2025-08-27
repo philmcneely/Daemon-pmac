@@ -1,30 +1,44 @@
 {
-  "examples": {
-    "basic_skills_matrix": {
-      "content": "### Skills Matrix\n\n| Skill | Level | Notes |\n|---|---:|---|\n| React | Advanced | Built 10+ apps |\n| Docker | Intermediate | Deploy pipelines |\n| Python | Expert | 8+ years experience |\n\n#### Recent Achievements\n- Led React migration for 3 legacy applications\n- Optimized Docker builds reducing deploy time by 60%\n- Mentored 5 developers in Python best practices",
-      "meta": {
-        "title": "Technical Skills Matrix",
-        "tags": ["skills", "matrix", "technical"],
-        "visibility": "public"
-      }
-    },
-    "comprehensive_matrix": {
-      "content": "### Comprehensive Skills Assessment 2025\n\n## Technical Skills\n\n### Programming Languages\n| Language | Proficiency | Years | Key Projects |\n|---|---|---|---|\n| **Python** | ⭐⭐⭐⭐⭐ | 8 | ML pipelines, APIs |\n| **JavaScript** | ⭐⭐⭐⭐ | 6 | Frontend, Node.js |\n| **Go** | ⭐⭐⭐ | 2 | Microservices |\n\n### Frameworks & Tools\n> **Note**: Ratings based on production experience and peer feedback\n\n#### Frontend\n- **React** `Advanced` - Component architecture, hooks, performance optimization\n- **Vue.js** `Intermediate` - SPA development, Vuex state management\n\n#### Backend\n- **FastAPI** `Expert` - Built 10+ production APIs\n- **Django** `Advanced` - E-commerce platforms, content management\n\n#### DevOps\n```bash\n# Sample deployment script mastery\ndocker build -t app:latest .\nkubectl apply -f deployment.yaml\n```\n\n## Soft Skills Assessment\n\n| Skill | Self-Rating | 360° Feedback | Development Goal |\n|---|---|---|---|\n| Leadership | 8/10 | 8.5/10 | Executive presence |\n| Communication | 9/10 | 9/10 | Technical writing |\n| Problem Solving | 9/10 | 8.5/10 | Systems thinking |\n\n## Endorsements\n\n### Technical Leadership\n> *\"Outstanding technical vision and ability to translate complex requirements into elegant solutions.\"*  \n> — Sarah Chen, Engineering Director\n\n### Mentoring\n> *\"Exceptional at developing junior talent. Patient, thorough, and always available for guidance.\"*  \n> — Mike Rodriguez, Senior Developer\n\n## Learning Goals 2025\n\n- [ ] **Rust Programming** - Systems programming for performance-critical applications\n- [ ] **Machine Learning Operations** - MLOps pipeline design and deployment\n- [ ] **Executive Communication** - Board-level presentation skills\n\n---\n\n*Last updated: Q3 2025*  \n*Next review: Q1 2026*",
-      "meta": {
-        "title": "Complete Skills Assessment 2025",
-        "tags": ["comprehensive", "technical", "leadership", "endorsements"],
-        "status": "current",
-        "visibility": "public"
-      }
-    },
-    "leadership_matrix": {
-      "content": "### Leadership Skills Matrix\n\n| Skill | Self-Assessment | Team Feedback | Manager Feedback |\n|---|---|---|---|\n| **Strategic Thinking** | Good | Very Good | Excellent |\n| **Team Development** | Excellent | Outstanding | Outstanding |\n| **Decision Making** | Very Good | Good | Very Good |\n| **Communication** | Excellent | Excellent | Excellent |\n| **Conflict Resolution** | Good | Very Good | Good |\n\n#### Key Leadership Accomplishments\n\n##### 2024\n- **Team Growth**: Expanded team from 3 to 8 developers\n- **Retention**: 100% team retention rate\n- **Delivery**: Led successful launch of 3 major product features\n\n##### 2023\n- **Process Improvement**: Reduced sprint planning time by 40%\n- **Cross-functional**: Collaborated with 5 different departments\n- **Mentoring**: Promoted 2 team members to senior roles\n\n#### Development Areas\n\n1. **Strategic Thinking**\n   - *Focus*: Long-term vision and industry trend analysis\n   - *Action*: Quarterly strategy reviews with senior leadership\n   - *Timeline*: Next 6 months\n\n2. **Decision Making**\n   - *Focus*: Data-driven decision frameworks\n   - *Action*: Complete advanced analytics course\n   - *Timeline*: Q4 2025\n\n#### 360° Feedback Highlights\n\n> *\"Exceptional at creating psychological safety and encouraging innovation within the team.\"*  \n> — Direct Report\n\n> *\"Strong technical background combined with genuine care for people development.\"*  \n> — Peer Manager\n\n> *\"Ready for next level leadership challenges. Demonstrates consistent growth mindset.\"*  \n> — Senior Director",
-      "meta": {
-        "title": "Leadership Skills Assessment",
-        "tags": ["leadership", "management", "360-feedback", "development"],
-        "status": "current",
-        "visibility": "unlisted"
-      }
+    "examples": {
+        "basic_skills_matrix": {
+            "content": "### Skills Matrix\n\n| Skill | Level | Notes |\n|---|---:|---|\n| React | Advanced | Built 10+ apps |\n| Docker | Intermediate | Deploy pipelines |\n| Python | Expert | 8+ years experience |\n\n#### Recent Achievements\n- Led React migration for 3 legacy applications\n- Optimized Docker builds reducing deploy time by 60%\n- Mentored 5 developers in Python best practices",
+            "meta": {
+                "title": "Technical Skills Matrix",
+                "tags": [
+                    "skills",
+                    "matrix",
+                    "technical"
+                ],
+                "visibility": "public"
+            }
+        },
+        "comprehensive_matrix": {
+            "content": "### Comprehensive Skills Assessment 2025\n\n## Technical Skills\n\n### Programming Languages\n| Language | Proficiency | Years | Key Projects |\n|---|---|---|---|\n| **Python** | ⭐⭐⭐⭐⭐ | 8 | ML pipelines, APIs |\n| **JavaScript** | ⭐⭐⭐⭐ | 6 | Frontend, Node.js |\n| **Go** | ⭐⭐⭐ | 2 | Microservices |\n\n### Frameworks & Tools\n> **Note**: Ratings based on production experience and peer feedback\n\n#### Frontend\n- **React** `Advanced` - Component architecture, hooks, performance optimization\n- **Vue.js** `Intermediate` - SPA development, Vuex state management\n\n#### Backend\n- **FastAPI** `Expert` - Built 10+ production APIs\n- **Django** `Advanced` - E-commerce platforms, content management\n\n#### DevOps\n```bash\n# Sample deployment script mastery\ndocker build -t app:latest .\nkubectl apply -f deployment.yaml\n```\n\n## Soft Skills Assessment\n\n| Skill | Self-Rating | 360° Feedback | Development Goal |\n|---|---|---|---|\n| Leadership | 8/10 | 8.5/10 | Executive presence |\n| Communication | 9/10 | 9/10 | Technical writing |\n| Problem Solving | 9/10 | 8.5/10 | Systems thinking |\n\n## Endorsements\n\n### Technical Leadership\n> *\"Outstanding technical vision and ability to translate complex requirements into elegant solutions.\"*  \n> — Sarah Chen, Engineering Director\n\n### Mentoring\n> *\"Exceptional at developing junior talent. Patient, thorough, and always available for guidance.\"*  \n> — Mike Rodriguez, Senior Developer\n\n## Learning Goals 2025\n\n- [ ] **Rust Programming** - Systems programming for performance-critical applications\n- [ ] **Machine Learning Operations** - MLOps pipeline design and deployment\n- [ ] **Executive Communication** - Board-level presentation skills\n\n---\n\n*Last updated: Q3 2025*  \n*Next review: Q1 2026*",
+            "meta": {
+                "title": "Complete Skills Assessment 2025",
+                "tags": [
+                    "comprehensive",
+                    "technical",
+                    "leadership",
+                    "endorsements"
+                ],
+                "status": "current",
+                "visibility": "public"
+            }
+        },
+        "leadership_matrix": {
+            "content": "### Leadership Skills Matrix\n\n| Skill | Self-Assessment | Team Feedback | Manager Feedback |\n|---|---|---|---|\n| **Strategic Thinking** | Good | Very Good | Excellent |\n| **Team Development** | Excellent | Outstanding | Outstanding |\n| **Decision Making** | Very Good | Good | Very Good |\n| **Communication** | Excellent | Excellent | Excellent |\n| **Conflict Resolution** | Good | Very Good | Good |\n\n#### Key Leadership Accomplishments\n\n##### 2024\n- **Team Growth**: Expanded team from 3 to 8 developers\n- **Retention**: 100% team retention rate\n- **Delivery**: Led successful launch of 3 major product features\n\n##### 2023\n- **Process Improvement**: Reduced sprint planning time by 40%\n- **Cross-functional**: Collaborated with 5 different departments\n- **Mentoring**: Promoted 2 team members to senior roles\n\n#### Development Areas\n\n1. **Strategic Thinking**\n   - *Focus*: Long-term vision and industry trend analysis\n   - *Action*: Quarterly strategy reviews with senior leadership\n   - *Timeline*: Next 6 months\n\n2. **Decision Making**\n   - *Focus*: Data-driven decision frameworks\n   - *Action*: Complete advanced analytics course\n   - *Timeline*: Q4 2025\n\n#### 360° Feedback Highlights\n\n> *\"Exceptional at creating psychological safety and encouraging innovation within the team.\"*  \n> — Direct Report\n\n> *\"Strong technical background combined with genuine care for people development.\"*  \n> — Peer Manager\n\n> *\"Ready for next level leadership challenges. Demonstrates consistent growth mindset.\"*  \n> — Senior Director",
+            "meta": {
+                "title": "Leadership Skills Assessment",
+                "tags": [
+                    "leadership",
+                    "management",
+                    "360-feedback",
+                    "development"
+                ],
+                "status": "current",
+                "visibility": "unlisted"
+            }
+        }
     }
-  }
 }
