@@ -227,18 +227,17 @@ class TestOWASPSecurity:
             assert user_delete.status_code in [403, 404]
 
         # Test vertical privilege escalation - regular user trying admin
-        # functions
-        admin_endpoint = {
-            "name": "user_created_endpoint",
-            "description": "User should not be able to create this",
-            "schema": {"title": {"type": "string"}},
-            "is_public": True,
-        }
+        # functions (Note: Custom endpoint creation was removed, testing other admin functions)
 
-        user_admin_attempt = client.post(
-            "/api/v1/endpoints", json=admin_endpoint, headers=regular_user_headers
-        )
+        # Test access to admin-only user management endpoints
+        user_admin_attempt = client.get("/admin/users", headers=regular_user_headers)
         assert user_admin_attempt.status_code in [401, 403]
+
+        # Test attempt to access admin API key management
+        user_apikey_attempt = client.get(
+            "/admin/api-keys", headers=regular_user_headers
+        )
+        assert user_apikey_attempt.status_code in [401, 403]
 
     def test_security_misconfiguration(self, client):
         """Test security misconfiguration (OWASP A05: Security Misconfiguration)"""

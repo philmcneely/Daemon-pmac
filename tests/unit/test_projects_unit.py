@@ -135,17 +135,41 @@ def create_project(content: str):
             assert "- [x] Initial setup" in content
             assert "| Metric | Value |" in content
 
-    @patch("app.data_loader.SessionLocal")
-    def test_import_projects_to_database(self, mock_session):
+    @patch("app.data_loader.get_db")
+    def test_import_projects_to_database(self, mock_get_db):
         """Test importing projects data to database"""
         # Mock database session
         mock_db = MagicMock()
-        mock_session.return_value.__enter__.return_value = mock_db
-        mock_db.query.return_value.filter.return_value.first.return_value = MagicMock(
-            id=1,
-            name="projects",
-            schema={"properties": {"content": {"type": "string"}}},
+        mock_get_db.return_value = iter([mock_db])  # get_db returns a generator
+
+        # Mock the projects endpoint with the correct schema
+        projects_endpoint = MagicMock()
+        projects_endpoint.id = 1
+        projects_endpoint.name = "projects"
+        projects_endpoint.schema = {
+            "content": {"type": "string", "required": True},
+            "meta": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "date": {"type": "string"},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                    "status": {"type": "string"},
+                    "visibility": {
+                        "type": "string",
+                        "enum": ["public", "unlisted", "private"],
+                        "default": "public",
+                    },
+                },
+            },
+        }
+
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            projects_endpoint
         )
+        mock_db.query.return_value.filter.return_value.all.return_value = (
+            []
+        )  # No existing entries
 
         projects_data = [
             {"content": "# Project Alpha\n\nFirst project description."},
@@ -166,20 +190,45 @@ def create_project(content: str):
         finally:
             os.unlink(temp_file)
 
-        # The result will have the endpoint found status
-        assert result["success"] is True or "not found" in result.get("error", "")
+        # Verify the import was successful
+        assert result["success"] is True
+        assert result["imported_count"] == 2
 
-    @patch("app.data_loader.SessionLocal")
-    def test_import_projects_validation_error(self, mock_session):
+    @patch("app.data_loader.get_db")
+    def test_import_projects_validation_error(self, mock_get_db):
         """Test handling validation errors during projects import"""
         # Mock database session
         mock_db = MagicMock()
-        mock_session.return_value.__enter__.return_value = mock_db
-        mock_db.query.return_value.filter.return_value.first.return_value = MagicMock(
-            id=1,
-            name="projects",
-            schema={"properties": {"content": {"type": "string"}}},
+        mock_get_db.return_value = iter([mock_db])  # get_db returns a generator
+
+        # Mock the projects endpoint with the correct schema
+        projects_endpoint = MagicMock()
+        projects_endpoint.id = 1
+        projects_endpoint.name = "projects"
+        projects_endpoint.schema = {
+            "content": {"type": "string", "required": True},
+            "meta": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "date": {"type": "string"},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                    "status": {"type": "string"},
+                    "visibility": {
+                        "type": "string",
+                        "enum": ["public", "unlisted", "private"],
+                        "default": "public",
+                    },
+                },
+            },
+        }
+
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            projects_endpoint
         )
+        mock_db.query.return_value.filter.return_value.all.return_value = (
+            []
+        )  # No existing entries
 
         # Invalid data (missing required content field)
         invalid_projects_data = [
