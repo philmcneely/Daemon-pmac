@@ -22,7 +22,6 @@ from ..schemas import (
     DataEntryCreate,
     DataEntryResponse,
     DataEntryUpdate,
-    EndpointCreate,
     EndpointResponse,
     EndpointUpdate,
     PaginatedResponse,
@@ -191,50 +190,149 @@ async def get_endpoint(endpoint_name: str, db: Session = Depends(get_db)):
     return endpoint
 
 
-@router.post("/endpoints", response_model=EndpointResponse)
-async def create_endpoint(
-    endpoint_data: EndpointCreate,
-    request: Request,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db),
-):
-    """Create a new endpoint (admin users only)"""
-    # Check if endpoint already exists
-    existing = db.query(Endpoint).filter(Endpoint.name == endpoint_data.name).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Endpoint '{endpoint_data.name}' already exists",
-        )
+@router.get(
+    "/system/info",
+    response_model=Dict[str, Any],
+    summary="Get system information",
+    description="""
+    **Get comprehensive system information and endpoint routing patterns**
 
-    # Create endpoint
-    endpoint = Endpoint(
-        **endpoint_data.model_dump(by_alias=True), created_by_id=current_user.id
+    This endpoint helps you understand how the API currently operates based
+    on the number of users.
+
+    ### 🔄 Adaptive Routing Information
+
+    The response tells you:
+    - **Current mode**: `single_user` or `multi_user`
+    - **Endpoint patterns**: How to access endpoints in the current mode
+    - **Available endpoints**: List of all accessible endpoints
+    - **User information**: Current users in the system
+
+    ### 📊 Use Cases
+
+    - **API Discovery**: Find out what endpoints are available
+    - **Mode Detection**: Understand if you need user-specific URLs
+    - **Integration**: Build clients that adapt to single/multi-user modes
+    - **Debugging**: Troubleshoot endpoint access issues
+
+    ### 🎯 Example Responses
+
+    **Single User Mode** (1 user or less):
+    ```json
+    {
+      "mode": "single_user",
+      "endpoint_pattern": "/api/v1/{endpoint_name}",
+      "available_endpoints": [...],
+      "users": ["admin"]
+    }
+    ```
+
+    **Multi-User Mode** (2+ users):
+    ```json
+    {
+      "mode": "multi_user",
+      "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
+      "available_endpoints": [...],
+      "users": ["admin", "john", "jane"]
+    }
+    ```
+    """,
+    responses={
+        200: {
+            "description": "System information and routing patterns",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "single_user_mode": {
+                            "summary": "Single user mode response",
+                            "value": {
+                                "mode": "single_user",
+                                "total_users": 1,
+                                "users": ["admin"],
+                                "endpoint_pattern": "/api/v1/{endpoint_name}",
+                                "example_urls": [
+                                    "/api/v1/resume",
+                                    "/api/v1/skills",
+                                    "/api/v1/ideas",
+                                ],
+                                "available_endpoints": [
+                                    {
+                                        "name": "resume",
+                                        "description": (
+                                            "Professional resume and work history"
+                                        ),
+                                    },
+                                    {
+                                        "name": "skills",
+                                        "description": "Technical and soft skills",
+                                    },
+                                    {
+                                        "name": "ideas",
+                                        "description": "Ideas and thoughts",
+                                    },
+                                ],
+                                "total_endpoints": 8,
+                            },
+                        },
+                        "multi_user_mode": {
+                            "summary": "Multi-user mode response",
+                            "value": {
+                                "mode": "multi_user",
+                                "total_users": 3,
+                                "users": ["admin", "john", "jane"],
+                                "endpoint_pattern": (
+                                    "/api/v1/{endpoint_name}/users/{username}"
+                                ),
+                                "example_urls": [
+                                    "/api/v1/resume/users/john",
+                                    "/api/v1/skills/users/jane",
+                                    "/api/v1/ideas/users/admin",
+                                ],
+                                "available_endpoints": [
+                                    {
+                                        "name": "resume",
+                                        "description": (
+                                            "Professional resume and work history"
+                                        ),
+                                    },
+                                    {
+                                        "name": "skills",
+                                        "description": "Technical and soft skills",
+                                    },
+                                    {
+                                        "name": "ideas",
+                                        "description": "Ideas and thoughts",
+                                    },
+                                ],
+                                "total_endpoints": 8,
+                            },
+                        },
+                    }
+                }
+            },
+        }
+    },
+)
+async def get_system_info(db: Session = Depends(get_db)):
+    """Get system information including endpoint routing patterns"""
+    adaptive_info = get_adaptive_endpoint_info(db)
+
+    # Get available endpoints
+    endpoints = (
+        db.query(Endpoint)
+        .filter(Endpoint.is_active == True, Endpoint.is_public == True)
+        .all()
     )
-    db.add(endpoint)
-    db.commit()
-    db.refresh(endpoint)
 
-    # Log audit action
-    log_audit_action(
-        db,
-        "CREATE",
-        "endpoints",
-        cast(int, endpoint.id),
-        current_user,
-        None,
-        endpoint_data.model_dump(by_alias=True),
-        request,
-    )
-    db.commit()
+    endpoint_list = [
+        {"name": ep.name, "description": ep.description} for ep in endpoints
+    ]
 
-    # Clear OpenAPI schema cache to refresh endpoint dropdowns
-    from .. import main
-
-    if hasattr(main.app, "openapi_schema"):
-        main.app.openapi_schema = None
-
-    return endpoint
+    return {
+        **adaptive_info,
+        "available_endpoints": endpoint_list,
+        "total_endpoints": len(endpoint_list),
+    }
 
 
 # Data management for endpoints
@@ -1111,151 +1209,6 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
                 "ai_safe",
             ],
         }
-
-
-@router.get(
-    "/system/info",
-    response_model=Dict[str, Any],
-    summary="Get system information",
-    description="""
-    **Get comprehensive system information and endpoint routing patterns**
-
-    This endpoint helps you understand how the API currently operates based
-    on the number of users.
-
-    ### 🔄 Adaptive Routing Information
-
-    The response tells you:
-    - **Current mode**: `single_user` or `multi_user`
-    - **Endpoint patterns**: How to access endpoints in the current mode
-    - **Available endpoints**: List of all accessible endpoints
-    - **User information**: Current users in the system
-
-    ### 📊 Use Cases
-
-    - **API Discovery**: Find out what endpoints are available
-    - **Mode Detection**: Understand if you need user-specific URLs
-    - **Integration**: Build clients that adapt to single/multi-user modes
-    - **Debugging**: Troubleshoot endpoint access issues
-
-    ### 🎯 Example Responses
-
-    **Single User Mode** (1 user or less):
-    ```json
-    {
-      "mode": "single_user",
-      "endpoint_pattern": "/api/v1/{endpoint_name}",
-      "available_endpoints": [...],
-      "users": ["admin"]
-    }
-    ```
-
-    **Multi-User Mode** (2+ users):
-    ```json
-    {
-      "mode": "multi_user",
-      "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
-      "available_endpoints": [...],
-      "users": ["admin", "john", "jane"]
-    }
-    ```
-    """,
-    responses={
-        200: {
-            "description": "System information and routing patterns",
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "single_user_mode": {
-                            "summary": "Single user mode response",
-                            "value": {
-                                "mode": "single_user",
-                                "total_users": 1,
-                                "users": ["admin"],
-                                "endpoint_pattern": "/api/v1/{endpoint_name}",
-                                "example_urls": [
-                                    "/api/v1/resume",
-                                    "/api/v1/skills",
-                                    "/api/v1/ideas",
-                                ],
-                                "available_endpoints": [
-                                    {
-                                        "name": "resume",
-                                        "description": (
-                                            "Professional resume and work history"
-                                        ),
-                                    },
-                                    {
-                                        "name": "skills",
-                                        "description": "Technical and soft skills",
-                                    },
-                                    {
-                                        "name": "ideas",
-                                        "description": "Ideas and thoughts",
-                                    },
-                                ],
-                                "total_endpoints": 8,
-                            },
-                        },
-                        "multi_user_mode": {
-                            "summary": "Multi-user mode response",
-                            "value": {
-                                "mode": "multi_user",
-                                "total_users": 3,
-                                "users": ["admin", "john", "jane"],
-                                "endpoint_pattern": (
-                                    "/api/v1/{endpoint_name}/users/{username}"
-                                ),
-                                "example_urls": [
-                                    "/api/v1/resume/users/john",
-                                    "/api/v1/skills/users/jane",
-                                    "/api/v1/ideas/users/admin",
-                                ],
-                                "available_endpoints": [
-                                    {
-                                        "name": "resume",
-                                        "description": (
-                                            "Professional resume and work history"
-                                        ),
-                                    },
-                                    {
-                                        "name": "skills",
-                                        "description": "Technical and soft skills",
-                                    },
-                                    {
-                                        "name": "ideas",
-                                        "description": "Ideas and thoughts",
-                                    },
-                                ],
-                                "total_endpoints": 8,
-                            },
-                        },
-                    }
-                }
-            },
-        }
-    },
-)
-async def get_system_info(db: Session = Depends(get_db)):
-    """Get system information including endpoint routing patterns"""
-    adaptive_info = get_adaptive_endpoint_info(db)
-
-    # Get available endpoints
-    endpoints = (
-        db.query(Endpoint)
-        .filter(Endpoint.is_active == True, Endpoint.is_public == True)
-        .all()
-    )
-
-    endpoint_list = [
-        {"name": ep.name, "description": ep.description} for ep in endpoints
-    ]
-
-    return {
-        **adaptive_info,
-        "available_endpoints": endpoint_list,
-        "total_endpoints": len(endpoint_list),
-    }
 
 
 def filter_sensitive_data(

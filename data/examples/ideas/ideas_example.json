@@ -4,7 +4,12 @@
     "meta": {
       "title": "Personal API Framework",
       "date": "2024-08-15",
-      "tags": ["api", "python", "fastapi", "personal-data"],
+      "tags": [
+        "api",
+        "python",
+        "fastapi",
+        "personal-data"
+      ],
       "status": "developing",
       "visibility": "public"
     }
@@ -14,7 +19,12 @@
     "meta": {
       "title": "AI-Assisted Code Review",
       "date": "2024-07-20",
-      "tags": ["ai", "code-review", "llm", "development-tools"],
+      "tags": [
+        "ai",
+        "code-review",
+        "llm",
+        "development-tools"
+      ],
       "status": "draft",
       "visibility": "public"
     }
@@ -24,7 +34,12 @@
     "meta": {
       "title": "Raspberry Pi Home Automation Hub",
       "date": "2024-06-10",
-      "tags": ["raspberry-pi", "iot", "home-automation", "python"],
+      "tags": [
+        "raspberry-pi",
+        "iot",
+        "home-automation",
+        "python"
+      ],
       "status": "published",
       "visibility": "public"
     }
@@ -34,7 +49,12 @@
     "meta": {
       "title": "Quality Engineering Knowledge Base",
       "date": "2024-08-01",
-      "tags": ["quality-engineering", "testing", "knowledge-base", "documentation"],
+      "tags": [
+        "quality-engineering",
+        "testing",
+        "knowledge-base",
+        "documentation"
+      ],
       "status": "developing",
       "visibility": "public"
     }
@@ -44,7 +64,13 @@
     "meta": {
       "title": "Container-Based Testing Environment",
       "date": "2024-07-15",
-      "tags": ["docker", "testing", "containers", "devops", "automation"],
+      "tags": [
+        "docker",
+        "testing",
+        "containers",
+        "devops",
+        "automation"
+      ],
       "status": "draft",
       "visibility": "public"
     }

@@ -4,7 +4,13 @@
     "meta": {
       "title": "Home Automation & IoT",
       "date": "2024-08-15",
-      "tags": ["technology", "raspberry-pi", "iot", "automation", "python"],
+      "tags": [
+        "technology",
+        "raspberry-pi",
+        "iot",
+        "automation",
+        "python"
+      ],
       "status": "active",
       "visibility": "public"
     }
@@ -14,7 +20,13 @@
     "meta": {
       "title": "3D Printing & Design",
       "date": "2024-07-20",
-      "tags": ["maker", "3d-printing", "cad", "design", "prototyping"],
+      "tags": [
+        "maker",
+        "3d-printing",
+        "cad",
+        "design",
+        "prototyping"
+      ],
       "status": "active",
       "visibility": "public"
     }
@@ -24,7 +36,13 @@
     "meta": {
       "title": "Photography",
       "date": "2024-06-30",
-      "tags": ["creative", "photography", "landscape", "macro", "nature"],
+      "tags": [
+        "creative",
+        "photography",
+        "landscape",
+        "macro",
+        "nature"
+      ],
       "status": "active",
       "visibility": "public"
     }
@@ -34,7 +52,13 @@
     "meta": {
       "title": "Woodworking",
       "date": "2024-05-15",
-      "tags": ["crafts", "woodworking", "furniture", "hand-tools", "diy"],
+      "tags": [
+        "crafts",
+        "woodworking",
+        "furniture",
+        "hand-tools",
+        "diy"
+      ],
       "status": "learning",
       "visibility": "public"
     }
@@ -44,7 +68,13 @@
     "meta": {
       "title": "Gaming & Game Design",
       "date": "2024-08-01",
-      "tags": ["entertainment", "gaming", "game-design", "strategy", "analysis"],
+      "tags": [
+        "entertainment",
+        "gaming",
+        "game-design",
+        "strategy",
+        "analysis"
+      ],
       "status": "active",
       "visibility": "public"
     }
