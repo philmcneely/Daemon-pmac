@@ -35,6 +35,16 @@
 - OpenAPI schema current
 - No temporary files in project root
 
+## Python Project Specifics
+- Use SQLite with aiosqlite (NOT PostgreSQL)
+- Use pip with requirements.txt (NOT Poetry)
+- Add detailed headers to .py files, keep .md files clean
+- Follow FastAPI + SQLAlchemy async patterns
+
+## Complete Guidelines
+- See docs/COPILOT_INSTRUCTIONS.md for comprehensive technical guidelines
+- These rules apply FIRST, then supplementary technical rules apply
+
 ## Examples:
 ✅ CORRECT: gh api repos/owner/repo/pulls > gh_temp/pulls.json 2>&1 && cat gh_temp/pulls.json
 ❌ WRONG: gh api repos/owner/repo/pulls

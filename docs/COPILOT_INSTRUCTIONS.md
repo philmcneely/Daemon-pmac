@@ -131,3 +131,158 @@ The terminal integration cannot capture GitHub CLI output directly. Always use t
 - `gh_temp/branch_protection.json` - Branch protection rules
 
 The `gh_temp/` directory is automatically ignored by git and can be safely cleaned up periodically. Never put temporary GitHub CLI output files in the root directory.
+
+---
+
+## 🔴 GENERAL DEVELOPMENT DIRECTIVES (SECONDARY TO USER RULES)
+
+### Code Quality Standards
+- **Be consistent:** Follow the existing coding style and patterns found in the project
+- **Provide detailed docstrings:** For all new functions and classes, include comprehensive docstrings following Google-style format
+- **Use type hints:** Annotate function parameters and return values with Python type hints wherever possible
+- **Use clear, actionable language:** Specific verbs, avoid ambiguity
+- **Favor positive instructions:** Describe what to do, not what to avoid
+
+### File Header Requirements
+- **ALWAYS add detailed headers** to all Python files (.py) with:
+  - Module description
+  - Author information
+  - Creation/modification dates
+  - Dependencies
+  - Usage examples (when applicable)
+- **SKIP headers** for Markdown files (.md) - keep them clean
+
+---
+
+## 🔴 PYTHON STYLE AND CONVENTIONS
+
+### Code Formatting
+- **PEP 8:** Strict adherence to PEP 8 style guide
+- **Line length:** Follow project's line length settings
+- **Naming conventions:** `snake_case` for functions and variables, `PascalCase` for classes
+- **Imports:** Order: standard library, third-party, local application imports
+- **F-strings:** Prefer f-strings for string formatting
+- **List comprehensions:** Use for concise list creation
+- **Error handling:** Use `try...except` blocks, avoid bare `except:` statements
+
+---
+
+## 🔴 PROJECT-SPECIFIC TECHNOLOGY STACK
+
+### Framework & Architecture
+- **Backend Framework:** `FastAPI` (version 0.104.1+)
+- **Database:** `SQLite` with `aiosqlite` (async support) via `SQLAlchemy 2.0+` ORM
+- **Authentication:** JWT tokens using `python-jose[cryptography]`
+- **Dependency Management:** `pip` with `requirements.txt` (NOT Poetry)
+- **Testing Framework:** `pytest` with `pytest-asyncio`
+- **Code Quality:** `black`, `isort`, `flake8`, `mypy`, `pre-commit`
+
+### Database Patterns
+- **All database interactions** must use SQLAlchemy models and sessions
+- **NO raw SQL queries** - use SQLAlchemy ORM exclusively
+- **Async sessions** with `aiosqlite` for database operations
+- **Import pattern:** `from app.database import get_db, Base, engine`
+
+### API Development Patterns
+- **Route definitions:** Use FastAPI router patterns with `@router.get/post/put/delete`
+- **Dependency injection:** Use `Depends(get_db)` for database sessions
+- **Request/Response models:** Use Pydantic models for validation
+- **Async functions:** All route handlers should be `async def`
+
+---
+
+## 🔴 TESTING REQUIREMENTS
+
+### Test Structure
+- **Framework:** `pytest` with `pytest-asyncio` for async testing
+- **Directory structure:** Follow existing `tests/unit/` and `tests/e2e/` patterns
+- **Naming convention:** `test_` prefix for test functions and files
+- **Mock external dependencies** when appropriate
+- **Database testing:** Use test database fixtures from `tests/conftest.py`
+
+### Test Coverage
+- **Unit tests:** All new functions and classes
+- **E2E tests:** All new API endpoints for both single-user and multi-user scenarios
+- **Integration tests:** Database operations and external API calls
+
+---
+
+## 🔴 SPECIFIC TASK EXAMPLES
+
+### Task: Generate a new FastAPI route
+```python
+@router.get("/api/v1/items/{item_id}")
+async def get_item(
+    item_id: int,
+    db: AsyncSession = Depends(get_db)
+) -> ItemResponse:
+    """Fetch a single item from the database."""
+    # Implementation using SQLAlchemy async session
+```
+
+### Task: Write a pytest test
+```python
+async def test_create_item(db_session: AsyncSession):
+    """Test the create_item function in crud.py."""
+    # Test implementation with async database session
+```
+
+### Task: Database model creation
+```python
+class Item(Base):
+    """Item model for storing item data."""
+    __tablename__ = "items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+```
+
+---
+
+## 🔴 FILE HEADER TEMPLATE
+
+### For Python Files (.py)
+Use this header template for all Python files:
+
+```python
+"""
+Module: [module_name]
+Description: [Brief description of module purpose]
+
+Author: [Your name]
+Created: [YYYY-MM-DD]
+Modified: [YYYY-MM-DD]
+
+Dependencies:
+- fastapi: [version] - Web framework
+- sqlalchemy: [version] - Database ORM
+- [other key dependencies]
+
+Usage:
+    [Brief usage example if applicable]
+
+Notes:
+    [Any important notes about the module]
+"""
+```
+
+### For Markdown Files (.md)
+- **NO headers** - keep Markdown files clean and focused on content
+- Start directly with the main heading or content
+
+---
+
+## 🔴 TECHNOLOGY STACK CORRECTIONS
+
+### What This Project Actually Uses:
+- ✅ **Database:** SQLite with aiosqlite (NOT PostgreSQL)
+- ✅ **Dependency Management:** pip with requirements.txt (NOT Poetry)
+- ✅ **Async Database:** SQLAlchemy 2.0+ with aiosqlite async driver
+- ✅ **Testing:** pytest with pytest-asyncio for async test support
+- ✅ **Authentication:** JWT with python-jose[cryptography]
+
+### Common Mistakes to Avoid:
+- ❌ Don't reference PostgreSQL - this project uses SQLite
+- ❌ Don't use Poetry commands - use pip and requirements.txt
+- ❌ Don't forget async/await patterns for database operations
+- ❌ Don't add headers to .md files - keep them clean
