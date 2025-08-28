@@ -58,6 +58,12 @@ curl -s https://api.github.com/repos/owner/repo  # Cannot read this output direc
 - **ALWAYS** clean up temporary files after use
 - **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
 
+### 🔴 PROBLEM RESOLUTION (MANDATORY)
+
+#### Root Cause Analysis
+- **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
+- **ALWAYS** examine application code first to understand how to perform actions correctly
+
 #### File Naming Convention
 **IMPORTANT**: Always use the `gh_temp/` directory for temporary files:
 - `gh_temp/ci_status.txt` - CI pipeline status

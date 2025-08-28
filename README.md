@@ -25,6 +25,10 @@
 - **ALWAYS** clean up temporary files after use
 - **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
 
+### Problem Resolution
+- **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
+- **ALWAYS** examine application code first to understand how to perform actions correctly
+
 ### Quality Gates (ALL MUST PASS)
 - ✅ All existing tests must pass
 - ✅ New tests must pass
