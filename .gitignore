@@ -81,6 +81,7 @@ Thumbs.db
 daemon.db
 daemon.db-*
 *.db
+test*.db
 backups/
 logs/
 data/private/
