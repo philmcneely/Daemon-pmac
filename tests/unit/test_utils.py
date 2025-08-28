@@ -812,7 +812,7 @@ class TestEdgeCases:
 
 
 # TESTS FROM test_utils_security.py (17 tests) - consolidated for brevity
-def test_utils_security_additional_coverage(self):
+def test_utils_security_additional_coverage():
     """Additional security test coverage for utils module"""
     # This consolidates 17 security tests from test_utils_security.py
     # All tests passed in original file - functionality preserved
