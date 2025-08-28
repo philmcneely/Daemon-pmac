@@ -84,7 +84,23 @@ def create_backup() -> BackupResponse:
 
 
 def cleanup_old_backups():
-    """Clean up old backup files based on retention policy"""
+    """Remove old backup files based on configured retention policy.
+
+    Scans the backup directory and removes backup files that exceed the
+    retention policy limits. Keeps only the most recent backups as specified
+    in application settings.
+
+    Returns:
+        Dict[str, Union[int, str, None]]: Dictionary containing:
+            - deleted_count: Number of backup files removed
+            - error: Error message if operation failed, None if successful
+
+    Note:
+        - Only runs when backup functionality is enabled
+        - Respects settings.backup_retention_count for file limits
+        - Preserves most recent backups based on file timestamps
+        - Returns early if backup directory doesn't exist
+    """
     if not settings.backup_enabled or not os.path.exists(settings.backup_dir):
         return {"deleted_count": 0, "error": None}
 

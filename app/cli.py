@@ -64,7 +64,21 @@ def resume():
 @resume.command()
 @click.option("--file", "-f", default=None, help="Path to resume JSON file")
 def check(file):
-    """Check if resume file exists and is valid"""
+    """Validate resume file existence and JSON structure.
+
+    Performs comprehensive validation of a resume JSON file including
+    file existence checks, JSON parsing validation, and schema verification.
+
+    Args:
+        file (str, optional): Path to resume JSON file. If not provided,
+                            uses default resume file location.
+
+    Note:
+        - Validates file exists and is readable
+        - Checks JSON syntax and structure
+        - Reports file size and modification time
+        - Displays validation results with detailed feedback
+    """
     try:
         from app.resume_loader import check_resume_file_exists, load_resume_from_file
 

@@ -215,7 +215,22 @@ def is_ip_allowed(ip_address: str) -> bool:
 
 
 def check_ip_access(request: Request):
-    """Middleware to check IP access"""
+    """Validate client IP address against allowed IP list.
+
+    Checks if the requesting client's IP address is in the allowed IP list.
+    Raises HTTP 403 Forbidden if IP access is denied.
+
+    Args:
+        request (Request): FastAPI request object containing client information.
+
+    Raises:
+        HTTPException: 403 Forbidden if IP is not allowed or cannot be determined.
+
+    Note:
+        - Uses request.client.host to extract client IP
+        - Relies on is_ip_allowed() function for IP validation
+        - Part of security middleware chain
+    """
     client_ip = request.client.host if request.client else None
     if not client_ip or not is_ip_allowed(client_ip):
         raise HTTPException(
@@ -226,7 +241,24 @@ def check_ip_access(request: Request):
 
 # Security headers middleware
 def add_security_headers(response):
-    """Add security headers to response"""
+    """Add comprehensive security headers to HTTP responses.
+
+    Applies a standard set of security headers to protect against common
+    web vulnerabilities including XSS, clickjacking, and content sniffing.
+
+    Args:
+        response: FastAPI response object to modify.
+
+    Returns:
+        Response: The modified response object with security headers added.
+
+    Note:
+        - Prevents MIME type sniffing with X-Content-Type-Options
+        - Blocks iframe embedding with X-Frame-Options
+        - Enables XSS protection with X-XSS-Protection
+        - Enforces HTTPS with Strict-Transport-Security
+        - Sets Content Security Policy to 'self' only
+    """
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"

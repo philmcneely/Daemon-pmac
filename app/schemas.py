@@ -308,7 +308,23 @@ class IdeaFlexibleData(BaseModel):
 
     @model_validator(mode="after")
     def validate_idea_data(self):
-        """Ensure at least content OR title+description is provided"""
+        """Validate idea data format and handle HTML entity decoding.
+
+        Ensures that ideas contain either markdown content OR structured
+        title+description fields. Also handles double HTML entity escaping
+        that can occur during data sanitization processes.
+
+        Returns:
+            IdeaData: Validated idea data with properly decoded content.
+
+        Raises:
+            ValueError: If neither content nor title+description provided.
+
+        Note:
+            - Supports both flexible markdown and legacy structured formats
+            - Double-unescapes HTML entities to handle sanitizer issues
+            - Maintains backward compatibility with existing data
+        """
         import html
 
         # Double-unescape HTML for markdown (handles sanitizer double-escaping)

@@ -230,12 +230,36 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db():
-    """Initialize database tables"""
+    """Initialize database tables and schema.
+
+    Creates all database tables defined in SQLAlchemy models using the
+    configured database engine. This should be called once during
+    application startup to ensure database schema exists.
+
+    Note:
+        - Uses Base.metadata.create_all() to create tables
+        - Safe to call multiple times (won't recreate existing tables)
+        - Should be called before any database operations
+    """
     Base.metadata.create_all(bind=engine)
 
 
 def create_default_endpoints(db: Session):
-    """Create default endpoints based on Daemon project"""
+    """Create standard endpoint definitions in database.
+
+    Initializes the database with default endpoint configurations including
+    resume, about, ideas, skills, and other core endpoints. Each endpoint
+    includes name, description, and JSON schema for data validation.
+
+    Args:
+        db (Session): SQLAlchemy database session for endpoint creation.
+
+    Note:
+        - Only creates endpoints that don't already exist
+        - Each endpoint includes comprehensive JSON schema definitions
+        - Covers all standard personal API endpoints
+        - Safe to call multiple times (checks for existing endpoints)
+    """
     default_endpoints = [
         {
             "name": "resume",

@@ -43,6 +43,21 @@ class PrivacyFilter:
     """Advanced privacy filtering system"""
 
     def __init__(self, db: Session, user: Optional[User] = None):
+        """Initialize privacy filter with database session and optional user.
+
+        Sets up privacy filtering system with database access and user-specific
+        privacy settings. Loads existing privacy settings if user is provided.
+
+        Args:
+            db (Session): SQLAlchemy database session for privacy rule queries.
+            user (Optional[User]): User object for user-specific privacy settings.
+                                  If None, applies only global privacy rules.
+
+        Note:
+            - Automatically loads user privacy settings if user provided
+            - Stores database session for privacy rule queries
+            - Prepares system for data filtering operations
+        """
         self.db = db
         self.user = user
         self.privacy_settings = None

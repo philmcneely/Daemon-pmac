@@ -253,7 +253,26 @@ async def list_endpoints(
 
 @router.get("/endpoints/{endpoint_name}", response_model=EndpointResponse)
 async def get_endpoint(endpoint_name: str, db: Session = Depends(get_db)):
-    """Get endpoint configuration"""
+    """Retrieve endpoint configuration and schema by name.
+
+    Fetches the configuration details for a specific endpoint including
+    its schema definition, description, and active status.
+
+    Args:
+        endpoint_name (str): Name of the endpoint to retrieve.
+        db (Session): Database session dependency.
+
+    Returns:
+        Endpoint: Endpoint configuration object with schema and metadata.
+
+    Raises:
+        HTTPException: 404 if endpoint not found or inactive.
+
+    Note:
+        - Only returns active endpoints (is_active=True)
+        - Includes full JSON schema for data validation
+        - Used for endpoint discovery and schema introspection
+    """
     endpoint = (
         db.query(Endpoint)
         .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
@@ -393,7 +412,28 @@ async def get_endpoint(endpoint_name: str, db: Session = Depends(get_db)):
     },
 )
 async def get_system_info(db: Session = Depends(get_db)):
-    """Get system information including endpoint routing patterns"""
+    """Retrieve comprehensive system information and endpoint metadata.
+
+    Provides detailed information about the API system including available
+    endpoints, routing patterns, adaptive endpoint configurations, and
+    system status information.
+
+    Args:
+        db (Session): Database session dependency.
+
+    Returns:
+        Dict[str, Any]: System information including:
+            - adaptive_endpoints: Dynamic endpoint configuration details
+            - endpoint_routing: Available endpoint routing patterns
+            - total_endpoints: Count of active endpoints
+            - system_metadata: API version and capabilities
+
+    Note:
+        - Includes only active endpoints in the response
+        - Provides adaptive endpoint configuration details
+        - Used for API discovery and client configuration
+        - Returns comprehensive metadata for system introspection
+    """
     adaptive_info = get_adaptive_endpoint_info(db)
 
     # Get available endpoints

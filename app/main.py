@@ -69,7 +69,25 @@ app_start_time = time.time()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan events"""
+    """Manage FastAPI application lifespan events.
+
+    Handles startup and shutdown operations including database initialization,
+    default endpoint creation, backup task scheduling, and proper cleanup.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+
+    Yields:
+        None: Yields control during application runtime.
+
+    Raises:
+        Exception: Database initialization or backup scheduling failures.
+
+    Note:
+        - Initializes database tables and default endpoints on startup
+        - Starts daily backup task if backup is enabled
+        - Ensures proper cleanup on shutdown
+    """
     # Startup
     logger.info("Starting Daemon application...")
 
@@ -110,7 +128,21 @@ async def lifespan(app: FastAPI):
 
 
 async def daily_backup_task():
-    """Background task for daily backups"""
+    """Execute automated daily backup operations in background.
+
+    Continuously runs a background task that creates database backups every 24 hours
+    when backup functionality is enabled. Also performs cleanup of old backup files
+    based on retention policy.
+
+    Raises:
+        Exception: Backup creation or cleanup failures are logged but don't stop the loop.
+
+    Note:
+        - Runs indefinitely as a background task
+        - Creates backups only when settings.backup_enabled is True
+        - Automatically cleans up old backups after each new backup
+        - Errors are logged but don't terminate the task
+    """
     while True:
         try:
             # Wait 24 hours
@@ -353,7 +385,19 @@ if settings.mcp_enabled:
 
 
 def get_available_endpoints():
-    """Get list of available endpoint names from database"""
+    """Retrieve list of active endpoint names from database.
+
+    Queries the database for all active endpoints and returns their names.
+    Falls back to a core set of endpoints if database query fails.
+
+    Returns:
+        List[str]: List of active endpoint names available in the system.
+
+    Note:
+        - Returns only endpoints marked as active (is_active=True)
+        - Provides fallback list if database is unavailable
+        - Used for dynamic endpoint discovery and validation
+    """
     try:
         from .database import Endpoint, SessionLocal
 
