@@ -647,6 +647,17 @@ data/
 4. Ensure all tests pass
 5. Submit a pull request
 
+## 📖 Additional Documentation
+
+For comprehensive development and deployment documentation, see the [`docs/`](docs/) directory:
+
+- **[Development Setup](docs/VSCODE_SETUP.md)** - VS Code configuration and development environment
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Detailed architecture and file organization
+- **[Data Management](docs/DATA_MANAGEMENT.md)** - Multi-user data import/export and privacy controls
+- **[Remote Deployment](docs/REMOTE_MANAGEMENT.md)** - Server deployment and management
+- **[Testing Guides](docs/)** - Unit and E2E testing strategies
+- **[API Development](docs/ENDPOINT_ALIGNMENT.md)** - Endpoint tracking and alignment
+
 ## Attribution & Inspiration
 
 This project is an **example implementation** of the concepts from:
@@ -722,7 +733,7 @@ curl -X POST "http://localhost:8000/api/v1/ideas" \
 
 #### 📝 Content Management Guide
 
-For detailed instructions on creating, updating, and managing content, see the [Content Management Guide](CONTENT_MANAGEMENT.md).
+For detailed instructions on creating, updating, and managing content, see the [Content Management Guide](docs/CONTENT_MANAGEMENT.md).
 
 **Quick Content Management Workflow:**
 1. **Login**: `POST /auth/login` → Get JWT token
