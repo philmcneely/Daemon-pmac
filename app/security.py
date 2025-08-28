@@ -1,5 +1,33 @@
 """
-Security validation utilities for input sanitization and threat detection
+Module: security
+Description: Security validation utilities for input sanitization, threat detection,
+             and protection against common web vulnerabilities
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- re: 3.9+ - Regular expression operations for pattern matching
+- typing: 3.9+ - Type hints for security validation functions
+
+Usage:
+    from app.security import SecurityValidator, sanitize_input, validate_sql_injection
+
+    # Create security validator
+    validator = SecurityValidator()
+
+    # Validate and sanitize user input
+    clean_input = validator.sanitize_input(user_data)
+
+    # Check for security threats
+    is_safe = validator.validate_input(user_input)
+
+Notes:
+    - Protects against SQL injection, XSS, and path traversal attacks
+    - Configurable validation rules and threat detection patterns
+    - Safe input sanitization while preserving legitimate content
+    - Comprehensive logging of security events and threats
 """
 
 import re

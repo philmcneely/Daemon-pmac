@@ -1,5 +1,32 @@
 """
-Management routes for admin operations
+Module: routers.admin
+Description: Administrative routes for system management, user administration,
+             backup operations, and system maintenance
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - Admin API routing and authentication
+- sqlalchemy: 2.0+ - Database administrative operations
+- datetime: 3.9+ - Backup scheduling and timestamp management
+
+Usage:
+    # Routes automatically included in main FastAPI app
+    # All admin routes require admin authentication
+
+    # System management endpoints:
+    # GET /admin/users - List all users
+    # POST /admin/backup - Create manual backup
+    # GET /admin/system/info - System health and metrics
+
+Notes:
+    - All routes require admin-level authentication
+    - Comprehensive audit logging for all admin operations
+    - Safe backup and restore operations with validation
+    - System health monitoring and resource usage tracking
+    - User management with proper role-based access control
 """
 
 import logging

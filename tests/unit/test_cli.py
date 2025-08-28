@@ -1,5 +1,24 @@
 """
-Test CLI functionality
+Module: tests.unit.test_cli
+Description: Unit tests for CLI functionality including user management,
+             data import operations, and administrative commands
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- click: 8.1.7+ - CLI framework testing utilities
+
+Usage:
+    pytest tests/unit/test_cli.py -v
+
+Notes:
+    - Tests all CLI commands and options
+    - Validates user creation and management operations
+    - Covers data import/export functionality
+    - Tests error handling and validation
 """
 
 import json

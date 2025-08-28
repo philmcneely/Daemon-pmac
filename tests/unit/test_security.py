@@ -1,5 +1,24 @@
 """
-Unit tests for security validation utilities
+Module: tests.unit.test_security
+Description: Unit tests for security validation utilities, input sanitization,
+             and threat detection mechanisms
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- app.security: Security validation module
+
+Usage:
+    pytest tests/unit/test_security.py -v
+
+Notes:
+    - Tests input sanitization and validation
+    - Validates threat detection patterns
+    - Covers SQL injection and XSS protection
+    - Tests security exception handling
 """
 
 import pytest

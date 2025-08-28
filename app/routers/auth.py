@@ -1,5 +1,32 @@
 """
-Authentication routes
+Module: routers.auth
+Description: Authentication routes for user login, registration, token management,
+             and session handling
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - OAuth2 authentication routing
+- python-jose: 3.5.0+ - JWT token operations
+- sqlalchemy: 2.0+ - User database operations
+
+Usage:
+    # Routes automatically included in main FastAPI app
+
+    # Authentication endpoints:
+    # POST /auth/login - User login with credentials
+    # POST /auth/register - New user registration
+    # POST /auth/refresh - Token refresh
+    # GET /auth/me - Current user information
+
+Notes:
+    - OAuth2 password flow with JWT tokens
+    - Secure password hashing with bcrypt
+    - Rate limiting on authentication endpoints
+    - Automatic first user becomes admin
+    - Session management with token expiration
 """
 
 from datetime import datetime, timedelta

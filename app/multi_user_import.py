@@ -1,5 +1,35 @@
 """
-Multi-user data import utilities
+Module: multi_user_import
+Description: Multi-user data import utilities for batch loading user data
+             from directory structures and file collections
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database operations and user management
+- pathlib: 3.9+ - File system path operations
+- json: 3.9+ - JSON data parsing and validation
+
+Usage:
+    from app.multi_user_import import import_all_users, import_user_directory
+
+    # Import all users from base directory
+    import_all_users(db, "data/private/")
+
+    # Import specific user's data
+    import_user_directory(db, "pmac", "data/private/pmac/")
+
+    # Batch import with progress tracking
+    results = batch_import_users(db, user_directories)
+
+Notes:
+    - Handles directory-based user data organization
+    - Supports multiple data formats and endpoint types
+    - Automatic user creation if users don't exist
+    - Transaction safety with rollback on errors
+    - Progress tracking and detailed error reporting
 """
 
 import json

@@ -1,5 +1,24 @@
 """
-Test authentication endpoints
+Module: tests.e2e.test_auth
+Description: End-to-end tests for authentication endpoints including login,
+             registration, and token management workflows
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+
+Usage:
+    pytest tests/e2e/test_auth.py -v
+
+Notes:
+    - Tests complete authentication workflows
+    - Validates JWT token generation and validation
+    - Covers user registration and login processes
+    - Tests authentication error scenarios
 """
 
 import pytest

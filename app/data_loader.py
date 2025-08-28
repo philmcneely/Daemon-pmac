@@ -1,6 +1,35 @@
 """
-Generic data loader for all endpoints
-Extends the resume loader to handle any endpoint with JSON data files
+Module: data_loader
+Description: Generic data loader for all endpoints with JSON file support,
+             extending resume loader functionality for dynamic endpoints
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database operations and queries
+- json: 3.9+ - JSON file parsing and validation
+- typing: 3.9+ - Type hints for data structures
+
+Usage:
+    from app.data_loader import load_data_from_file, import_user_data
+
+    # Load data from JSON file
+    data = load_data_from_file("data/private/pmac/ideas.json")
+
+    # Import all user data from directory
+    import_user_data(db, "pmac", "data/private/pmac/")
+
+    # Load specific endpoint data
+    ideas_data = load_endpoint_data(db, "ideas", "pmac")
+
+Notes:
+    - Supports all dynamic endpoints with flexible JSON schemas
+    - Automatic file discovery and data validation
+    - Batch import operations with transaction safety
+    - Compatible with both single-user and multi-user data structures
+    - Extends resume loader patterns for consistency
 """
 
 import glob

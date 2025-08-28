@@ -1,5 +1,31 @@
 """
-MCP (Model Context Protocol) support for Daemon API
+Module: routers.mcp
+Description: Model Context Protocol (MCP) support for AI assistant integration
+             with Daemon API endpoints and data access
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - MCP API routing and responses
+- sqlalchemy: 2.0+ - Database operations for MCP tools
+- json: 3.9+ - MCP message serialization
+
+Usage:
+    # Routes automatically included when MCP is enabled
+
+    # MCP endpoints:
+    # GET /mcp/tools - List available MCP tools
+    # POST /mcp/call - Execute MCP tool calls
+    # GET /mcp/schema - MCP schema definitions
+
+Notes:
+    - Provides AI assistants with structured access to personal data
+    - Privacy-aware tool execution with user consent
+    - Standardized MCP protocol implementation
+    - Tool discovery and capability advertisement
+    - Safe execution environment with proper error handling
 """
 
 import json

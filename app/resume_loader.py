@@ -1,5 +1,35 @@
 """
-Resume import utility for loading resume data from files
+Module: resume_loader
+Description: Resume import utility for loading structured resume data from JSON files
+             with schema validation and database persistence
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database operations for resume storage
+- json: 3.9+ - JSON file parsing and validation
+- pathlib: 3.9+ - File system operations
+
+Usage:
+    from app.resume_loader import load_resume_from_file, import_resume_to_database
+
+    # Load resume from JSON file
+    resume_data = load_resume_from_file("data/private/pmac/resume.json")
+
+    # Import resume to database
+    import_resume_to_database(db, "pmac", resume_data)
+
+    # Auto-discover and import
+    auto_import_resume(db, "pmac", "data/private/pmac/")
+
+Notes:
+    - Supports structured resume schema with validation
+    - Handles contact information, experience, education, skills
+    - Automatic data normalization and cleanup
+    - Compatible with privacy filtering systems
+    - Foundation for other data loader modules
 """
 
 import json
