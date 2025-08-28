@@ -1,11 +1,12 @@
 """
-Test data loader functionality
+Comprehensive data loader tests - consolidated from multiple test files
+Covers all data loading functionality with proper mocking and error handling
 """
 
 import json
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
@@ -32,6 +33,13 @@ class TestDiscoverDataFiles:
         result = discover_data_files("/nonexistent/path")
         assert result == {}
 
+    def test_discover_data_files_default_directory(self):
+        """Test discovery in default directory when it doesn't exist"""
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.return_value = False
+            result = discover_data_files()
+            assert result == {}
+
     def test_discover_data_files_single_files(self):
         """Test discovery of single endpoint files"""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -48,321 +56,557 @@ class TestDiscoverDataFiles:
             assert "ideas" in result
             assert "notes" in result
             assert "tasks" in result
+            assert result["ideas"]["type"] == "single"
+            assert result["notes"]["type"] == "single"
+            assert result["tasks"]["type"] == "single"
 
-            for endpoint, files in result.items():
-                assert len(files) == 1
-                assert files[0].endswith(f"{endpoint}.json")
-
-    def test_discover_data_files_with_variants(self):
-        """Test discovery of files with variants (underscore patterns)"""
+    def test_discover_data_files_collection_files(self):
+        """Test discovery of collection endpoint files"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create test files with variants
-            test_files = [
-                "ideas.json",
-                "ideas_personal.json",
-                "ideas_work.json",
+            # Create collection files (multiple files for same endpoint)
+            collection_files = [
                 "resume.json",
-                "resume_pmac.json",
+                "resume_personal.json",
+                "resume_work.json",
+                "ideas.json",
+                "ideas_work.json",
+                "ideas_personal.json",
             ]
-            for filename in test_files:
+            for filename in collection_files:
                 file_path = os.path.join(temp_dir, filename)
                 with open(file_path, "w") as f:
                     json.dump({"test": "data"}, f)
 
             result = discover_data_files(temp_dir)
 
-            assert len(result) == 2  # ideas and resume
-            assert len(result["ideas"]) == 3
-            assert len(result["resume"]) == 2
+            assert "resume" in result
+            assert "ideas" in result
+            assert result["resume"]["type"] == "collection"
+            assert result["ideas"]["type"] == "collection"
+            assert len(result["resume"]["files"]) == 3
+            assert len(result["ideas"]["files"]) == 3
 
-    def test_discover_data_files_ignores_non_json(self):
-        """Test that non-JSON files are ignored"""
+    def test_discover_data_files_mixed_types(self):
+        """Test discovery with mixed single and collection files"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create mixed file types
-            files = [
-                ("ideas.json", {"test": "data"}),
-                ("notes.txt", "text content"),
-                ("config.yaml", "yaml: content"),
-                ("tasks.json", {"task": "data"}),
+            # Create mixed files
+            mixed_files = [
+                "tasks.json",  # Single file
+                "notes.json",  # Single file
+                "ideas.json",  # Collection base
+                "ideas_work.json",  # Collection variant
+                "ideas_personal.json",  # Collection variant
+                "not_json.txt",  # Should be ignored
+                "hidden.json~",  # Should be ignored
             ]
-
-            for filename, content in files:
+            for filename in mixed_files:
                 file_path = os.path.join(temp_dir, filename)
-                if filename.endswith(".json"):
-                    with open(file_path, "w") as f:
-                        json.dump(content, f)
-                else:
-                    with open(file_path, "w") as f:
-                        f.write(str(content))
+                with open(file_path, "w") as f:
+                    if filename.endswith(".json"):
+                        json.dump({"test": "data"}, f)
+                    else:
+                        f.write("not json")
 
             result = discover_data_files(temp_dir)
 
-            assert len(result) == 2  # Only JSON files
-            assert "ideas" in result
             assert "tasks" in result
+            assert "notes" in result
+            assert "ideas" in result
+            assert result["tasks"]["type"] == "single"
+            assert result["notes"]["type"] == "single"
+            assert result["ideas"]["type"] == "collection"
+            assert len(result["ideas"]["files"]) == 3
+            # Non-JSON files should be ignored
+            assert "not_json" not in result
+            assert "hidden" not in result
+
+    def test_discover_data_files_subdirectories(self):
+        """Test that subdirectories are ignored"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create file in root
+            with open(os.path.join(temp_dir, "ideas.json"), "w") as f:
+                json.dump({"test": "data"}, f)
+
+            # Create subdirectory with file
+            subdir = os.path.join(temp_dir, "subdir")
+            os.makedirs(subdir)
+            with open(os.path.join(subdir, "tasks.json"), "w") as f:
+                json.dump({"test": "data"}, f)
+
+            result = discover_data_files(temp_dir)
+
+            assert "ideas" in result
+            assert "tasks" not in result  # Should be ignored in subdirectory
+
+    def test_discover_data_files_invalid_json(self):
+        """Test handling of invalid JSON files"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create valid JSON file
+            with open(os.path.join(temp_dir, "valid.json"), "w") as f:
+                json.dump({"test": "data"}, f)
+
+            # Create invalid JSON file
+            with open(os.path.join(temp_dir, "invalid.json"), "w") as f:
+                f.write("invalid json content")
+
+            result = discover_data_files(temp_dir)
+
+            # Should include valid file but skip invalid one
+            assert "valid" in result
+            assert "invalid" not in result
+
+    def test_discover_data_files_permission_error(self):
+        """Test handling of permission errors"""
+        with patch("os.listdir") as mock_listdir:
+            mock_listdir.side_effect = PermissionError("Permission denied")
+            result = discover_data_files("/some/path")
+            assert result == {}
 
 
 class TestLoadEndpointDataFromFile:
     """Test loading data from individual files"""
 
-    def test_load_nonexistent_file(self):
-        """Test loading from nonexistent file"""
-        result = load_endpoint_data_from_file("test", "/nonexistent/file.json")
-
-        assert result["success"] is False
-        assert "not found" in result["error"]
-        assert result["file_path"] == "/nonexistent/file.json"
-
-    def test_load_single_object(self):
-        """Test loading single JSON object"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump({"name": "Test Item", "value": 42}, f)
-            temp_path = f.name
-
-        try:
-            result = load_endpoint_data_from_file("test", temp_path)
-
-            assert result["success"] is True
-            assert "data" in result
-            assert len(result["data"]) == 1
-            assert result["data"][0]["name"] == "Test Item"
-            assert result["data"][0]["value"] == 42
-        finally:
-            os.unlink(temp_path)
-
-    def test_load_array_of_objects(self):
-        """Test loading array of JSON objects"""
-        test_data = [
-            {"name": "Item 1", "value": 1},
-            {"name": "Item 2", "value": 2},
-            {"name": "Item 3", "value": 3},
-        ]
+    def test_load_endpoint_data_from_file_success(self):
+        """Test successful data loading from file"""
+        test_data = {"title": "Test Item", "content": "Test content"}
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(test_data, f)
-            temp_path = f.name
+            temp_file = f.name
 
         try:
-            result = load_endpoint_data_from_file("test", temp_path)
-
-            assert result["success"] is True
-            assert len(result["data"]) == 3
-            assert result["data"][0]["name"] == "Item 1"
-            assert result["data"][2]["value"] == 3
+            result = load_endpoint_data_from_file(temp_file)
+            assert result == test_data
         finally:
-            os.unlink(temp_path)
+            os.unlink(temp_file)
 
-    def test_load_wrapped_data(self):
-        """Test loading data with wrapper format"""
-        test_data = {
-            "metadata": {"version": "1.0"},
-            "data": [{"name": "Item 1", "value": 1}, {"name": "Item 2", "value": 2}],
-        }
+    def test_load_endpoint_data_from_file_not_found(self):
+        """Test loading from non-existent file"""
+        result = load_endpoint_data_from_file("/nonexistent/file.json")
+        assert result is None
+
+    def test_load_endpoint_data_from_file_invalid_json(self):
+        """Test loading from file with invalid JSON"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("invalid json content")
+            temp_file = f.name
+
+        try:
+            result = load_endpoint_data_from_file(temp_file)
+            assert result is None
+        finally:
+            os.unlink(temp_file)
+
+    def test_load_endpoint_data_from_file_permission_error(self):
+        """Test handling of permission errors"""
+        with patch("builtins.open") as mock_open_file:
+            mock_open_file.side_effect = PermissionError("Permission denied")
+            result = load_endpoint_data_from_file("/some/file.json")
+            assert result is None
+
+    def test_load_endpoint_data_from_file_empty_file(self):
+        """Test loading from empty file"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("")
+            temp_file = f.name
+
+        try:
+            result = load_endpoint_data_from_file(temp_file)
+            assert result is None
+        finally:
+            os.unlink(temp_file)
+
+    def test_load_endpoint_data_from_file_large_file(self):
+        """Test loading from large file"""
+        # Create large test data
+        large_data = {"items": [{"id": i, "name": f"item_{i}"} for i in range(1000)]}
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_data, f)
-            temp_path = f.name
+            json.dump(large_data, f)
+            temp_file = f.name
 
         try:
-            result = load_endpoint_data_from_file("test", temp_path)
-
-            assert result["success"] is True
-            assert len(result["data"]) == 2
-            assert result["data"][0]["name"] == "Item 1"
+            result = load_endpoint_data_from_file(temp_file)
+            assert result == large_data
+            assert len(result["items"]) == 1000
         finally:
-            os.unlink(temp_path)
-
-    def test_load_invalid_json(self):
-        """Test loading invalid JSON"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            f.write("{ invalid json }")
-            temp_path = f.name
-
-        try:
-            result = load_endpoint_data_from_file("test", temp_path)
-
-            assert result["success"] is False
-            assert "JSON" in result["error"]
-        finally:
-            os.unlink(temp_path)
-
-    def test_load_invalid_data_type(self):
-        """Test loading unsupported data type"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump("just a string", f)
-            temp_path = f.name
-
-        try:
-            result = load_endpoint_data_from_file("test", temp_path)
-
-            assert result["success"] is False
-            assert "Invalid data format" in result["error"]
-        finally:
-            os.unlink(temp_path)
+            os.unlink(temp_file)
 
 
 class TestImportEndpointDataToDatabase:
-    """Test database import functionality"""
+    """Test importing data to database"""
 
-    def test_import_to_nonexistent_endpoint(self, test_db_session):
-        """Test importing to nonexistent endpoint"""
-        test_data = [{"name": "Test", "value": 1}]
+    @patch("app.data_loader.get_db")
+    def test_import_endpoint_data_to_database_success(self, mock_get_db):
+        """Test successful data import to database"""
+        # Mock database session
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_data, f)
-            temp_path = f.name
-
-        try:
-            with patch("app.data_loader.get_db") as mock_get_db:
-                mock_db = MagicMock()
-                mock_db.query.return_value.filter.return_value.first.return_value = None
-                mock_get_db.return_value = mock_db
-
-                result = import_endpoint_data_to_database("nonexistent", temp_path)
-
-                assert result["success"] is False
-                # The function may return different error messages depending on the state
-                assert "error" in result
-                assert isinstance(result["error"], str)
-        finally:
-            os.unlink(temp_path)
-
-    def test_import_with_existing_data(self, test_db_session):
-        """Test importing with replace_existing=False"""
-        from app.database import DataEntry, Endpoint
-
-        # Create test endpoint
-        endpoint = Endpoint(
-            name="test_import",
-            description="Test endpoint",
-            schema={"name": {"type": "string"}},
+        # Mock endpoint
+        mock_endpoint = MagicMock()
+        mock_endpoint.id = 1
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_endpoint
         )
-        test_db_session.add(endpoint)
-        test_db_session.commit()
-        test_db_session.refresh(endpoint)
 
-        # Add existing data
-        existing_entry = DataEntry(endpoint_id=endpoint.id, data={"name": "Existing"})
-        test_db_session.add(existing_entry)
-        test_db_session.commit()
+        test_data = {"title": "Test Item", "content": "Test content"}
 
-        # Try to import without replacing
-        test_data = [{"name": "New Item"}]
+        result = import_endpoint_data_to_database("test_endpoint", test_data, 1)
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_data, f)
-            temp_path = f.name
+        assert result is True
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
 
-        try:
-            with patch("app.data_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = iter([test_db_session])
+    @patch("app.data_loader.get_db")
+    def test_import_endpoint_data_to_database_endpoint_not_found(self, mock_get_db):
+        """Test import when endpoint doesn't exist"""
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
 
-                result = import_endpoint_data_to_database(
-                    "test_import", temp_path, replace_existing=False
-                )
+        # Endpoint not found
+        mock_db.query.return_value.filter.return_value.first.return_value = None
 
-                assert result["success"] is False
-                # Should indicate data already exists
-                assert "error" in result
-                assert (
-                    "already exists" in result["error"] or "existing" in result["error"]
-                )
-        finally:
-            os.unlink(temp_path)
+        test_data = {"title": "Test Item"}
 
-    def test_import_with_replace_existing(self, test_db_session):
-        """Test importing with replace_existing=True"""
-        from app.database import DataEntry, Endpoint
+        result = import_endpoint_data_to_database("nonexistent", test_data, 1)
 
-        # Create test endpoint
-        endpoint = Endpoint(
-            name="test_replace",
-            description="Test endpoint",
-            schema={"name": {"type": "string"}},
+        assert result is False
+        mock_db.add.assert_not_called()
+
+    @patch("app.data_loader.get_db")
+    def test_import_endpoint_data_to_database_database_error(self, mock_get_db):
+        """Test import with database error"""
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
+
+        # Mock endpoint exists
+        mock_endpoint = MagicMock()
+        mock_endpoint.id = 1
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_endpoint
         )
-        test_db_session.add(endpoint)
-        test_db_session.commit()
-        test_db_session.refresh(endpoint)
 
-        # Add existing data
-        existing_entry = DataEntry(endpoint_id=endpoint.id, data={"name": "Old"})
-        test_db_session.add(existing_entry)
-        test_db_session.commit()
+        # Database commit fails
+        mock_db.commit.side_effect = Exception("Database error")
 
-        # Import with replace
-        test_data = [{"name": "New Item 1"}, {"name": "New Item 2"}]
+        test_data = {"title": "Test Item"}
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_data, f)
-            temp_path = f.name
+        result = import_endpoint_data_to_database("test_endpoint", test_data, 1)
 
-        try:
-            with patch("app.data_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = iter([test_db_session])
+        assert result is False
+        mock_db.rollback.assert_called_once()
 
-                result = import_endpoint_data_to_database(
-                    "test_replace", temp_path, replace_existing=True
-                )
+    @patch("app.data_loader.get_db")
+    def test_import_endpoint_data_to_database_empty_data(self, mock_get_db):
+        """Test import with empty data"""
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
 
-                assert result["success"] is True
-                assert result["imported_count"] == 2
-        finally:
-            os.unlink(temp_path)
+        mock_endpoint = MagicMock()
+        mock_endpoint.id = 1
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_endpoint
+        )
 
+        # Empty data should still be importable
+        test_data = {}
 
-class TestGetDataImportStatus:
-    """Test data import status functionality"""
+        result = import_endpoint_data_to_database("test_endpoint", test_data, 1)
 
-    def test_get_status_for_all_endpoints(self, test_db_session):
-        """Test getting status for all endpoints"""
-        from app.database import Endpoint
+        assert result is True
+        mock_db.add.assert_called_once()
 
-        # Create test endpoints with required schema field
-        endpoint1 = Endpoint(name="test1", description="Test 1", schema={})
-        endpoint2 = Endpoint(name="test2", description="Test 2", schema={})
-        test_db_session.add_all([endpoint1, endpoint2])
-        test_db_session.commit()
+    @patch("app.data_loader.get_db")
+    def test_import_endpoint_data_to_database_large_data(self, mock_get_db):
+        """Test import with large data payload"""
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create some test files
-            with open(os.path.join(temp_dir, "test1.json"), "w") as f:
-                json.dump([{"name": "Item 1"}], f)
+        mock_endpoint = MagicMock()
+        mock_endpoint.id = 1
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_endpoint
+        )
 
-            with patch("app.data_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = iter([test_db_session])
+        # Large data payload
+        large_data = {"content": "x" * 10000, "items": list(range(1000))}
 
-                result = get_data_import_status(data_dir=temp_dir)
+        result = import_endpoint_data_to_database("test_endpoint", large_data, 1)
 
-            assert "endpoint_status" in result
-            # Test basic structure without assuming exact format
+        assert result is True
+        mock_db.add.assert_called_once()
 
 
 class TestImportAllDiscoveredData:
-    """Test bulk import functionality"""
+    """Test importing all discovered data"""
 
-    def test_import_all_discovered_data(self, test_db_session):
-        """Test importing all discovered data"""
-        from app.database import Endpoint
+    @patch("app.data_loader.import_endpoint_data_to_database")
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    @patch("app.data_loader.discover_data_files")
+    def test_import_all_discovered_data_success(
+        self, mock_discover, mock_load, mock_import
+    ):
+        """Test successful import of all discovered data"""
+        # Mock discovered files
+        mock_discover.return_value = {
+            "ideas": {"type": "single", "files": ["/path/to/ideas.json"]},
+            "notes": {
+                "type": "collection",
+                "files": ["/path/to/notes.json", "/path/to/notes_work.json"],
+            },
+        }
 
-        # Create test endpoint
-        endpoint = Endpoint(
-            name="bulk_test",
-            description="Bulk test",
-            schema={"name": {"type": "string"}},
+        # Mock successful file loading
+        mock_load.side_effect = [
+            {"title": "Idea 1"},  # ideas.json
+            {"title": "Note 1"},  # notes.json
+            {"title": "Note 2"},  # notes_work.json
+        ]
+
+        # Mock successful database import
+        mock_import.return_value = True
+
+        result = import_all_discovered_data(user_id=1)
+
+        assert result["success"] is True
+        assert result["imported_endpoints"] == 2
+        assert result["total_files"] == 3
+        assert result["failed_files"] == 0
+
+    @patch("app.data_loader.import_endpoint_data_to_database")
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    @patch("app.data_loader.discover_data_files")
+    def test_import_all_discovered_data_no_files(
+        self, mock_discover, mock_load, mock_import
+    ):
+        """Test import when no files are discovered"""
+        mock_discover.return_value = {}
+
+        result = import_all_discovered_data(user_id=1)
+
+        assert result["success"] is True
+        assert result["imported_endpoints"] == 0
+        assert result["total_files"] == 0
+        assert result["failed_files"] == 0
+
+    @patch("app.data_loader.import_endpoint_data_to_database")
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    @patch("app.data_loader.discover_data_files")
+    def test_import_all_discovered_data_file_load_failures(
+        self, mock_discover, mock_load, mock_import
+    ):
+        """Test import with some file loading failures"""
+        mock_discover.return_value = {
+            "ideas": {"type": "single", "files": ["/path/to/ideas.json"]},
+            "notes": {"type": "single", "files": ["/path/to/notes.json"]},
+        }
+
+        # Mock mixed success/failure file loading
+        mock_load.side_effect = [{"title": "Idea 1"}, None]  # Success  # Failure
+
+        mock_import.return_value = True
+
+        result = import_all_discovered_data(user_id=1)
+
+        assert result["success"] is True
+        assert result["imported_endpoints"] == 1  # Only one successful
+        assert result["total_files"] == 2
+        assert result["failed_files"] == 1
+
+    @patch("app.data_loader.import_endpoint_data_to_database")
+    @patch("app.data_loader.load_endpoint_data_from_file")
+    @patch("app.data_loader.discover_data_files")
+    def test_import_all_discovered_data_database_failures(
+        self, mock_discover, mock_load, mock_import
+    ):
+        """Test import with database import failures"""
+        mock_discover.return_value = {
+            "ideas": {"type": "single", "files": ["/path/to/ideas.json"]}
+        }
+
+        mock_load.return_value = {"title": "Idea 1"}
+        mock_import.return_value = False  # Database import fails
+
+        result = import_all_discovered_data(user_id=1)
+
+        assert result["success"] is False
+        assert result["imported_endpoints"] == 0
+        assert result["failed_files"] == 1
+
+    @patch("app.data_loader.discover_data_files")
+    def test_import_all_discovered_data_discovery_error(self, mock_discover):
+        """Test import when discovery fails"""
+        mock_discover.side_effect = Exception("Discovery error")
+
+        result = import_all_discovered_data(user_id=1)
+
+        assert result["success"] is False
+        assert "error" in result
+
+
+class TestGetDataImportStatus:
+    """Test getting data import status"""
+
+    @patch("app.data_loader.discover_data_files")
+    def test_get_data_import_status_success(self, mock_discover):
+        """Test successful status retrieval"""
+        mock_discover.return_value = {
+            "ideas": {"type": "single", "files": ["/path/to/ideas.json"]},
+            "notes": {
+                "type": "collection",
+                "files": ["/path/to/notes.json", "/path/to/notes_work.json"],
+            },
+        }
+
+        result = get_data_import_status()
+
+        assert result["available_endpoints"] == 2
+        assert result["total_files"] == 3
+        assert "ideas" in result["endpoints"]
+        assert "notes" in result["endpoints"]
+
+    @patch("app.data_loader.discover_data_files")
+    def test_get_data_import_status_no_data(self, mock_discover):
+        """Test status when no data files exist"""
+        mock_discover.return_value = {}
+
+        result = get_data_import_status()
+
+        assert result["available_endpoints"] == 0
+        assert result["total_files"] == 0
+        assert result["endpoints"] == {}
+
+    @patch("app.data_loader.discover_data_files")
+    def test_get_data_import_status_discovery_error(self, mock_discover):
+        """Test status when discovery fails"""
+        mock_discover.side_effect = Exception("Discovery error")
+
+        result = get_data_import_status()
+
+        assert result["available_endpoints"] == 0
+        assert result["total_files"] == 0
+        assert "error" in result
+
+
+class TestDataLoaderSecurityValidation:
+    """Test security validation and boundary conditions"""
+
+    def test_path_traversal_prevention(self):
+        """Test that path traversal attempts are blocked"""
+        malicious_paths = [
+            "../../../etc/passwd",
+            "..\\..\\..\\windows\\system32\\config\\sam",
+            "/etc/passwd",
+            "C:\\Windows\\System32\\config\\SAM",
+        ]
+
+        for path in malicious_paths:
+            result = load_endpoint_data_from_file(path)
+            # Should return None for security reasons
+            assert result is None
+
+    def test_large_file_handling(self):
+        """Test handling of extremely large files"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            # Create very large JSON (but still valid)
+            large_data = {"items": ["x" * 1000 for _ in range(1000)]}
+            json.dump(large_data, f)
+            temp_file = f.name
+
+        try:
+            result = load_endpoint_data_from_file(temp_file)
+            # Should handle large files gracefully
+            assert result is not None
+            assert len(result["items"]) == 1000
+        finally:
+            os.unlink(temp_file)
+
+    def test_malformed_endpoint_names(self):
+        """Test handling of malformed endpoint names"""
+        malformed_names = [
+            "../malicious",
+            "endpoint/with/slashes",
+            "endpoint..json",
+            "",
+            None,
+        ]
+
+        for name in malformed_names:
+            if name is not None:
+                # Should handle malformed names gracefully
+                result = import_endpoint_data_to_database(name, {"test": "data"}, 1)
+                # Implementation should validate endpoint names
+                assert result in [True, False]  # Should not crash
+
+    def test_json_injection_attempts(self):
+        """Test JSON with potentially malicious content"""
+        malicious_json_data = {
+            "script": "<script>alert('xss')</script>",
+            "sql": "'; DROP TABLE users; --",
+            "path": "../../../etc/passwd",
+            "eval": "eval('malicious_code')",
+        }
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(malicious_json_data, f)
+            temp_file = f.name
+
+        try:
+            result = load_endpoint_data_from_file(temp_file)
+            # Should load but content should be treated as safe strings
+            assert result is not None
+            assert result["script"] == "<script>alert('xss')</script>"
+            # Content is loaded as-is but should be sanitized at display/use time
+        finally:
+            os.unlink(temp_file)
+
+    @patch("app.data_loader.get_db")
+    def test_sql_injection_in_endpoint_data(self, mock_get_db):
+        """Test SQL injection attempts in endpoint data"""
+        mock_db = MagicMock()
+        mock_get_db.return_value.__enter__.return_value = mock_db
+
+        mock_endpoint = MagicMock()
+        mock_endpoint.id = 1
+        mock_db.query.return_value.filter.return_value.first.return_value = (
+            mock_endpoint
         )
-        test_db_session.add(endpoint)
-        test_db_session.commit()
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create test file
-            test_data = [{"name": "Item 1"}, {"name": "Item 2"}]
-            with open(os.path.join(temp_dir, "bulk_test.json"), "w") as f:
-                json.dump(test_data, f)
+        # Data with SQL injection attempts
+        malicious_data = {
+            "title": "'; DROP TABLE data_entries; --",
+            "content": "1' OR '1'='1",
+            "metadata": {"key": "value'; DELETE FROM users; --"},
+        }
 
-            with patch("app.data_loader.get_db") as mock_get_db:
-                mock_get_db.return_value = iter([test_db_session])
+        # Should handle malicious data safely (SQLAlchemy should parameterize)
+        result = import_endpoint_data_to_database("test", malicious_data, 1)
 
-                result = import_all_discovered_data(data_dir=temp_dir)
+        # Should not crash and should be handled safely by ORM
+        assert result is True
+        mock_db.add.assert_called_once()
 
-                # Should return some result
-                assert isinstance(result, dict)
+    def test_unicode_and_encoding_handling(self):
+        """Test handling of various unicode and encoding scenarios"""
+        unicode_data = {
+            "title": "Test with émojis 🚀🔥💻",
+            "content": "Unicode chars: àáâãäåæçèéêë",
+            "chinese": "测试中文字符",
+            "japanese": "テストの日本語",
+            "emoji_mix": "🎉 Mixed content with unicode àáâã 测试 🎯",
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
+        ) as f:
+            json.dump(unicode_data, f, ensure_ascii=False)
+            temp_file = f.name
+
+        try:
+            result = load_endpoint_data_from_file(temp_file)
+            assert result is not None
+            assert result["title"] == "Test with émojis 🚀🔥💻"
+            assert result["chinese"] == "测试中文字符"
+        finally:
+            os.unlink(temp_file)
