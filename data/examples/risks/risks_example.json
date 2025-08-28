@@ -1,0 +1,18 @@
+[
+  {
+    "content": "### Risk: Data Privacy Exposure\n\n**Risk Category:** Operational/Legal\n**Probability:** Medium\n**Impact:** High\n**Status:** Monitored\n\n#### Description\nPotential exposure of personal data through third-party integrations and API endpoints, particularly as the platform scales and integrates with external services.\n\n#### Specific Concerns\n- **API Security:** Public endpoints may inadvertently expose private data\n- **Third-party Services:** Analytics and monitoring tools collecting more data than necessary\n- **User Consent:** Complex consent flows that users don't fully understand\n- **Data Retention:** Unclear policies around how long data is stored and when it's deleted\n\n#### Current Mitigation Strategies\n1. **Privacy by Design**\n   - Default all new endpoints to private visibility\n   - Require explicit opt-in for public data sharing\n   - Regular privacy impact assessments\n\n2. **Technical Controls**\n   - Field-level privacy controls in database\n   - Automatic data masking for non-authorized access\n   - Regular security audits and penetration testing\n\n3. **Legal Compliance**\n   - GDPR compliance framework implementation\n   - Clear data processing agreements with vendors\n   - Regular review of privacy policies\n\n#### Monitoring & Early Warning Signs\n- Increased requests for data export/deletion\n- User complaints about unsolicited communications\n- Unusual patterns in API access logs\n- Reports of data appearing in unexpected contexts\n\n#### Response Plan\n1. **Immediate (0-24 hours)**\n   - Isolate affected systems\n   - Assess scope of potential exposure\n   - Notify key stakeholders\n\n2. **Short-term (1-7 days)**\n   - Implement containment measures\n   - Begin user notification process\n   - Document incident for regulatory reporting\n\n3. **Long-term (1+ weeks)**\n   - Conduct thorough post-incident review\n   - Update policies and procedures\n   - Enhance monitoring and detection capabilities\n   - Provide additional staff training\n\n#### Review Schedule\n- **Weekly:** Monitor key risk indicators\n- **Monthly:** Review mitigation effectiveness\n- **Quarterly:** Full risk assessment update\n- **Annually:** Comprehensive strategy review\n\n#### Related Risks\n- Regulatory compliance failures\n- Reputational damage from privacy incidents\n- Customer trust erosion\n- Competitive disadvantage from privacy constraints",
+    "meta": {
+      "title": "Data Privacy Exposure Risk",
+      "date": "2025-08-28",
+      "tags": [
+        "risk-management",
+        "privacy",
+        "security",
+        "compliance",
+        "operational"
+      ],
+      "status": "monitored",
+      "visibility": "public"
+    }
+  }
+]
