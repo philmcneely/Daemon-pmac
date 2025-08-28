@@ -64,6 +64,11 @@ curl -s https://api.github.com/repos/owner/repo  # Cannot read this output direc
 - **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
 - **ALWAYS** examine application code first to understand how to perform actions correctly
 
+### 🔴 WORK COMPLETION (MANDATORY)
+
+#### Summary Protocol
+- **ALWAYS** commit changes before summarizing what you've done
+
 #### File Naming Convention
 **IMPORTANT**: Always use the `gh_temp/` directory for temporary files:
 - `gh_temp/ci_status.txt` - CI pipeline status

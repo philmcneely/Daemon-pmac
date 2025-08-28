@@ -29,6 +29,9 @@
 - **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
 - **ALWAYS** examine application code first to understand how to perform actions correctly
 
+### Work Completion
+- **ALWAYS** commit changes before summarizing what you've done
+
 ### Quality Gates (ALL MUST PASS)
 - ✅ All existing tests must pass
 - ✅ New tests must pass
