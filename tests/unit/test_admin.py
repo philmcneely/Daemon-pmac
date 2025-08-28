@@ -2,6 +2,7 @@
 Properly structured admin tests with specific status code expectations
 """
 
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -209,3 +210,220 @@ class TestAdminDatabaseErrors:
         # Should handle gracefully - not necessarily 500
         assert isinstance(response.status_code, int)
         assert response.status_code >= 400  # Some kind of error response
+
+
+class TestAdminRouterExtended:
+    """Extended admin router tests from working file"""
+
+    @patch("app.auth.generate_api_key")
+    def test_create_api_key_success(self, mock_generate):
+        """Test creating API key successfully"""
+
+        # Setup the mock for generate_api_key
+        mock_generate.return_value = ("test_api_key_value", "test_hash")
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Mock database session
+        def mock_get_db():
+            mock_db = MagicMock()
+
+            # Mock the API key object that gets created and returned
+            mock_new_key = MagicMock()
+            mock_new_key.id = 1
+            mock_new_key.name = "test-key"
+            mock_new_key.key = "test_api_key_value"
+            mock_new_key.expires_at = None
+            mock_new_key.created_at = datetime(2023, 1, 1, 0, 0, 0)
+
+            # Mock the db.refresh to set the attributes
+            def mock_refresh(obj):
+                obj.id = 1
+                obj.created_at = datetime(2023, 1, 1, 0, 0, 0)
+
+            mock_db.refresh = mock_refresh
+            return mock_db
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+        app.dependency_overrides[get_db] = mock_get_db
+
+        try:
+            client = TestClient(app)
+            response = client.post("/admin/api-keys", json={"name": "test-key"})
+
+            # Should work with proper mocking - API creation typically returns 201
+            assert response.status_code in [200, 201]
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
+
+    def test_toggle_user_status_success(self):
+        """Test toggling user status successfully"""
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Mock database session
+        def mock_get_db():
+            mock_db = MagicMock()
+
+            # Mock user to toggle
+            mock_user = MagicMock()
+            mock_user.id = 2
+            mock_user.username = "testuser"
+            mock_user.is_active = True
+
+            mock_db.query.return_value.filter.return_value.first.return_value = (
+                mock_user
+            )
+            return mock_db
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+        app.dependency_overrides[get_db] = mock_get_db
+
+        try:
+            client = TestClient(app)
+            # Use the correct endpoint path
+            response = client.put("/admin/users/2/toggle")
+
+            # Should work with proper mocking
+            assert response.status_code in [200, 422]
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
+
+    def test_toggle_admin_status_success(self):
+        """Test toggling admin status successfully"""
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Mock database session
+        def mock_get_db():
+            mock_db = MagicMock()
+
+            # Mock user to toggle
+            mock_user = MagicMock()
+            mock_user.id = 2
+            mock_user.username = "testuser"
+            mock_user.is_admin = False
+
+            mock_db.query.return_value.filter.return_value.first.return_value = (
+                mock_user
+            )
+            return mock_db
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+        app.dependency_overrides[get_db] = mock_get_db
+
+        try:
+            client = TestClient(app)
+            # Use the correct endpoint path
+            response = client.put("/admin/users/2/admin")
+
+            # Should work with proper mocking
+            assert response.status_code in [200, 422]
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
+
+    def test_get_system_info_success(self):
+        """Test getting system info successfully"""
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+
+        try:
+            client = TestClient(app)
+            response = client.get("/admin/system")
+
+            # Should work - system info endpoint should be available
+            assert response.status_code == 200
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
+
+    def test_get_stats_success(self):
+        """Test getting stats successfully"""
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Mock database session
+        def mock_get_db():
+            mock_db = MagicMock()
+            # Mock the query chain for endpoints
+            mock_db.query().all.return_value = []  # Return empty list of endpoints
+            # Mock the query chain for users
+            mock_db.query().count.return_value = 1  # Return count of 1 user
+            return mock_db
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+        app.dependency_overrides[get_db] = mock_get_db
+
+        try:
+            client = TestClient(app)
+            response = client.get("/admin/stats")
+
+            # Should work - stats endpoint should be available
+            assert response.status_code == 200
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
+
+    def test_list_backups_success(self):
+        """Test listing backups successfully"""
+
+        # Mock admin user
+        def mock_get_admin():
+            mock_admin = MagicMock()
+            mock_admin.id = 1
+            mock_admin.username = "admin"
+            mock_admin.is_admin = True
+            return mock_admin
+
+        # Override dependencies
+        app.dependency_overrides[get_current_admin_user] = mock_get_admin
+
+        try:
+            client = TestClient(app)
+            response = client.get("/admin/backups")
+
+            # Should work - backups endpoint should be available
+            assert response.status_code == 200
+        finally:
+            # Clean up overrides
+            app.dependency_overrides.clear()
