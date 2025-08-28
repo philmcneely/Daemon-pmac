@@ -1,5 +1,70 @@
 # GitHub Copilot Instructions
 
+## 🚨 WARNING: MANDATORY Development Workflow Rules 🚨
+
+**These rules are CRITICAL and must NEVER be violated. They are embedded at multiple levels to prevent forgetting.**
+
+### 🔴 DEVELOPMENT WORKFLOW (MANDATORY)
+
+#### Test-First Development
+- **ALWAYS** update tests when changing functionality
+- **ALWAYS** run tests and ensure they pass before proceeding
+- **NEVER** move to next task until all tests pass and docs are updated
+
+#### Documentation Updates
+- **ALWAYS** update `personal_api_spec.md` when changing API behavior
+- **ALWAYS** update `E2E_TEST_CASES_GIVEN_WHEN_THEN.md` for new test scenarios
+- **ALWAYS** update OpenAPI documentation for endpoint changes
+
+#### Quality Gates (ALL MUST PASS)
+- ✅ All existing tests must pass
+- ✅ New tests must pass
+- ✅ Documentation must be updated and accurate
+- ✅ OpenAPI schema must be current
+- ✅ No temporary files in project root
+
+### 🔴 COMMAND OUTPUT HANDLING (MANDATORY)
+
+#### GitHub CLI & Curl Commands
+- **ALWAYS** pipe GitHub CLI (`gh`) commands to files in `gh_temp/` directory first, then read the file
+- **ALWAYS** pipe `curl` commands to files in `gh_temp/` directory first, then read the file
+- **NEVER** try to read CLI output directly from terminal
+
+#### Examples:
+
+##### ✅ CORRECT Pattern for GitHub CLI:
+```bash
+gh api repos/owner/repo/pulls > gh_temp/pulls.json 2>&1
+cat gh_temp/pulls.json
+```
+
+##### ✅ CORRECT Pattern for Curl:
+```bash
+curl -s https://api.github.com/repos/owner/repo > gh_temp/repo.json 2>&1
+cat gh_temp/repo.json
+```
+
+##### ❌ INCORRECT Pattern:
+```bash
+gh api repos/owner/repo/pulls  # Cannot read this output directly
+curl -s https://api.github.com/repos/owner/repo  # Cannot read this output directly
+```
+
+### 🔴 FILE MANAGEMENT (MANDATORY)
+
+#### Clean Repository Practices
+- **NEVER** create extraneous files for one-offs in the root directory
+- **NEVER** create duplicate files and leave them around
+- **ALWAYS** clean up temporary files after use
+- **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
+
+#### File Naming Convention
+**IMPORTANT**: Always use the `gh_temp/` directory for temporary files:
+- `gh_temp/ci_status.txt` - CI pipeline status
+- `gh_temp/pr_info.json` - Pull request information
+- `gh_temp/repo_settings.json` - Repository settings
+- `gh_temp/branch_protection.json` - Branch protection rules
+
 ## GitHub CLI Output Handling
 
 **CRITICAL** Whenever you run a GitHub CLI (`gh`) command in the terminal, pipe the output to a file that you can read from. Always use the `gh_temp/` directory for temporary files (it's gitignored). Make sure to clean these files regularly so that it doesn't grow the directory too big. There is a bug in the current version of Copilot that causes it to not read the output of commands correctly. This workaround allows you to read the output from the temporary file instead. You MUST redirect output to a file first, then read the file.

@@ -1,5 +1,39 @@
 # Daemon: Multi-User Personal API Framework
 
+## 🤖 CRITICAL COPILOT RULES (MANDATORY)
+
+**⚠️ DEVELOPMENT WORKFLOW - NEVER VIOLATE THESE RULES:**
+
+### Test-First Development
+- **ALWAYS** update tests when changing functionality
+- **ALWAYS** run tests and ensure they pass before proceeding
+- **NEVER** move to next task until all tests pass and docs are updated
+
+### Documentation Updates
+- **ALWAYS** update `personal_api_spec.md` when changing API behavior
+- **ALWAYS** update `E2E_TEST_CASES_GIVEN_WHEN_THEN.md` for new test scenarios
+- **ALWAYS** update OpenAPI documentation for endpoint changes
+
+### Command Output Handling
+- **ALWAYS** pipe GitHub CLI (`gh`) commands to files in `gh_temp/` directory first, then read the file
+- **ALWAYS** pipe `curl` commands to files in `gh_temp/` directory first, then read the file
+- **NEVER** try to read CLI output directly from terminal
+
+### File Management
+- **NEVER** create extraneous files for one-offs in the root directory
+- **NEVER** create duplicate files and leave them around
+- **ALWAYS** clean up temporary files after use
+- **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
+
+### Quality Gates (ALL MUST PASS)
+- ✅ All existing tests must pass
+- ✅ New tests must pass
+- ✅ Documentation must be updated and accurate
+- ✅ OpenAPI schema must be current
+- ✅ No temporary files in project root
+
+---
+
 [![CI/CD Pipeline](https://github.com/philmcneely/Daemon-pmac/actions/workflows/ci.yml/badge.svg)](https://github.com/philmcneely/Daemon-pmac/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/philmcneely/Daemon-pmac/branch/main/graph/badge.svg)](https://codecov.io/gh/philmcneely/Daemon-pmac)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
