@@ -30,6 +30,6 @@ This directory contains internal project documentation for development, deployme
 The following documentation remains in the project root for high visibility:
 
 - **[../README.md](../README.md)** - Main project overview and getting started guide
-- **[../REQUIREMENTS.md](../REQUIREMENTS.md)** - Detailed system requirements and specifications
-- **[../personal_api_spec.md](../personal_api_spec.md)** - Definitive API specification
+- **[../SYSTEM_REQUIREMENTS.md](../SYSTEM_REQUIREMENTS.md)** - Detailed system requirements and specifications
+- **[../API_REQUIREMENTS.md](../API_REQUIREMENTS.md)** - Definitive API specification
 - **[../CHANGES.md](../CHANGES.md)** - Project changelog and major updates

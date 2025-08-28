@@ -6,7 +6,7 @@
 - NEVER move to next task until all tests pass and docs updated
 
 ## Documentation Updates
-- ALWAYS update personal_api_spec.md when changing API behavior
+- ALWAYS update API_REQUIREMENTS.md when changing API behavior
 - ALWAYS update E2E_TEST_CASES_GIVEN_WHEN_THEN.md for new test scenarios
 - ALWAYS update OpenAPI documentation for endpoint changes
 
