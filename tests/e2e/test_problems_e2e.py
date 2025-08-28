@@ -1,13 +1,24 @@
 """
-E2E tests for the /problems endpoint
+Module: tests.e2e.test_problems_e2e
+Description: End-to-end tests for problems endpoint with markdown content support
 
-Tests the complete functionality of the problems API endpoint including:
-- Basic CRUD operations (Create, Read, Update, Delete)
-- Markdown content formatting and validation
-- HTML entity handling for problem descriptions
-- Privacy controls and visibility settings
-- Complex problem tracking scenarios
-- Error handling and validation
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/e2e/test_problems_e2e.py -v
+
+Notes:
+    - Complete workflow testing with database integration
+    - Comprehensive test coverage with fixtures
+    - Proper database isolation and cleanup
+    - Authentication and authorization testing
 """
 
 import pytest

@@ -1,5 +1,24 @@
 """
-Test utility functions
+Module: tests.e2e.test_utils
+Description: End-to-end tests for utility functions including backup and monitoring
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/e2e/test_utils.py -v
+
+Notes:
+    - Complete workflow testing with database integration
+    - Comprehensive test coverage with fixtures
+    - Proper database isolation and cleanup
+    - Authentication and authorization testing
 """
 
 import json

@@ -1,6 +1,25 @@
 #!/usr/bin/env python3
 """
-Tests for multi-user endpoint behavior
+Module: tests.e2e.test_multi_user_endpoints_e2e
+Description: End-to-end tests for multi-user endpoint routing and data isolation
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/e2e/test_multi_user_endpoints_e2e.py -v
+
+Notes:
+    - Complete workflow testing with database integration
+    - Comprehensive test coverage with fixtures
+    - Proper database isolation and cleanup
+    - Authentication and authorization testing
 """
 
 import pytest

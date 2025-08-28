@@ -1,11 +1,24 @@
 """
-End-to-end tests for the skills endpoint with flexible markdown support.
+Module: tests.e2e.test_skills_e2e
+Description: End-to-end tests for skills endpoint with structured data management
 
-These tests validate the skills endpoint which supports both:
-1. New flexible markdown format: {content, meta}
-2. Legacy structured format: {name, category, level, years_experience, description}
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
 
-The endpoint should maintain backward compatibility while enabling rich markdown content.
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/e2e/test_skills_e2e.py -v
+
+Notes:
+    - Complete workflow testing with database integration
+    - Comprehensive test coverage with fixtures
+    - Proper database isolation and cleanup
+    - Authentication and authorization testing
 """
 
 import pytest

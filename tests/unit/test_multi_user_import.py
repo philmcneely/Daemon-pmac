@@ -1,5 +1,24 @@
 """
-Test multi_user_import functionality - simplified version
+Module: tests.unit.test_multi_user_import
+Description: Unit tests for multi-user data import and batch operations
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/unit/test_multi_user_import.py -v
+
+Notes:
+    - Unit testing with isolated component validation
+    - Comprehensive test coverage with fixtures
+    - Proper database isolation and cleanup
+    - Authentication and authorization testing
 """
 
 import json
