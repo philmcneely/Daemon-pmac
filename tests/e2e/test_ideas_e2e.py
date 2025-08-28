@@ -2,6 +2,8 @@
 Comprehensive E2E tests for Ideas endpoint with flexible markdown support
 """
 
+from typing import Any, Dict
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -13,7 +15,7 @@ class TestIdeasEndpoint:
         """Test getting ideas when none exist"""
         response = client.get("/api/v1/ideas")
         assert response.status_code == 200
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         assert isinstance(data, dict)
         assert "items" in data
         assert isinstance(data["items"], list)
@@ -33,7 +35,7 @@ class TestIdeasEndpoint:
         assert response.status_code == 200
 
         # Verify the response
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         assert "id" in data
         assert data["data"]["title"] == idea_data["title"]
         assert data["data"]["description"] == idea_data["description"]
@@ -75,11 +77,11 @@ class TestIdeasEndpoint:
         assert response.status_code == 200
 
         # Verify the response
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         assert "id" in data
         assert data["data"]["content"] == idea_data["content"]
-        assert data["data"]["meta"]["title"] == idea_data["meta"]["title"]
-        assert data["data"]["meta"]["tags"] == idea_data["meta"]["tags"]
+        assert data["data"]["meta"]["title"] == idea_data["meta"]["title"]  # type: ignore
+        assert data["data"]["meta"]["tags"] == idea_data["meta"]["tags"]  # type: ignore
 
     def test_ideas_create_minimal_markdown(self, client: TestClient, auth_headers):
         """Test creating ideas with minimal markdown (only content required)"""
@@ -90,7 +92,7 @@ class TestIdeasEndpoint:
         response = client.post("/api/v1/ideas", json=idea_data, headers=auth_headers)
         assert response.status_code == 200
 
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         assert "id" in data
         assert data["data"]["content"] == idea_data["content"]
 
@@ -143,9 +145,9 @@ class TestIdeasEndpoint:
         )
         assert update_response.status_code == 200
 
-        updated_idea = update_response.json()
+        updated_idea: Dict[str, Any] = update_response.json()
         assert updated_idea["data"]["content"] == updated_data["content"]
-        assert updated_idea["data"]["meta"]["title"] == updated_data["meta"]["title"]
+        assert updated_idea["data"]["meta"]["title"] == updated_data["meta"]["title"]  # type: ignore
 
     def test_ideas_delete_item(self, client: TestClient, auth_headers):
         """Test deleting an idea"""
@@ -186,7 +188,7 @@ class TestIdeasEndpoint:
         # Test pagination
         response = client.get("/api/v1/ideas?page=1&size=3")
         assert response.status_code == 200
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         assert "items" in data
         assert len(data["items"]) <= 3  # Should respect the size limit
 

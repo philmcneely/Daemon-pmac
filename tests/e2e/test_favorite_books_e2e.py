@@ -8,6 +8,8 @@ These tests validate the favorite_books endpoint which supports both:
 The endpoint should maintain backward compatibility while enabling rich markdown content.
 """
 
+from typing import Any, Dict
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -34,7 +36,7 @@ class TestFavoriteBooksEndpoint:
         )
         assert response.status_code == 200
 
-        created_book = response.json()
+        created_book: Dict[str, Any] = response.json()
         assert created_book["id"]
         assert created_book["data"]["content"] == book_data["content"]
         assert created_book["data"]["meta"]["title"] == "Atomic Habits"
@@ -64,7 +66,7 @@ class TestFavoriteBooksEndpoint:
         )
         assert response.status_code == 200
 
-        created_book = response.json()
+        created_book: Dict[str, Any] = response.json()
         assert created_book["data"]["title"] == book_data["title"]
         assert created_book["data"]["author"] == book_data["author"]
         assert created_book["data"]["rating"] == book_data["rating"]
@@ -86,7 +88,7 @@ class TestFavoriteBooksEndpoint:
         list_response = client.get("/api/v1/favorite_books")
         assert list_response.status_code == 200
 
-        books_response = list_response.json()
+        books_response: Dict[str, Any] = list_response.json()
         assert isinstance(books_response, dict)
         assert "items" in books_response
         books = books_response["items"]
@@ -114,13 +116,13 @@ class TestFavoriteBooksEndpoint:
             "/api/v1/favorite_books", json=book_data, headers=auth_headers
         )
         assert create_response.status_code == 200
-        created_book = create_response.json()
+        created_book: Dict[str, Any] = create_response.json()
 
         # Now retrieve it
         get_response = client.get(f"/api/v1/favorite_books/{created_book['id']}")
         assert get_response.status_code == 200
 
-        retrieved_book = get_response.json()
+        retrieved_book: Dict[str, Any] = get_response.json()
         assert retrieved_book["id"] == created_book["id"]
         assert retrieved_book["content"] == book_data["content"]
 
@@ -136,7 +138,7 @@ class TestFavoriteBooksEndpoint:
             "/api/v1/favorite_books", json=original_data, headers=auth_headers
         )
         assert create_response.status_code == 200
-        created_book = create_response.json()
+        created_book: Dict[str, Any] = create_response.json()
 
         # Update it
         updated_data = {
@@ -154,10 +156,10 @@ class TestFavoriteBooksEndpoint:
         )
         assert update_response.status_code == 200
 
-        updated_book = update_response.json()
+        updated_book: Dict[str, Any] = update_response.json()
         assert updated_book["data"]["content"] == updated_data["content"]
-        assert updated_book["data"]["meta"]["title"] == updated_data["meta"]["title"]
-        assert updated_book["data"]["meta"]["author"] == updated_data["meta"]["author"]
+        assert updated_book["data"]["meta"]["title"] == updated_data["meta"]["title"]  # type: ignore
+        assert updated_book["data"]["meta"]["author"] == updated_data["meta"]["author"]  # type: ignore
 
     def test_favorite_books_delete_item(self, client: TestClient, auth_headers):
         """Test deleting a favorite book"""
@@ -171,7 +173,7 @@ class TestFavoriteBooksEndpoint:
             "/api/v1/favorite_books", json=book_data, headers=auth_headers
         )
         assert create_response.status_code == 200
-        created_book = create_response.json()
+        created_book: Dict[str, Any] = create_response.json()
 
         # Delete it
         delete_response = client.delete(
@@ -195,7 +197,7 @@ class TestFavoriteBooksEndpoint:
         )
         assert response.status_code == 200
 
-        created_book = response.json()
+        created_book: Dict[str, Any] = response.json()
         # HTML entities should be unescaped
         assert "&amp;" not in created_book["data"]["content"]
         assert "&gt;" not in created_book["data"]["content"]
@@ -255,8 +257,8 @@ class TestFavoriteBooksEndpoint:
         assert priv_response.status_code == 200
 
         # Test that privacy metadata is preserved
-        pub_book_data = pub_response.json()
-        priv_book_data = priv_response.json()
+        pub_book_data: Dict[str, Any] = pub_response.json()
+        priv_book_data: Dict[str, Any] = priv_response.json()
 
         assert pub_book_data["data"]["meta"]["visibility"] == "public"
         assert priv_book_data["data"]["meta"]["visibility"] == "private"
@@ -290,7 +292,7 @@ class TestFavoriteBooksEndpoint:
         # Verify both are retrievable
         books_response = client.get("/api/v1/favorite_books")
         assert books_response.status_code == 200
-        books_data = books_response.json()
+        books_data: Dict[str, Any] = books_response.json()
         books = books_data["items"]
 
         # Should have both books
@@ -316,7 +318,7 @@ class TestFavoriteBooksEndpoint:
             "/api/v1/favorite_books", json=book_data, headers=auth_headers
         )
         assert response.status_code == 200
-        created_book = response.json()
+        created_book: Dict[str, Any] = response.json()
 
         # Verify ownership is tracked
         assert "created_by" in created_book or "owner" in created_book
@@ -337,7 +339,7 @@ class TestFavoriteBooksEndpoint:
         # Verify all books are retrievable
         list_response = client.get("/api/v1/favorite_books")
         assert list_response.status_code == 200
-        books_data = list_response.json()
+        books_data: Dict[str, Any] = list_response.json()
         books = books_data["items"]
         assert len(books) >= len(bulk_books)
 
@@ -357,5 +359,5 @@ class TestFavoriteBooksEndpoint:
         # Test pagination
         page_response = client.get("/api/v1/favorite_books?page=1&size=3")
         assert page_response.status_code == 200
-        books = page_response.json()
+        books: Dict[str, Any] = page_response.json()
         assert len(books) <= 3
