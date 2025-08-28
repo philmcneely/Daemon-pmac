@@ -1,5 +1,34 @@
 """
-Utility functions for backup, monitoring, and other operations
+Module: utils
+Description: Utility functions for backup operations, monitoring, health checks,
+             and general application support functions
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database operations for backups
+- psutil: 5.9.0+ - System monitoring and resource usage
+- datetime: 3.9+ - Timestamp and date operations
+
+Usage:
+    from app.utils import create_backup, get_system_health, clean_old_backups
+
+    # Create database backup
+    backup_path = create_backup(db_session)
+
+    # Get system health metrics
+    health_data = get_system_health()
+
+    # Clean old backup files
+    clean_old_backups(max_age_days=30)
+
+Notes:
+    - Automatic backup rotation and cleanup
+    - System resource monitoring for health checks
+    - Safe file operations with proper error handling
+    - Configurable backup retention policies
 """
 
 import html

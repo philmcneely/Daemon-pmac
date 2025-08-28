@@ -1,5 +1,28 @@
 """
-Properly structured admin tests with specific status code expectations
+Module: tests.unit.test_admin
+Description: Unit tests for admin functionality including user management,
+             system administration, and endpoint management
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/unit/test_admin.py -v
+
+    # Run specific test
+    pytest tests/unit/test_admin.py::TestAdminUsers::test_create_user -v
+
+Notes:
+    - Tests admin-only functionality with proper authentication
+    - Covers user creation, management, and system operations
+    - Includes both positive and negative test cases
+    - Verifies proper error handling and status codes
 """
 
 from datetime import datetime

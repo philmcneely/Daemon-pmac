@@ -1,5 +1,36 @@
 """
-Authentication and security utilities
+Module: auth
+Description: Authentication and security utilities for JWT tokens, password hashing,
+             and user verification
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - Web framework for API routes and dependencies
+- python-jose: 3.5.0+ - JWT token creation, verification, and decoding
+- passlib: 1.7.4+ - Password hashing with bcrypt algorithm
+- sqlalchemy: 2.0+ - Database ORM for user and API key models
+
+Usage:
+    from app.auth import get_current_user, verify_password, get_password_hash
+
+    # Verify user authentication in API endpoints
+    user = await get_current_user(token)
+
+    # Hash password for secure storage
+    hashed = get_password_hash("user_password")
+
+    # Verify password during login
+    is_valid = verify_password("plain_password", hashed_password)
+
+Notes:
+    - JWT tokens expire after 30 minutes (configurable in settings)
+    - Supports both session-based auth and API key authentication
+    - Rate limiting applied to all authentication endpoints
+    - IP-based access control for enhanced security
+    - Automatic security headers added to all responses
 """
 
 import hashlib

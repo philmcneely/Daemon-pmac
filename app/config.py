@@ -1,5 +1,30 @@
 """
-Configuration management for Daemon
+Module: config
+Description: Configuration management and settings validation using Pydantic
+             for environment-based configuration
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pydantic: 2.5.2+ - Data validation and settings management
+- pydantic-settings: 2.0+ - Environment variable configuration
+
+Usage:
+    from app.config import settings
+
+    # Access configuration values
+    database_url = settings.database_url
+    secret_key = settings.secret_key
+
+    # All settings automatically loaded from environment variables or .env file
+
+Notes:
+    - Settings automatically load from .env file in development
+    - Environment variables override .env file values
+    - Database URL defaults to SQLite for local development
+    - Security settings have safe defaults but should be overridden in production
 """
 
 from typing import Any, List, Optional

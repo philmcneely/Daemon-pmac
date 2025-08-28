@@ -1,5 +1,33 @@
 """
-Privacy filtering and data protection utilities
+Module: privacy
+Description: Privacy filtering and data protection utilities for controlling
+             data visibility based on user settings and privacy levels
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database queries for privacy settings
+- typing: 3.9+ - Type hints for data structures
+
+Usage:
+    from app.privacy import get_privacy_filter
+
+    # Create privacy filter for user
+    privacy_filter = get_privacy_filter(db, user)
+
+    # Apply privacy filtering to data
+    filtered_data = privacy_filter.filter_data(raw_data, "business_card")
+
+    # Available privacy levels: business_card, professional, public_full, ai_safe
+
+Notes:
+    - Supports multiple privacy levels with different filtering rules
+    - Automatic detection and removal of sensitive data (SSN, phone, etc.)
+    - User-configurable privacy settings override defaults
+    - Recursive filtering for nested data structures
+    - Safe for AI assistant consumption at 'ai_safe' level
 """
 
 import json

@@ -1,5 +1,35 @@
 """
-Core API routes for daemon endpoints
+Module: routers.api
+Description: Core API routes for dynamic endpoints, user data management,
+             and adaptive single/multi-user routing
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - API routing and request/response handling
+- sqlalchemy: 2.0+ - Database operations and queries
+- pydantic: 2.5.2+ - Data validation and serialization
+
+Usage:
+    # Routes are automatically included in main FastAPI app
+    # Supports both single-user and multi-user endpoint patterns:
+
+    # Single-user mode (≤1 user):
+    # GET /api/v1/resume
+    # POST /api/v1/ideas
+
+    # Multi-user mode (2+ users):
+    # GET /api/v1/resume/users/pmac
+    # POST /api/v1/ideas/users/pmac
+
+Notes:
+    - Automatically detects single vs multi-user mode
+    - Dynamic endpoint creation and management
+    - Privacy filtering applied to all public endpoints
+    - Comprehensive data import/export functionality
+    - Audit logging for all data modifications
 """
 
 import json

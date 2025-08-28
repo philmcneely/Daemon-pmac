@@ -1,5 +1,32 @@
 """
-Command Line Interface for Daemon-pmac
+Module: cli
+Description: Command Line Interface for Daemon-pmac administration, user management,
+             and data operations
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- click: 8.1.7+ - Command line interface framework
+- sqlalchemy: 2.0+ - Database operations
+- rich: 13.7.0+ - Rich console output and formatting
+
+Usage:
+    # Create new users
+    python -m app.cli create-user pmac
+
+    # Import data from JSON files
+    python -m app.cli import-user-data pmac --data-dir data/private/pmac
+
+    # Create database backups
+    python -m app.cli backup create
+
+Notes:
+    - All commands support --help for detailed usage information
+    - Automatic database initialization if not exists
+    - Rich console output with colors and progress bars
+    - Safe operations with confirmation prompts for destructive actions
 """
 
 import os

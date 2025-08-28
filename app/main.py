@@ -1,5 +1,32 @@
 """
-Main FastAPI application
+Module: main
+Description: Main FastAPI application with middleware, routing, and lifecycle
+             management for the Daemon personal API framework
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- fastapi: 0.104.1+ - Web framework for building APIs
+- uvicorn: 0.24.0+ - ASGI server for running the application
+- slowapi: 0.1.9+ - Rate limiting middleware
+- sqlalchemy: 2.0+ - Database operations and session management
+
+Usage:
+    # Run the application
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+    # Or use the development script
+    python dev.py
+
+Notes:
+    - Automatic database initialization on startup
+    - Rate limiting applied to all endpoints (configurable)
+    - CORS middleware configured for cross-origin requests
+    - Security headers automatically added to all responses
+    - Comprehensive error handling and logging
+    - Health check endpoint available at /health
 """
 
 import asyncio

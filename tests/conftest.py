@@ -1,5 +1,35 @@
 """
-Test configuration and fixtures
+Module: tests.conftest
+Description: Test configuration, fixtures, and shared utilities for pytest
+             test suite including database setup and client fixtures
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework and fixture management
+- pytest-asyncio: 0.21.1+ - Async test support
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Test database configuration
+
+Usage:
+    # Fixtures are automatically available in all test files
+    def test_example(client, db_session, test_user):
+        response = client.get("/api/v1/resume")
+        assert response.status_code == 200
+
+    # Async test support
+    @pytest.mark.asyncio
+    async def test_async_example(async_client):
+        response = await async_client.get("/api/v1/users")
+
+Notes:
+    - Separate test database created for each test session
+    - Automatic cleanup of test data between tests
+    - Pre-configured test users with known credentials
+    - Both sync and async client fixtures available
+    - Database fixtures with proper isolation
 """
 
 import os

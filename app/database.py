@@ -1,5 +1,35 @@
 """
-Database models and configuration
+Module: database
+Description: SQLAlchemy database models, configuration, and session management
+             for the Daemon personal API framework
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- sqlalchemy: 2.0+ - Database ORM and query builder
+- aiosqlite: 0.19.0+ - Async SQLite database driver
+
+Usage:
+    from app.database import get_db, User, DynamicEndpoint
+
+    # Use dependency injection in FastAPI routes
+    @router.get("/users")
+    async def get_users(db: Session = Depends(get_db)):
+        return db.query(User).all()
+
+    # Create new database entries
+    new_user = User(username="pmac", email="pmac@example.com")
+    db.add(new_user)
+    db.commit()
+
+Notes:
+    - Uses SQLite by default with async support via aiosqlite
+    - All models inherit from DeclarativeBase for SQLAlchemy 2.0 compatibility
+    - Automatic database initialization on first startup
+    - Comprehensive audit logging for all data changes
+    - Privacy settings and dynamic endpoint support built-in
 """
 
 from datetime import datetime

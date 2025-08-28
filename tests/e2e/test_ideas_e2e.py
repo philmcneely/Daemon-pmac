@@ -1,5 +1,29 @@
 """
-Comprehensive E2E tests for Ideas endpoint with flexible markdown support
+Module: tests.e2e.test_ideas_e2e
+Description: End-to-end tests for Ideas endpoint with flexible markdown support,
+             covering both single-user and multi-user scenarios
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pytest: 7.4.3+ - Testing framework
+- fastapi: 0.104.1+ - TestClient for API testing
+- sqlalchemy: 2.0+ - Database operations in tests
+
+Usage:
+    pytest tests/e2e/test_ideas_e2e.py -v
+
+    # Run specific test class
+    pytest tests/e2e/test_ideas_e2e.py::TestIdeasEndpoint -v
+
+Notes:
+    - Tests complete workflows from API request to database storage
+    - Covers adaptive routing (single-user vs multi-user modes)
+    - Validates markdown content handling and metadata processing
+    - Includes privacy filtering and access control testing
+    - Tests CRUD operations with proper authentication
 """
 
 from typing import Any, Dict

@@ -1,5 +1,33 @@
 """
-Pydantic models for request/response validation
+Module: schemas
+Description: Pydantic models for request/response validation, data serialization,
+             and API documentation generation
+
+Author: pmac
+Created: 2025-08-28
+Modified: 2025-08-28
+
+Dependencies:
+- pydantic: 2.5.2+ - Data validation and serialization
+- typing: 3.9+ - Type hints for model fields
+
+Usage:
+    from app.schemas import UserCreate, TokenResponse, DynamicDataResponse
+
+    # Use in FastAPI route definitions
+    @router.post("/users", response_model=UserResponse)
+    async def create_user(user_data: UserCreate):
+        pass
+
+    # Automatic validation and documentation generation
+    response = DynamicDataResponse(content="...", meta={})
+
+Notes:
+    - All API request/response models defined here
+    - Automatic OpenAPI documentation generation
+    - Built-in validation for all data types
+    - Consistent error handling and response formats
+    - Privacy-aware response models for different access levels
 """
 
 from datetime import datetime
