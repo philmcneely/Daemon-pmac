@@ -30,6 +30,15 @@
 - **ALWAYS** pipe `curl` commands to files in `gh_temp/` directory first, then read the file
 - **NEVER** try to read CLI output directly from terminal
 
+#### Backup Investigation Methods
+- **ALWAYS** use multiple investigation approaches when debugging:
+  1. **Search existing code**: Use `grep_search`, `semantic_search`, `file_search` to understand current patterns
+  2. **Check route registration**: Verify endpoints are properly registered in routers and main.py
+  3. **Test existing endpoints**: Use curl to test what already works before creating new
+  4. **Examine logs**: Check server logs for errors, warnings, or routing issues
+  5. **Validate assumptions**: Test your understanding of existing functionality
+- **NEVER** assume functionality doesn't exist - always verify through multiple search methods
+
 #### Examples:
 
 ##### ✅ CORRECT Pattern for GitHub CLI:
@@ -58,11 +67,27 @@ curl -s https://api.github.com/repos/owner/repo  # Cannot read this output direc
 - **ALWAYS** clean up temporary files after use
 - **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
 
+#### Code Investigation and Analysis
+- **ALWAYS** investigate existing codebase before adding new functionality:
+  1. Search for similar patterns: `grep_search`, `semantic_search`
+  2. Check existing endpoints: Look at router files and test with curl
+  3. Examine existing models and schemas
+  4. Look for utility functions that might already solve the problem
+- **ALWAYS** prefer extending/using existing functionality over creating new
+- **ALWAYS** follow established patterns and conventions in the codebase
+
 ### 🔴 PROBLEM RESOLUTION (MANDATORY)
 
 #### Root Cause Analysis
 - **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
 - **ALWAYS** examine application code first to understand how to perform actions correctly
+
+#### Check Existing Before Creating New
+- **ALWAYS** check what endpoints, functions, or features already exist before creating new ones
+- **NEVER** create duplicate functionality without understanding why existing solutions don't work
+- **ALWAYS** examine existing patterns and follow them for consistency
+- **ALWAYS** search codebase for similar functionality before implementing from scratch
+- **ALWAYS** use `grep_search`, `semantic_search`, or `file_search` to find existing implementations
 
 ### 🔴 WORK COMPLETION (MANDATORY)
 
@@ -286,3 +311,89 @@ Notes:
 - ❌ Don't use Poetry commands - use pip and requirements.txt
 - ❌ Don't forget async/await patterns for database operations
 - ❌ Don't add headers to .md files - keep them clean
+
+---
+
+## 🔴 INVESTIGATION METHODOLOGIES (MANDATORY)
+
+### Before Creating New Functionality
+
+**CRITICAL**: Always investigate existing solutions before implementing new features.
+
+#### 1. Search Existing Codebase
+```bash
+# Search for similar functionality
+grep_search: "endpoint.*users" OR "get.*users" OR "list.*users"
+semantic_search: "user listing functionality"
+file_search: "**/routers/*.py" to examine all route definitions
+```
+
+#### 2. Test Existing Endpoints
+```bash
+# Always pipe to gh_temp/ directory
+curl -X GET "http://localhost:8007/api/v1/system/info" > gh_temp/system_info.json 2>&1
+cat gh_temp/system_info.json
+
+# Check what endpoints already exist
+python -c "from app.main import app; [print(f'{route.methods} {route.path}') for route in app.routes if hasattr(route, 'path')]"
+```
+
+#### 3. Examine Router Registration
+- Check `app/main.py` for router inclusion
+- Verify route ordering (specific routes before general ones)
+- Look at existing router files: `app/routers/api.py`, `app/routers/auth.py`, `app/routers/admin.py`
+
+#### 4. Validate Route Conflicts
+- FastAPI matches routes in order of definition
+- Specific paths (e.g., `/users`) must come before parameterized paths (e.g., `/{endpoint_name}`)
+- Use router debugging to identify conflicts
+
+#### 5. Check Authentication Requirements
+- Understand difference between public and authenticated endpoints
+- Verify existing endpoints' authentication requirements
+- Don't create public versions of secure endpoints
+
+### Real-World Example: User Listing Endpoint
+
+**Scenario**: Frontend needs to list users for multi-user mode detection.
+
+#### ❌ Wrong Approach (What I Did Initially):
+1. Assumed no user listing endpoint existed
+2. Created new `/api/v1/users` endpoint
+3. Added new route without checking existing functionality
+4. Created security concerns with public user data access
+
+#### ✅ Correct Approach (What Should Have Been Done):
+1. **Search existing**: `grep_search: "users.*endpoint" AND "@router.*users"`
+2. **Found existing endpoints**: `/admin/users`, `/auth/users`, `/api/v1/system/info`
+3. **Test existing**: `curl /api/v1/system/info` → Already returns user list + mode
+4. **Use existing**: Update frontend to use `/api/v1/system/info`
+5. **Result**: No new code needed, proper security maintained
+
+#### Key Lessons:
+- **System info endpoint already provided user list and mode detection**
+- **Admin endpoints exist for authenticated user management**
+- **Public endpoint patterns were already established**
+- **Investigation time: 5 minutes vs. implementation time: 30 minutes**
+
+#### Investigation Commands That Would Have Saved Time:
+```bash
+# This would have immediately shown existing endpoints
+python -c "from app.main import app; [print(f'{route.methods} {route.path}') for route in app.routes if 'users' in route.path]"
+
+# This would have shown system/info returns user data
+curl -X GET "http://localhost:8007/api/v1/system/info" > gh_temp/system_info.json 2>&1
+cat gh_temp/system_info.json
+```
+
+### Investigation Checklist
+
+Before creating any new endpoint or functionality:
+
+- [ ] **Search existing code** for similar patterns
+- [ ] **Test existing endpoints** with curl (pipe to gh_temp/)
+- [ ] **Check route registration** and ordering
+- [ ] **Verify authentication requirements** match use case
+- [ ] **Examine existing schemas and models**
+- [ ] **Look for utility functions** that solve similar problems
+- [ ] **Test the existing solution** to understand why it doesn't meet needs

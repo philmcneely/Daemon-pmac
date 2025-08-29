@@ -21,6 +21,12 @@
 - ALWAYS clean up temporary files after use
 - ALWAYS use gh_temp/ directory for temporary files (gitignored)
 
+## Check Existing Before Creating New
+- ALWAYS check what endpoints, functions, or features already exist before creating new ones
+- NEVER create duplicate functionality without understanding why existing solutions don't work
+- ALWAYS search codebase for similar functionality before implementing from scratch
+- ALWAYS use grep_search, semantic_search, or file_search to find existing implementations
+
 ## Problem Resolution
 - NEVER suppress warnings or add workarounds - ALWAYS fix the root cause
 - ALWAYS examine application code first to understand how to perform actions correctly

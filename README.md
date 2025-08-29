@@ -25,6 +25,12 @@
 - **ALWAYS** clean up temporary files after use
 - **ALWAYS** use `gh_temp/` directory for temporary files (it's gitignored)
 
+### Check Existing Before Creating New
+- **ALWAYS** check what endpoints, functions, or features already exist before creating new ones
+- **NEVER** create duplicate functionality without understanding why existing solutions don't work
+- **ALWAYS** search codebase for similar functionality before implementing from scratch
+- **ALWAYS** use `grep_search`, `semantic_search`, or `file_search` to find existing implementations
+
 ### Problem Resolution
 - **NEVER** suppress warnings or add workarounds - ALWAYS fix the root cause
 - **ALWAYS** examine application code first to understand how to perform actions correctly
@@ -735,7 +741,6 @@ For comprehensive development and deployment documentation, see the [`docs/`](do
 - **[Development Setup](docs/VSCODE_SETUP.md)** - VS Code configuration and development environment
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Detailed architecture and file organization
 - **[Data Management](docs/DATA_MANAGEMENT.md)** - Multi-user data import/export and privacy controls
-- **[Frontend Integration](docs/FRONTEND_INTEGRATION.md)** - Frontend deployment and integration guide
 - **[Server Setup](docs/SERVER_SETUP.md)** - Server configuration and deployment strategies
 - **[Multi-App Hosting](docs/MULTI_APP_HOSTING.md)** - Multi-application hosting with nginx and Docker
 - **[Remote Deployment](docs/REMOTE_MANAGEMENT.md)** - Server deployment and management
