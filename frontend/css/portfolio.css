@@ -458,6 +458,25 @@ a:hover {
     transform: translateY(-2px);
 }
 
+.btn-secondary {
+    background: var(--background-alt);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background: var(--background);
+    box-shadow: var(--shadow);
+}
+
 /* Section Styles */
 .section:nth-child(even) {
     background: var(--background-alt);
@@ -661,6 +680,143 @@ a:hover {
     color: rgba(255, 255, 255, 0.8);
 }
 
+/* User Selection Interface Styles */
+.user-selection {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--background-alt) 0%, var(--background) 100%);
+    padding: 2rem;
+}
+
+.user-selection-content {
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+}
+
+.user-selection h1 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.user-selection p {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+}
+
+.user-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.user-card {
+    background: var(--background);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.user-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.user-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.user-card:hover::before {
+    transform: scaleX(1);
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+    font-size: 2rem;
+}
+
+.user-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.user-email {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.user-role {
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.user-card-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--primary);
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: var(--transition);
+}
+
+.user-card:hover .user-card-action {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.back-button {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: var(--transition);
+}
+
+.back-button:hover {
+    background: var(--background-alt);
+}
+
 /* Footer */
 .footer {
     background: var(--background-alt);
@@ -672,6 +828,115 @@ a:hover {
 .footer p {
     color: var(--text-secondary);
     margin: 0;
+}
+
+/* Error Message Styles */
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 2rem;
+    background: var(--background-alt);
+}
+
+.error-message h2 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.error-message p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 500px;
+}
+
+.error-message .btn-primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.error-message .btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Loading Content Styles */
+.loading-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Content Area Styles for Multi-User */
+.content-area {
+    min-height: 100px;
+}
+
+.about-content, .contact-content, .generic-content {
+    line-height: 1.8;
+}
+
+.about-content p {
+    margin-bottom: 1rem;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.skill-item {
+    background: var(--background-alt);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary);
+}
+
+.experience-list, .projects-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.experience-item, .project-item {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.experience-item:hover, .project-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    transition: var(--transition);
 }
 
 /* Utilities */
@@ -818,6 +1083,23 @@ a:hover {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .user-selection h1 {
+        font-size: 2rem;
+    }
+
+    .user-selection p {
+        font-size: 1rem;
+    }
+
+    .user-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .user-card {
+        padding: 1.5rem;
     }
 }
 

@@ -13,8 +13,9 @@ frontend/
 ├── css/
 │   └── portfolio.css      # Professional portfolio styling
 ├── js/
-│   ├── api.js             # API client with auto-detection
-│   └── portfolio.js       # Portfolio class and content management
+│   ├── api.js                     # API client with auto-detection
+│   ├── portfolio.js               # Original single-user portfolio class
+│   └── portfolio-multiuser.js     # Multi-user portfolio implementation
 ├── tests/
 │   ├── index.html         # Automated test suite
 │   └── README.md          # Testing documentation
@@ -31,23 +32,32 @@ frontend_server.py          # Standalone frontend server (project root)
    - Smooth animations and loading states
    - Hero section with dynamic content loading
 
-2. **Flexible Deployment Options**
+2. **Multi-User Support**
+   - **Single-User Mode**: Automatically loads the only user's portfolio
+   - **Multi-User Mode**: Shows user selection interface with user cards
+   - **Adaptive Interface**: Detects mode automatically on startup
+   - **User-Specific Content**: Each user's data is loaded independently
+
+3. **Flexible Deployment Options**
    - **Single Server Mode**: Traditional setup where API serves frontend
    - **Dual Server Mode**: Separate frontend server for better separation
    - **Multi-App Hosting**: Support for hosting multiple applications
-   - Automatic configuration detection based on environment
+   - **Automatic Configuration**: Detection based on environment
 
-3. **Smart API Integration**
+4. **Smart API Integration**
    - Automatic API base URL detection (supports both same-origin and cross-origin)
+   - Multi-user endpoint support (`/api/v1/users/{username}/{endpoint}`)
    - Graceful error handling and loading states
    - Real-time content fetching and formatting
    - Auto-extracts user information from API data
 
-4. **Enhanced UX**
-   - No-click interface - all content loads automatically
+5. **Enhanced UX**
+   - **Single-User**: No-click interface - content loads automatically
+   - **Multi-User**: Elegant user selection with clickable user cards
    - Loading spinners with professional appearance
    - Error messages with user-friendly explanations
    - Mobile-optimized responsive design
+   - Back navigation in multi-user mode
 
 ### 🔧 Server Architecture
 
@@ -206,3 +216,33 @@ The frontend is now fully functional with flexible deployment options. Future en
 3. **Manage processes**: Apps run independently with process management
 
 The frontend provides a complete, professional portfolio interface with modern deployment flexibility for any hosting scenario.
+
+## Multi-User Behavior
+
+The frontend automatically detects whether the system is in single-user or multi-user mode and adapts its interface accordingly:
+
+### Single-User Mode (≤1 user)
+- **Behavior**: Automatically loads the single user's portfolio
+- **Interface**: Direct access to portfolio content without user selection
+- **Navigation**: Standard portfolio navigation (About, Skills, Experience, etc.)
+- **Use Case**: Personal portfolios, individual deployments
+
+### Multi-User Mode (2+ users)
+- **Behavior**: Shows user selection interface first
+- **Interface**: Grid of user cards with names, emails, and roles
+- **User Selection**: Click any user card to view their portfolio
+- **Navigation**:
+  - Portfolio navigation within each user's content
+  - "Back to Users" button to return to user selection
+  - User name displayed in navigation bar
+- **Use Case**: Team portfolios, multi-tenant deployments, family sites
+
+### Automatic Detection
+The frontend uses the `/api/v1/admin/users` endpoint to detect users:
+- **No users or 1 user**: Single-user mode
+- **2+ users**: Multi-user mode with selection interface
+
+### User-Specific Data Loading
+In multi-user mode, each user's data is loaded using user-specific endpoints:
+- **Single-user**: `/api/v1/{endpoint}`
+- **Multi-user**: `/api/v1/users/{username}/{endpoint}`

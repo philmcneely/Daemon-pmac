@@ -98,9 +98,10 @@ class APIClient {
      */
     async getUsers() {
         try {
-            return await this.request('/api/v1/admin/users');
+            return await this.request('/admin/users');
         } catch (error) {
             // If admin endpoint fails, assume single-user mode
+            console.warn('Failed to get users (assuming single-user mode):', error);
             return [];
         }
     }
