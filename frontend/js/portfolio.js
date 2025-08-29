@@ -63,10 +63,115 @@ class Portfolio {
     }
 
     /**
+     * Update hero section with name and title
+     */
+    async updateHeroSection() {
+        try {
+            console.log('Updating hero section...');
+
+            // Default values
+            let name = 'Phil McNeely';  // Extract from your email
+            let title = 'Full Stack Developer';
+
+            // Check contact endpoint first for email/name extraction
+            const contactEndpoint = this.endpoints.find(ep => ep.name === 'contact' || ep.name === 'contact_info');
+            if (contactEndpoint) {
+                try {
+                    const contactData = await this.api.getEndpointData(contactEndpoint.name);
+                    if (contactData.items && contactData.items.length > 0) {
+                        const item = contactData.items[0];
+                        const content = item.content || '';
+                        const meta = item.meta || item.data?.meta || {};
+
+                        // Extract name from email if present
+                        const emailMatch = content.match(/hello@(\w+)/i);
+                        if (emailMatch) {
+                            // Extract from email: hello@philmcneely.com -> Phil McNeely
+                            const domain = emailMatch[1]; // philmcneely
+                            if (domain === 'philmcneely') {
+                                name = 'Phil McNeely';
+                            }
+                        }
+
+                        // Look for explicit name in meta or content
+                        if (meta.name) name = meta.name;
+                        if (meta.title && !meta.title.includes('Contact')) {
+                            title = meta.title;
+                        }
+                        if (meta.job_title || meta.position) {
+                            title = meta.job_title || meta.position;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Could not load contact data for hero:', error);
+                }
+            }
+
+            // Try about endpoint for additional info
+            const aboutEndpoint = this.endpoints.find(ep => ep.name === 'about');
+            if (aboutEndpoint) {
+                try {
+                    const aboutData = await this.api.getEndpointData(aboutEndpoint.name);
+                    if (aboutData.items && aboutData.items.length > 0) {
+                        const item = aboutData.items[0];
+                        const content = item.content || '';
+                        const meta = item.meta || item.data?.meta || {};
+
+                        // Look for developer/professional title in content
+                        if (content.includes('developer')) {
+                            title = 'Developer';
+                        }
+                        if (content.includes('Full Stack')) {
+                            title = 'Full Stack Developer';
+                        }
+                        if (content.includes('Software Engineer')) {
+                            title = 'Software Engineer';
+                        }
+
+                        // Override with explicit meta if available
+                        if (meta.name) name = meta.name;
+                        if (meta.job_title || meta.position) {
+                            title = meta.job_title || meta.position;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Could not load about data for hero:', error);
+                }
+            }
+
+            // Update the hero elements
+            const heroName = document.getElementById('heroName');
+            const heroTitle = document.getElementById('heroTitle');
+
+            if (heroName) {
+                heroName.textContent = name;
+            }
+
+            if (heroTitle) {
+                heroTitle.textContent = title;
+            }
+
+            console.log(`Hero updated - Name: ${name}, Title: ${title}`);
+
+        } catch (error) {
+            console.error('Failed to update hero section:', error);
+            // Set fallback values
+            const heroName = document.getElementById('heroName');
+            const heroTitle = document.getElementById('heroTitle');
+
+            if (heroName) heroName.textContent = 'Phil McNeely';
+            if (heroTitle) heroTitle.textContent = 'Full Stack Developer';
+        }
+    }
+
+    /**
      * Load all content from available endpoints
      */
     async loadAllContent() {
         console.log('Loading all content...');
+
+        // Update hero section first
+        await this.updateHeroSection();
 
         // Load core sections first
         await this.loadCoreContent();

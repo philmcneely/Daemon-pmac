@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Portfolio</title>
+    <link rel="stylesheet" href="css/portfolio.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <h2>Loading Portfolio</h2>
+            <p>Gathering information...</p>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar" class="status-bar offline hidden">
+        <div class="status-indicator">
+            <i class="fas fa-circle"></i>
+            <span class="status-text">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- Main Portfolio -->
+    <div id="portfolio" class="portfolio">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="nav-brand">
+                    <h1>Portfolio</h1>
+                </div>
+                <div class="nav-links">
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#skills" class="nav-link">Skills</a>
+                    <a href="#experience" class="nav-link">Experience</a>
+                    <a href="#projects" class="nav-link">Projects</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1 class="hero-title">
+                            <span class="hero-greeting">Hello, I'm</span>
+                            <span class="hero-name" id="heroName">Loading...</span>
+                        </h1>
+                        <p class="hero-subtitle" id="heroTitle">Loading professional information...</p>
+                        <div class="hero-actions">
+                            <a href="#contact" class="btn btn-primary">Get In Touch</a>
+                            <a href="#projects" class="btn btn-secondary">View Work</a>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="hero-image">
+                            <div class="hero-placeholder">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- About Section -->
+            <section id="about" class="section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>About Me</h2>
+                        <p>Get to know my background and experience</p>
+                    </div>
+                    <div class="section-content">
+                        <div id="aboutContent" class="content-placeholder">
+                            <p>Welcome to my personal portfolio. This page showcases my professional experience, skills, and projects.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section id="skills" class="section section-alt">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Skills & Expertise</h2>
+                        <p>Technologies and tools I work with</p>
+                    </div>
+                    <div class="section-content">
+                        <div id="skillsContent" class="content-placeholder">
+                            <p>Technical skills and expertise will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Experience Section -->
+            <section id="experience" class="section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Experience</h2>
+                        <p>My professional journey and accomplishments</p>
+                    </div>
+                    <div class="section-content">
+                        <div id="experienceContent" class="content-placeholder">
+                            <p>Professional experience and career history will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects" class="section section-alt">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Projects</h2>
+                        <p>Showcasing my latest work and achievements</p>
+                    </div>
+                    <div class="section-content">
+                        <div id="projectsContent" class="content-placeholder">
+                            <p>Portfolio projects and accomplishments will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section id="contact" class="section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Get In Touch</h2>
+                        <p>Let's connect and discuss opportunities</p>
+                    </div>
+                    <div class="section-content">
+                        <div id="contactContent" class="content-placeholder">
+                            <p>Contact information and ways to reach me will be displayed here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2025 Personal Portfolio. Built with passion and care.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/portfolio.js"></script>
+</body>
+
+</html>

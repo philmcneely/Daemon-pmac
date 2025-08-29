@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,28 +13,52 @@
             padding: 2rem;
             line-height: 1.6;
         }
+
         .test-section {
             margin-bottom: 2rem;
             padding: 1.5rem;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
         }
+
         .test-result {
             padding: 0.5rem 1rem;
             margin: 0.5rem 0;
             border-radius: 4px;
             font-family: monospace;
         }
-        .pass { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
-        .fail { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
-        .warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
-        .info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+
+        .pass {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .fail {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
         .test-summary {
             background: #f9fafb;
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 2rem;
         }
+
         button {
             background: #3b82f6;
             color: white;
@@ -43,9 +68,11 @@
             cursor: pointer;
             margin: 0.5rem 0.5rem 0.5rem 0;
         }
+
         button:hover {
             background: #2563eb;
         }
+
         .code-block {
             background: #f3f4f6;
             padding: 1rem;
@@ -56,6 +83,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>Portfolio Frontend Test Suite</h1>
 
@@ -439,4 +467,5 @@
         document.addEventListener('DOMContentLoaded', loadTestDependencies);
     </script>
 </body>
+
 </html>
