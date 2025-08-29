@@ -148,6 +148,46 @@ safety check
 pip-audit
 ```
 
+### 🚀 Deployment Options
+
+#### Quick Development Server
+```bash
+# Using new deployment scripts (recommended)
+./scripts/dev-start.sh        # Development with hot reload
+./scripts/prod-start.sh       # Production single-app mode
+
+# Legacy method
+python dev.py                 # Single server on port 8004
+```
+
+#### Multi-App Hosting
+Perfect for hosting multiple applications on one server:
+```bash
+# Start individual apps on specific ports
+./scripts/multi-app-start.sh daemon 8007 8006
+./scripts/multi-app-start.sh app2 8017 8016
+./scripts/multi-app-start.sh app3 8027 8026
+
+# Configure nginx for reverse proxy (see docs/SERVER_SETUP.md)
+```
+
+#### Environment Configuration
+```bash
+# Copy and customize environment settings
+cp .env.example .env
+# Edit .env with your specific ports and domain settings
+
+# Key settings for multi-app hosting:
+PORT=8007                    # API server port
+FRONTEND_PORT=8006          # Frontend server port
+DEPLOYMENT_MODE=production  # development, production, multi-app
+EXTERNAL_DOMAIN=yourdomain.com
+```
+
+For comprehensive deployment documentation, see:
+- **[Server Setup Guide](docs/SERVER_SETUP.md)** - Single and multi-server configurations
+- **[Multi-App Hosting](docs/MULTI_APP_HOSTING.md)** - nginx, Docker, and production hosting
+
 #### Pre-commit Hooks
 
 This project uses **pre-commit hooks** to ensure code quality before commits:
@@ -695,6 +735,9 @@ For comprehensive development and deployment documentation, see the [`docs/`](do
 - **[Development Setup](docs/VSCODE_SETUP.md)** - VS Code configuration and development environment
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Detailed architecture and file organization
 - **[Data Management](docs/DATA_MANAGEMENT.md)** - Multi-user data import/export and privacy controls
+- **[Frontend Integration](docs/FRONTEND_INTEGRATION.md)** - Frontend deployment and integration guide
+- **[Server Setup](docs/SERVER_SETUP.md)** - Server configuration and deployment strategies
+- **[Multi-App Hosting](docs/MULTI_APP_HOSTING.md)** - Multi-application hosting with nginx and Docker
 - **[Remote Deployment](docs/REMOTE_MANAGEMENT.md)** - Server deployment and management
 - **[Testing Guides](docs/)** - Unit and E2E testing strategies
 - **[API Development](docs/ENDPOINT_ALIGNMENT.md)** - Endpoint tracking and alignment

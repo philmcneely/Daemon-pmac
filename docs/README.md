@@ -15,6 +15,12 @@ This directory contains internal project documentation for development, deployme
 - **[DEPENDABOT_MANAGEMENT.md](DEPENDABOT_MANAGEMENT.md)** - Automated dependency management configuration
 - **[REMOTE_MANAGEMENT.md](REMOTE_MANAGEMENT.md)** - Remote deployment and server management
 
+## Deployment & Hosting
+
+- **[SERVER_SETUP.md](SERVER_SETUP.md)** - Server configuration and deployment strategies
+- **[MULTI_APP_HOSTING.md](MULTI_APP_HOSTING.md)** - Multi-application hosting configuration and nginx setup
+- **[FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md)** - Frontend deployment and integration guide
+
 ## Testing & Quality
 
 - **[UNIT_TEST_IMPROVEMENT_PLAN.md](UNIT_TEST_IMPROVEMENT_PLAN.md)** - Unit testing strategy and enhancement plans
