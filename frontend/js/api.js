@@ -98,10 +98,18 @@ class APIClient {
      */
     async getUsers() {
         try {
-            return await this.request('/admin/users');
+            // Use system info endpoint which includes user list and mode
+            const systemInfo = await this.request('/api/v1/system/info');
+            if (systemInfo && systemInfo.users) {
+                // Convert username array to user objects for compatibility
+                return systemInfo.users.map(username => ({
+                    username: username,
+                    display_name: username.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                }));
+            }
+            return [];
         } catch (error) {
-            // If admin endpoint fails, assume single-user mode
-            console.warn('Failed to get users (assuming single-user mode):', error);
+            // If system info fails, assume single-user mode
             return [];
         }
     }
