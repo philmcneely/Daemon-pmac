@@ -885,8 +885,18 @@ class MultiUserPortfolio {
                 </div>
             </section>
 
+            <!-- Achievements Section -->
+            <section id="achievements" class="section bg-light">
+                <div class="container">
+                    <h2 class="section-title">Achievements</h2>
+                    <div id="achievementsContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Contact Section -->
-            <section id="contact" class="section bg-light">
+            <section id="contact" class="section">
                 <div class="container">
                     <h2 class="section-title">Contact</h2>
                     <div id="contactContent" class="content-area">
