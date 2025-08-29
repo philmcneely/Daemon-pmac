@@ -49,18 +49,35 @@ def import_user_data_from_directory(
     db: Optional[Session] = None,
     replace_existing: bool = False,
 ) -> Dict[str, Any]:
-    """
-    Import data for a specific user from their data directory
+    """Import data for a specific user from their dedicated data directory.
+
+    Processes all JSON data files in a user's directory, validates them
+    against endpoint schemas, and imports them to the database with proper
+    user association and access control.
 
     Args:
-        username: Username to import data for
-        data_directory: Path to user's data directory
-            (defaults to data/private/{username})
-        db: Database session (optional)
-        replace_existing: Whether to replace existing data entries
+        username (str): Username of the target user for data import.
+        data_directory (Optional[str]): Path to user's data directory.
+                                      Defaults to data/private/{username}.
+        db (Optional[Session]): Database session. Creates new session if None.
+        replace_existing (bool): Whether to replace existing data entries.
+                               Defaults to False (append mode).
 
     Returns:
-        Dict with import results
+        Dict[str, Any]: Import results containing:
+            - success: Boolean indicating overall import success
+            - username: Target username for the import
+            - imported_endpoints: List of successfully imported endpoints
+            - skipped_endpoints: List of endpoints that were skipped
+            - errors: List of import errors encountered
+            - total_entries: Total number of data entries imported
+
+    Note:
+        - Creates user directory structure if it doesn't exist
+        - Validates all data against endpoint schemas before import
+        - Maintains data privacy and user association
+        - Supports both append and replace import modes
+        - Provides detailed error reporting for troubleshooting
     """
     if not db:
         db = next(get_db())

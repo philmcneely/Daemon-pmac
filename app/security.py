@@ -104,14 +104,25 @@ class InputValidator:
 
     @classmethod
     def validate_username(cls, username: str) -> None:
-        """
-        Validate username format and security
+        """Validate username format and security against malicious patterns.
+
+        Performs comprehensive username validation including security pattern
+        detection, format validation, and character restrictions to prevent
+        injection attacks and ensure safe routing.
 
         Args:
-            username: The username to validate
+            username (str): Username string to validate.
 
         Raises:
-            SecurityError: If username is invalid or contains dangerous patterns
+            SecurityError: If username is invalid, empty, or contains dangerous
+                         patterns such as SQL injection, XSS, or path traversal.
+
+        Note:
+            - Checks for SQL injection patterns
+            - Validates against XSS attack vectors
+            - Prevents path traversal attacks
+            - Enforces alphanumeric with limited special characters
+            - Case-insensitive pattern matching for security
         """
         if not username:
             raise SecurityError("Username cannot be empty")

@@ -48,14 +48,25 @@ SUPPORTED_FORMATS = [".json"]
 
 
 def discover_data_files(data_dir: Optional[str] = None) -> Dict[str, List[str]]:
-    """
-    Discover data files for all endpoints
+    """Discover and catalog data files for all available endpoints.
+
+    Scans the specified directory (or default ./data) for JSON data files
+    that match endpoint naming patterns. Groups files by endpoint type
+    for batch processing and validation.
 
     Args:
-        data_dir: Directory to search for data files (defaults to ./data)
+        data_dir (Optional[str]): Directory path to search for data files.
+                                Defaults to './data' if not specified.
 
     Returns:
-        Dict mapping endpoint names to lists of data files
+        Dict[str, List[str]]: Dictionary mapping endpoint names to lists
+                            of discovered data file paths for each endpoint.
+
+    Note:
+        - Searches for JSON files matching endpoint patterns
+        - Handles nested directory structures
+        - Returns empty dict if directory doesn't exist
+        - Used for bulk data import operations
     """
     if data_dir is None:
         data_dir = DEFAULT_DATA_DIR
@@ -86,15 +97,28 @@ def discover_data_files(data_dir: Optional[str] = None) -> Dict[str, List[str]]:
 
 
 def load_endpoint_data_from_file(endpoint_name: str, file_path: str) -> Dict[str, Any]:
-    """
-    Load and validate data for a specific endpoint from file
+    """Load and validate endpoint data from a JSON file.
+
+    Reads JSON data from the specified file, validates it against the
+    endpoint's schema, and returns structured load results with validation
+    status and any encountered errors.
 
     Args:
-        endpoint_name: Name of the endpoint
-        file_path: Path to the data file
+        endpoint_name (str): Name of the target endpoint for data validation.
+        file_path (str): Absolute or relative path to the JSON data file.
 
     Returns:
-        Dict with load results
+        Dict[str, Any]: Load results containing:
+            - success: Boolean indicating if load was successful
+            - data: Loaded JSON data if successful
+            - error: Error message if load failed
+            - file_info: File metadata (size, modification time)
+
+    Note:
+        - Validates JSON syntax and endpoint schema compliance
+        - Returns detailed error information for debugging
+        - Handles file access errors gracefully
+        - Used for both single-file and batch import operations
     """
     if not os.path.exists(file_path):
         return {

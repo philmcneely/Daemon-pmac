@@ -53,16 +53,34 @@ def load_resume_from_file(
     user_id: Optional[int] = None,
     replace_existing: bool = False,
 ) -> Dict[str, Any]:
-    """
-    Load resume data from JSON file and optionally import into database
+    """Load and validate resume data from JSON file with database import option.
+
+    Reads resume data from a JSON file, validates the structure and content,
+    and optionally imports it directly into the database with proper user
+    association and conflict resolution.
 
     Args:
-        file_path: Path to resume JSON file (defaults to data/resume_pmac.json)
-        user_id: User ID to associate with the resume entry (optional)
-        replace_existing: Whether to replace existing resume data (default: False)
+        file_path (Optional[str]): Path to resume JSON file. Defaults to
+                                 data/resume_pmac.json if not provided.
+        user_id (Optional[int]): User ID to associate with resume entry.
+                               If None, uses default system user.
+        replace_existing (bool): Whether to replace existing resume data.
+                               Defaults to False (append/update mode).
 
     Returns:
-        Dict with import results
+        Dict[str, Any]: Load results containing:
+            - success: Boolean indicating if load was successful
+            - data: Loaded resume data if successful
+            - file_path: Resolved absolute file path used
+            - import_result: Database import results if imported
+            - error: Error message if load failed
+
+    Note:
+        - Supports both relative and absolute file paths
+        - Validates JSON structure and resume schema compliance
+        - Handles file access errors gracefully
+        - Provides detailed error reporting for troubleshooting
+        - Can load data without database import for validation only
     """
     if file_path is None:
         file_path = DEFAULT_RESUME_FILE
