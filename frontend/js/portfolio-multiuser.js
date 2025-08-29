@@ -254,7 +254,7 @@ class MultiUserPortfolio {
      */
     async loadAllEndpoints(username = null) {
         console.log(`Loading all endpoints for user: ${username}`);
-        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'contact'];
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'contact'];
 
         console.log('Available endpoints:', this.endpoints.map(e => e.name));
         console.log('Loading sections:', sections);
@@ -345,6 +345,8 @@ class MultiUserPortfolio {
                 return this.formatExperienceData(items);
             case 'projects':
                 return this.formatProjectsData(items);
+            case 'achievements':
+                return this.formatAchievementsData(items);
             case 'contact':
                 return this.formatContactData(items[0]);
             default:
@@ -630,6 +632,43 @@ class MultiUserPortfolio {
     }
 
     /**
+     * Format achievements data
+     */
+    formatAchievementsData(items) {
+        let html = '<div class="achievements-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            const meta = item.meta || {};
+
+            html += '<div class="achievement-item">';
+
+            // Add achievement meta information if available
+            if (meta.title) {
+                html += `<div class="achievement-meta">
+                    <h3 class="achievement-title">${meta.title}</h3>
+                    ${meta.date ? `<span class="achievement-date">${meta.date}</span>` : ''}
+                </div>`;
+            }
+
+            // Add the formatted content
+            html += `<div class="achievement-content">${this.formatText(content)}</div>`;
+
+            // Add tags if available
+            if (meta.tags && meta.tags.length > 0) {
+                html += '<div class="achievement-tags">';
+                meta.tags.forEach(tag => {
+                    html += `<span class="achievement-tag">${tag}</span>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
      * Format contact data
      */
     formatContactData(item) {
@@ -773,6 +812,7 @@ class MultiUserPortfolio {
                         <a href="#skills" class="nav-link">Skills</a>
                         <a href="#experience" class="nav-link">Experience</a>
                         <a href="#projects" class="nav-link">Projects</a>
+                        <a href="#achievements" class="nav-link">Achievements</a>
                         <a href="#contact" class="nav-link">Contact</a>
                     </div>
                     <div class="nav-toggle">
