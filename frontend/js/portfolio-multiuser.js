@@ -254,7 +254,7 @@ class MultiUserPortfolio {
      */
     async loadAllEndpoints(username = null) {
         console.log(`Loading all endpoints for user: ${username}`);
-        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'contact'];
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'contact'];
 
         console.log('Available endpoints:', this.endpoints.map(e => e.name));
         console.log('Loading sections:', sections);
@@ -282,6 +282,8 @@ class MultiUserPortfolio {
         let containerId = sectionName;
         if (sectionName === 'personal-story') {
             containerId = 'personalStory';
+        } else if (sectionName === 'goals-values') {
+            containerId = 'goalsValues';
         }
 
         const container = document.getElementById(`${containerId}Content`);
@@ -292,6 +294,12 @@ class MultiUserPortfolio {
         console.log(`Container found for ${sectionName}:`, container);
 
         try {
+            // Special handling for goals-values dual-endpoint section
+            if (sectionName === 'goals-values') {
+                await this.loadGoalsValuesSection(container, username);
+                return;
+            }
+
             // Find the endpoint
             const endpoint = this.endpoints.find(ep =>
                 ep.name === sectionName ||
@@ -347,6 +355,9 @@ class MultiUserPortfolio {
                 return this.formatProjectsData(items);
             case 'achievements':
                 return this.formatAchievementsData(items);
+            case 'goals-values':
+                // This should not be called as goals-values has special handling
+                return this.formatGoalsValuesData([], []);
             case 'contact':
                 return this.formatContactData(items[0]);
             default:
@@ -669,11 +680,149 @@ class MultiUserPortfolio {
     }
 
     /**
+     * Format goals-values data (dual-endpoint section)
+     */
+    async formatGoalsValuesData(goalsData, valuesData) {
+        let html = '<div class="goals-values-container">';
+
+        // Goals Section
+        if (goalsData && goalsData.length > 0) {
+            html += '<div class="goals-section">';
+            html += '<h3 class="subsection-title">🎯 Goals</h3>';
+            html += '<div class="goals-items">';
+
+            goalsData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                const meta = item.meta || {};
+
+                html += '<div class="goals-item">';
+
+                // Add meta information if available
+                if (meta.title) {
+                    html += `<div class="goals-meta">
+                        <h4 class="goals-title">${meta.title}</h4>
+                        ${meta.date ? `<span class="goals-date">${meta.date}</span>` : ''}
+                    </div>`;
+                }
+
+                // Add the formatted content
+                html += `<div class="goals-content">${this.formatText(content)}</div>`;
+
+                // Add tags if available
+                if (meta.tags && meta.tags.length > 0) {
+                    html += '<div class="goals-tags">';
+                    meta.tags.forEach(tag => {
+                        html += `<span class="goals-tag">${tag}</span>`;
+                    });
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Values Section
+        if (valuesData && valuesData.length > 0) {
+            html += '<div class="values-section">';
+            html += '<h3 class="subsection-title">💎 Values</h3>';
+            html += '<div class="values-items">';
+
+            valuesData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                const meta = item.meta || {};
+
+                html += '<div class="values-item">';
+
+                // Add meta information if available
+                if (meta.title) {
+                    html += `<div class="values-meta">
+                        <h4 class="values-title">${meta.title}</h4>
+                        ${meta.date ? `<span class="values-date">${meta.date}</span>` : ''}
+                    </div>`;
+                }
+
+                // Add the formatted content
+                html += `<div class="values-content">${this.formatText(content)}</div>`;
+
+                // Add tags if available
+                if (meta.tags && meta.tags.length > 0) {
+                    html += '<div class="values-tags">';
+                    meta.tags.forEach(tag => {
+                        html += `<span class="values-tag">${tag}</span>`;
+                    });
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
      * Format contact data
      */
     formatContactData(item) {
         const content = this.extractContent(item);
         return `<div class="contact-content">${this.formatText(content)}</div>`;
+    }
+
+    /**
+     * Load goals and values section with dual-endpoint support
+     */
+    async loadGoalsValuesSection(container, username = null) {
+        try {
+            console.log('Loading Goals & Values section with dual endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading goals and values...</div>';
+
+            // Find both endpoints
+            const goalsEndpoint = this.endpoints.find(ep => ep.name === 'goals');
+            const valuesEndpoint = this.endpoints.find(ep => ep.name === 'values');
+
+            if (!goalsEndpoint && !valuesEndpoint) {
+                container.innerHTML = '<p>No goals or values information available.</p>';
+                return;
+            }
+
+            // Load data from both endpoints concurrently
+            const promises = [];
+            if (goalsEndpoint) {
+                promises.push(this.api.getEndpointData('goals', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            if (valuesEndpoint) {
+                promises.push(this.api.getEndpointData('values', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            const [goalsData, valuesData] = await Promise.all(promises);
+
+            console.log('Goals data:', goalsData);
+            console.log('Values data:', valuesData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatGoalsValuesData(goalsData, valuesData);
+            container.innerHTML = formattedHtml;
+
+            console.log('Goals & Values section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Goals & Values section:', error);
+            container.innerHTML = '<p>Failed to load goals and values information.</p>';
+        }
     }
 
     /**
@@ -813,6 +962,7 @@ class MultiUserPortfolio {
                         <a href="#experience" class="nav-link">Experience</a>
                         <a href="#projects" class="nav-link">Projects</a>
                         <a href="#achievements" class="nav-link">Achievements</a>
+                        <a href="#goals-values" class="nav-link">Goals & Values</a>
                         <a href="#contact" class="nav-link">Contact</a>
                     </div>
                     <div class="nav-toggle">
@@ -895,8 +1045,18 @@ class MultiUserPortfolio {
                 </div>
             </section>
 
+            <!-- Goals & Values Section -->
+            <section id="goals-values" class="section">
+                <div class="container">
+                    <h2 class="section-title">Goals & Values</h2>
+                    <div id="goalsValuesContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Contact Section -->
-            <section id="contact" class="section">
+            <section id="contact" class="section bg-light">
                 <div class="container">
                     <h2 class="section-title">Contact</h2>
                     <div id="contactContent" class="content-area">
