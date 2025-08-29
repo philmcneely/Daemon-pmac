@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Frontend Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+        .fail { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+        .warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        .info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+        .test-summary {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .code-block {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Portfolio Frontend Test Suite</h1>
+
+    <div class="test-summary" id="testSummary">
+        <h2>Test Summary</h2>
+        <p>Click "Run All Tests" to execute the complete test suite.</p>
+    </div>
+
+    <div class="test-controls">
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <button onclick="testAPIConnection()">Test API Connection</button>
+        <button onclick="testContentLoading()">Test Content Loading</button>
+        <button onclick="testResponsiveDesign()">Test Responsive Design</button>
+    </div>
+
+    <div class="test-section">
+        <h2>API Connection Tests</h2>
+        <div id="apiTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Content Loading Tests</h2>
+        <div id="contentTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>UI/UX Tests</h2>
+        <div id="uiTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Responsive Design Tests</h2>
+        <div id="responsiveTests"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Performance Tests</h2>
+        <div id="performanceTests"></div>
+    </div>
+
+    <script>
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            warnings: 0
+        };
+
+        function logResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+
+            testResults.total++;
+            if (type === 'pass') testResults.passed++;
+            else if (type === 'fail') testResults.failed++;
+            else if (type === 'warning') testResults.warnings++;
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('testSummary');
+            const passRate = testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(1) : 0;
+
+            summary.innerHTML = `
+                <h2>Test Summary</h2>
+                <p><strong>Total Tests:</strong> ${testResults.total}</p>
+                <p><strong>Passed:</strong> ${testResults.passed} | <strong>Failed:</strong> ${testResults.failed} | <strong>Warnings:</strong> ${testResults.warnings}</p>
+                <p><strong>Pass Rate:</strong> ${passRate}%</p>
+            `;
+        }
+
+        function clearResults() {
+            document.getElementById('apiTests').innerHTML = '';
+            document.getElementById('contentTests').innerHTML = '';
+            document.getElementById('uiTests').innerHTML = '';
+            document.getElementById('responsiveTests').innerHTML = '';
+            document.getElementById('performanceTests').innerHTML = '';
+
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            updateSummary();
+        }
+
+        async function testAPIConnection() {
+            logResult('apiTests', 'Testing API connection...', 'info');
+
+            try {
+                // Test if APIClient exists
+                if (typeof APIClient === 'undefined') {
+                    logResult('apiTests', 'FAIL: APIClient class not found', 'fail');
+                    return;
+                }
+
+                // Test API base URL detection
+                const api = new APIClient();
+                if (api.baseURL) {
+                    logResult('apiTests', `PASS: API base URL detected: ${api.baseURL}`, 'pass');
+                } else {
+                    logResult('apiTests', 'FAIL: API base URL not detected', 'fail');
+                }
+
+                // Test system info endpoint
+                try {
+                    const systemInfo = await api.getSystemInfo();
+                    if (systemInfo && systemInfo.available_endpoints) {
+                        logResult('apiTests', `PASS: System info loaded (${systemInfo.available_endpoints.length} endpoints)`, 'pass');
+                    } else {
+                        logResult('apiTests', 'FAIL: Invalid system info response', 'fail');
+                    }
+                } catch (error) {
+                    logResult('apiTests', `FAIL: System info request failed: ${error.message}`, 'fail');
+                }
+
+                // Test health endpoint
+                try {
+                    const health = await api.request('/health');
+                    if (health) {
+                        logResult('apiTests', 'PASS: Health endpoint responsive', 'pass');
+                    } else {
+                        logResult('apiTests', 'FAIL: Health endpoint not responding', 'fail');
+                    }
+                } catch (error) {
+                    logResult('apiTests', `FAIL: Health endpoint error: ${error.message}`, 'fail');
+                }
+
+            } catch (error) {
+                logResult('apiTests', `FAIL: API connection test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        async function testContentLoading() {
+            logResult('contentTests', 'Testing content loading functionality...', 'info');
+
+            try {
+                // Test if Portfolio class exists
+                if (typeof Portfolio === 'undefined') {
+                    logResult('contentTests', 'FAIL: Portfolio class not found', 'fail');
+                    return;
+                }
+
+                // Test DOM elements existence
+                const requiredElements = [
+                    'aboutContent',
+                    'skillsContent',
+                    'experienceContent',
+                    'projectsContent',
+                    'contactContent'
+                ];
+
+                let elementsFound = 0;
+                requiredElements.forEach(elementId => {
+                    if (document.getElementById(elementId)) {
+                        elementsFound++;
+                    }
+                });
+
+                if (elementsFound === requiredElements.length) {
+                    logResult('contentTests', 'PASS: All required content containers found', 'pass');
+                } else {
+                    logResult('contentTests', `WARNING: Only ${elementsFound}/${requiredElements.length} content containers found`, 'warning');
+                }
+
+                // Test content formatting functions
+                const portfolio = new Portfolio();
+
+                // Test content extraction
+                const testItem = { content: "Test content", meta: { title: "Test" } };
+                const extracted = portfolio.extractContent(testItem);
+                if (extracted === "Test content") {
+                    logResult('contentTests', 'PASS: Content extraction working', 'pass');
+                } else {
+                    logResult('contentTests', 'FAIL: Content extraction not working', 'fail');
+                }
+
+                // Test content formatting
+                const formatted = portfolio.formatContent("# Test\n\n- Item 1\n- Item 2");
+                if (formatted.includes('<h2>') && formatted.includes('<ul>')) {
+                    logResult('contentTests', 'PASS: Content formatting working', 'pass');
+                } else {
+                    logResult('contentTests', 'FAIL: Content formatting not working properly', 'fail');
+                }
+
+                // Test endpoint name formatting
+                const formattedName = portfolio.formatEndpointName('favorite_books');
+                if (formattedName === 'Favorite Books') {
+                    logResult('contentTests', 'PASS: Endpoint name formatting working', 'pass');
+                } else {
+                    logResult('contentTests', 'FAIL: Endpoint name formatting not working', 'fail');
+                }
+
+            } catch (error) {
+                logResult('contentTests', `FAIL: Content loading test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        function testResponsiveDesign() {
+            logResult('responsiveTests', 'Testing responsive design...', 'info');
+
+            try {
+                // Test viewport meta tag
+                const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport && viewport.content.includes('width=device-width')) {
+                    logResult('responsiveTests', 'PASS: Viewport meta tag configured correctly', 'pass');
+                } else {
+                    logResult('responsiveTests', 'FAIL: Viewport meta tag missing or incorrect', 'fail');
+                }
+
+                // Test CSS responsive classes
+                const testElement = document.createElement('div');
+                testElement.className = 'hero-content';
+                document.body.appendChild(testElement);
+
+                const styles = window.getComputedStyle(testElement);
+                if (styles.display === 'grid') {
+                    logResult('responsiveTests', 'PASS: CSS Grid layout detected', 'pass');
+                } else {
+                    logResult('responsiveTests', 'WARNING: CSS Grid not detected for hero content', 'warning');
+                }
+
+                document.body.removeChild(testElement);
+
+                // Test media query support
+                if (window.matchMedia) {
+                    const mobileQuery = window.matchMedia('(max-width: 768px)');
+                    logResult('responsiveTests', 'PASS: Media query support available', 'pass');
+
+                    if (mobileQuery.matches) {
+                        logResult('responsiveTests', 'INFO: Currently in mobile viewport', 'info');
+                    } else {
+                        logResult('responsiveTests', 'INFO: Currently in desktop viewport', 'info');
+                    }
+                } else {
+                    logResult('responsiveTests', 'FAIL: Media query support not available', 'fail');
+                }
+
+                // Test font loading
+                const computedStyle = window.getComputedStyle(document.body);
+                const fontFamily = computedStyle.fontFamily;
+                if (fontFamily.includes('Inter') || fontFamily.includes('system')) {
+                    logResult('responsiveTests', 'PASS: Appropriate fonts loaded', 'pass');
+                } else {
+                    logResult('responsiveTests', 'WARNING: Expected fonts may not be loaded', 'warning');
+                }
+
+            } catch (error) {
+                logResult('responsiveTests', `FAIL: Responsive design test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        function testUIElements() {
+            logResult('uiTests', 'Testing UI elements...', 'info');
+
+            try {
+                // Test navigation
+                const navLinks = document.querySelectorAll('.nav-link');
+                if (navLinks.length > 0) {
+                    logResult('uiTests', `PASS: Navigation links found (${navLinks.length})`, 'pass');
+                } else {
+                    logResult('uiTests', 'FAIL: No navigation links found', 'fail');
+                }
+
+                // Test hero section
+                const hero = document.querySelector('.hero');
+                if (hero) {
+                    logResult('uiTests', 'PASS: Hero section found', 'pass');
+                } else {
+                    logResult('uiTests', 'FAIL: Hero section not found', 'fail');
+                }
+
+                // Test sections
+                const sections = document.querySelectorAll('.section');
+                if (sections.length >= 4) {
+                    logResult('uiTests', `PASS: Content sections found (${sections.length})`, 'pass');
+                } else {
+                    logResult('uiTests', `WARNING: Only ${sections.length} content sections found`, 'warning');
+                }
+
+                // Test loading screen
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    logResult('uiTests', 'PASS: Loading screen element found', 'pass');
+                } else {
+                    logResult('uiTests', 'FAIL: Loading screen element not found', 'fail');
+                }
+
+                // Test buttons
+                const buttons = document.querySelectorAll('.btn');
+                if (buttons.length > 0) {
+                    logResult('uiTests', `PASS: Button elements found (${buttons.length})`, 'pass');
+                } else {
+                    logResult('uiTests', 'WARNING: No button elements found', 'warning');
+                }
+
+            } catch (error) {
+                logResult('uiTests', `FAIL: UI elements test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        function testPerformance() {
+            logResult('performanceTests', 'Testing performance metrics...', 'info');
+
+            try {
+                // Test page load performance
+                if (performance && performance.timing) {
+                    const timing = performance.timing;
+                    const loadTime = timing.loadEventEnd - timing.navigationStart;
+
+                    if (loadTime < 3000) {
+                        logResult('performanceTests', `PASS: Page load time: ${loadTime}ms`, 'pass');
+                    } else if (loadTime < 5000) {
+                        logResult('performanceTests', `WARNING: Page load time: ${loadTime}ms (slow)`, 'warning');
+                    } else {
+                        logResult('performanceTests', `FAIL: Page load time: ${loadTime}ms (too slow)`, 'fail');
+                    }
+                } else {
+                    logResult('performanceTests', 'WARNING: Performance timing not available', 'warning');
+                }
+
+                // Test CSS file count
+                const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+                if (stylesheets.length <= 3) {
+                    logResult('performanceTests', `PASS: Reasonable CSS file count (${stylesheets.length})`, 'pass');
+                } else {
+                    logResult('performanceTests', `WARNING: Many CSS files (${stylesheets.length})`, 'warning');
+                }
+
+                // Test script file count
+                const scripts = document.querySelectorAll('script[src]');
+                if (scripts.length <= 3) {
+                    logResult('performanceTests', `PASS: Reasonable script file count (${scripts.length})`, 'pass');
+                } else {
+                    logResult('performanceTests', `WARNING: Many script files (${scripts.length})`, 'warning');
+                }
+
+                // Test DOM complexity
+                const elements = document.querySelectorAll('*');
+                if (elements.length < 500) {
+                    logResult('performanceTests', `PASS: DOM complexity reasonable (${elements.length} elements)`, 'pass');
+                } else if (elements.length < 1000) {
+                    logResult('performanceTests', `WARNING: DOM moderately complex (${elements.length} elements)`, 'warning');
+                } else {
+                    logResult('performanceTests', `FAIL: DOM very complex (${elements.length} elements)`, 'fail');
+                }
+
+            } catch (error) {
+                logResult('performanceTests', `FAIL: Performance test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+            logResult('apiTests', 'Starting comprehensive test suite...', 'info');
+
+            // Run tests in sequence to avoid conflicts
+            await testAPIConnection();
+            await testContentLoading();
+            testUIElements();
+            testResponsiveDesign();
+            testPerformance();
+
+            logResult('performanceTests', 'All tests completed!', 'info');
+        }
+
+        // Auto-load API and Portfolio scripts for testing
+        function loadTestDependencies() {
+            const apiScript = document.createElement('script');
+            apiScript.src = '../js/api.js';
+            apiScript.onload = () => {
+                const portfolioScript = document.createElement('script');
+                portfolioScript.src = '../js/portfolio.js';
+                document.head.appendChild(portfolioScript);
+            };
+            document.head.appendChild(apiScript);
+        }
+
+        // Load dependencies when page loads
+        document.addEventListener('DOMContentLoaded', loadTestDependencies);
+    </script>
+</body>
+</html>

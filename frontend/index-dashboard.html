@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal API Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading State -->
+        <div id="loading" class="loading-overlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading your data...</p>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="logo">
+                        <i class="fas fa-user-circle"></i>
+                        Personal API Dashboard
+                    </h1>
+                    <div class="header-actions">
+                        <div id="user-selector" class="user-selector" style="display: none;">
+                            <label for="userSelect">Select User:</label>
+                            <select id="userSelect">
+                                <option value="">Choose a user...</option>
+                            </select>
+                        </div>
+                        <div class="api-status">
+                            <span id="status-indicator" class="status-indicator">
+                                <i class="fas fa-circle"></i>
+                                <span id="status-text">Connecting...</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- User Info Panel (Single User Mode) -->
+                <div id="single-user-panel" class="user-panel">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <h2 id="user-name">Loading...</h2>
+                            <p id="user-title">Personal API Data</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User List Panel (Multi User Mode) -->
+                <div id="multi-user-panel" class="user-list-panel" style="display: none;">
+                    <h2>Available Users</h2>
+                    <div id="user-cards" class="user-cards">
+                        <!-- User cards will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Endpoints Content -->
+                <div id="endpoints-content" class="endpoints-content">
+                    <div class="endpoints-grid" id="endpoints-grid">
+                        <!-- Endpoint cards will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Endpoint Detail Modal -->
+                <div id="endpoint-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modal-title">Endpoint Details</h3>
+                            <button class="modal-close" id="modal-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modal-body">
+                            <!-- Endpoint content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2025 Personal API Dashboard. Built with ❤️ using the Daemon API framework.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
