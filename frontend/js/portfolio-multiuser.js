@@ -651,30 +651,8 @@ class MultiUserPortfolio {
         let html = '<div class="achievements-container">';
         items.forEach((item, index) => {
             const content = this.extractContent(item);
-            const meta = item.meta || {};
-
             html += '<div class="achievement-item">';
-
-            // Add achievement meta information if available
-            if (meta.title) {
-                html += `<div class="achievement-meta">
-                    <h3 class="achievement-title">${meta.title}</h3>
-                    ${meta.date ? `<span class="achievement-date">${meta.date}</span>` : ''}
-                </div>`;
-            }
-
-            // Add the formatted content
             html += `<div class="achievement-content">${this.formatText(content)}</div>`;
-
-            // Add tags if available
-            if (meta.tags && meta.tags.length > 0) {
-                html += '<div class="achievement-tags">';
-                meta.tags.forEach(tag => {
-                    html += `<span class="achievement-tag">${tag}</span>`;
-                });
-                html += '</div>';
-            }
-
             html += '</div>';
         });
         html += '</div>';
@@ -695,30 +673,8 @@ class MultiUserPortfolio {
 
             goalsData.forEach((item, index) => {
                 const content = this.extractContent(item);
-                const meta = item.meta || {};
-
                 html += '<div class="goals-item">';
-
-                // Add meta information if available
-                if (meta.title) {
-                    html += `<div class="goals-meta">
-                        <h4 class="goals-title">${meta.title}</h4>
-                        ${meta.date ? `<span class="goals-date">${meta.date}</span>` : ''}
-                    </div>`;
-                }
-
-                // Add the formatted content
                 html += `<div class="goals-content">${this.formatText(content)}</div>`;
-
-                // Add tags if available
-                if (meta.tags && meta.tags.length > 0) {
-                    html += '<div class="goals-tags">';
-                    meta.tags.forEach(tag => {
-                        html += `<span class="goals-tag">${tag}</span>`;
-                    });
-                    html += '</div>';
-                }
-
                 html += '</div>';
             });
 
@@ -734,30 +690,8 @@ class MultiUserPortfolio {
 
             valuesData.forEach((item, index) => {
                 const content = this.extractContent(item);
-                const meta = item.meta || {};
-
                 html += '<div class="values-item">';
-
-                // Add meta information if available
-                if (meta.title) {
-                    html += `<div class="values-meta">
-                        <h4 class="values-title">${meta.title}</h4>
-                        ${meta.date ? `<span class="values-date">${meta.date}</span>` : ''}
-                    </div>`;
-                }
-
-                // Add the formatted content
                 html += `<div class="values-content">${this.formatText(content)}</div>`;
-
-                // Add tags if available
-                if (meta.tags && meta.tags.length > 0) {
-                    html += '<div class="values-tags">';
-                    meta.tags.forEach(tag => {
-                        html += `<span class="values-tag">${tag}</span>`;
-                    });
-                    html += '</div>';
-                }
-
                 html += '</div>';
             });
 
@@ -776,30 +710,8 @@ class MultiUserPortfolio {
         let html = '<div class="hobbies-container">';
         items.forEach((item, index) => {
             const content = this.extractContent(item);
-            const meta = item.meta || {};
-
-            html += '<div class="hobbies-item">';
-
-            // Add meta information if available
-            if (meta.title) {
-                html += `<div class="hobbies-meta">
-                    <h3 class="hobbies-title">${meta.title}</h3>
-                    ${meta.date ? `<span class="hobbies-date">${meta.date}</span>` : ''}
-                </div>`;
-            }
-
-            // Add the formatted content
-            html += `<div class="hobbies-content">${this.formatText(content)}</div>`;
-
-            // Add tags if available
-            if (meta.tags && meta.tags.length > 0) {
-                html += '<div class="hobbies-tags">';
-                meta.tags.forEach(tag => {
-                    html += `<span class="hobbies-tag">${tag}</span>`;
-                });
-                html += '</div>';
-            }
-
+            html += '<div class="hobby-item">';
+            html += `<div class="hobby-content">${this.formatText(content)}</div>`;
             html += '</div>';
         });
         html += '</div>';

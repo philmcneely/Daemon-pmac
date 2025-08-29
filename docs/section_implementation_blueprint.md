@@ -25,36 +25,16 @@ formatNEW_SECTIONData(items) {
     let html = '<div class="NEW_SECTION-container">';
     items.forEach((item, index) => {
         const content = this.extractContent(item);
-        const meta = item.meta || {};
-
         html += '<div class="NEW_SECTION-item">';
-
-        // Add meta information if available
-        if (meta.title) {
-            html += `<div class="NEW_SECTION-meta">
-                <h3 class="NEW_SECTION-title">${meta.title}</h3>
-                ${meta.date ? `<span class="NEW_SECTION-date">${meta.date}</span>` : ''}
-            </div>`;
-        }
-
-        // Add the formatted content
         html += `<div class="NEW_SECTION-content">${this.formatText(content)}</div>`;
-
-        // Add tags if available
-        if (meta.tags && meta.tags.length > 0) {
-            html += '<div class="NEW_SECTION-tags">';
-            meta.tags.forEach(tag => {
-                html += `<span class="NEW_SECTION-tag">${tag}</span>`;
-            });
-            html += '</div>';
-        }
-
         html += '</div>';
     });
     html += '</div>';
     return html;
 }
 ```
+
+**Note**: Following updated design pattern - no metadata (title, date, tags) display to avoid repetitive information and maintain clean content focus.
 
 ### 3. **ADD CASE TO FORMAT SWITCH** (JavaScript)
 **Location**: `frontend/js/portfolio-multiuser.js` around line 348 (in formatSectionData method)
@@ -127,12 +107,9 @@ Section (before Contact section, around line 161):
 ### **CSS Class Naming Convention**
 - Container: `.NEW_SECTION-container`
 - Item: `.NEW_SECTION-item`
-- Meta: `.NEW_SECTION-meta`
-- Title: `.NEW_SECTION-title`
-- Date: `.NEW_SECTION-date`
 - Content: `.NEW_SECTION-content`
-- Tags: `.NEW_SECTION-tags`
-- Tag: `.NEW_SECTION-tag`
+
+**Note**: Simplified CSS structure - removed meta, title, date, and tags classes as metadata is no longer displayed.
 
 ### **Section Styling Pattern**
 - Alternating background: Use `class="section bg-light"` for light background or `class="section"` for default
@@ -145,13 +122,15 @@ All endpoints return data in this format:
   {
     "content": "Main content text",
     "meta": {
-      "title": "Optional title",
-      "date": "Optional date",
-      "tags": ["tag1", "tag2"]
+      "title": "Optional title (not displayed)",
+      "date": "Optional date (not displayed)",
+      "tags": ["tag1", "tag2"] // (not displayed)
     }
   }
 ]
 ```
+
+**Note**: While endpoints may include metadata, only the content field is displayed to maintain clean, focused presentation.
 
 ### **Error Handling**
 The system automatically handles:
@@ -175,10 +154,12 @@ Before implementing a new section:
 Replace `NEW_SECTION` with your section name and `NEW_ENDPOINT` with your API endpoint name:
 
 1. **Sections Array**: Add `'NEW_SECTION'` before `'contact'`
-2. **Format Function**: Copy achievements format function, replace all instances of "achievements" with "NEW_SECTION"
+2. **Format Function**: Create simple format function - display only content, no metadata
 3. **Case Statement**: Add `case 'NEW_SECTION': return this.formatNEW_SECTIONData(items);`
 4. **Navigation**: Add `<a href="#NEW_SECTION" class="nav-link">Display Name</a>` before contact link
 5. **HTML Section**: Copy achievements section HTML, replace IDs and text
+
+**Updated Pattern**: Focus on content-only display for cleaner, less repetitive presentation.
 
 ## EXACT LOCATIONS IN CODE
 
@@ -193,9 +174,18 @@ const sections = ['about', 'personal-story', 'skills', 'experience', 'projects',
 ```javascript
 formatAchievementsData(items) {
     let html = '<div class="achievements-container">';
-    // ... implementation
+    items.forEach((item, index) => {
+        const content = this.extractContent(item);
+        html += '<div class="achievement-item">';
+        html += `<div class="achievement-content">${this.formatText(content)}</div>`;
+        html += '</div>';
+    });
+    html += '</div>';
+    return html;
 }
 ```
+
+**Note**: Updated to content-only pattern - no metadata display for cleaner presentation.
 
 **Case Statement** (line 348):
 ```javascript
