@@ -40,7 +40,6 @@ from typing import Any, cast
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -750,10 +749,8 @@ async def rate_limited_example(request: Request):
     return {"message": "This endpoint is rate limited"}
 
 
-# Mount static files for frontend (must be last to not interfere with API routes)
-frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+# Note: Frontend is now served separately on port 8006
+# Static files mounting removed to avoid conflicts with API routes
 
 
 if __name__ == "__main__":

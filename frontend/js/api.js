@@ -16,9 +16,19 @@ class APIClient {
      * Determine the API base URL based on current location
      */
     getAPIBaseURL() {
-        // Since frontend is served from the same server as the API,
-        // we can use the same origin (host:port)
-        return window.location.origin;
+        // Auto-detect: if frontend is on port 8006, API is on 8007
+        // If on same port (like 8004), use same origin
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const currentPort = window.location.port;
+
+        if (currentPort === '8006') {
+            // Frontend server mode - API on 8007
+            return `${protocol}//${hostname}:8007`;
+        } else {
+            // Same server mode - use same origin
+            return window.location.origin;
+        }
     }
 
     /**

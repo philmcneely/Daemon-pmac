@@ -53,7 +53,7 @@ class Settings(BaseSettings):
 
     # Server configuration - bind to all interfaces
     host: str = Field(default="0.0.0.0")  # nosec B104
-    port: int = Field(default=8004)
+    port: int = Field(default=8007)
     debug: bool = Field(default=False)
     reload: bool = Field(default=False)
 
@@ -63,7 +63,12 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: List[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:8080"]
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:8080",
+            "http://localhost:8006",  # Frontend server
+            "http://localhost:8004",  # Original port
+        ]
     )
 
     # Security - IP filtering
@@ -84,6 +89,14 @@ class Settings(BaseSettings):
 
     # Multi-user settings
     multi_user_mode: str = Field(default="auto")  # "auto", "single", "multi"
+
+    # Multi-app hosting configuration
+    deployment_mode: str = Field(default="development")
+    frontend_port: int = Field(default=8006)
+    external_domain: Optional[str] = Field(default=None)
+    api_base_path: str = Field(default="")
+    frontend_base_path: str = Field(default="")
+    daemon_api_url: Optional[str] = Field(default=None)
 
     # API URLs
     api_prefix: str = Field(default="/api/v1")

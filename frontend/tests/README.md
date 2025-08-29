@@ -7,7 +7,8 @@ This directory contains automated tests for the portfolio frontend.
 ### Running Tests
 
 1. **Via Web Browser**: Open `index.html` in a web browser
-2. **Via Server**: Access `http://localhost:8004/tests/` when server is running
+2. **Via Frontend Server**: Access `http://localhost:8006/tests/` when frontend server is running
+3. **Note**: API server should be running on `http://localhost:8007/` for full functionality
 
 ### Test Categories
 
