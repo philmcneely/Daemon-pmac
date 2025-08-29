@@ -174,6 +174,9 @@ class MultiUserPortfolio {
         // Reset portfolio structure
         this.resetPortfolioStructure();
 
+        // Small delay to ensure DOM is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Load content with username
         await this.loadPortfolioContent(username);
 
@@ -250,23 +253,36 @@ class MultiUserPortfolio {
      * Load all endpoint data
      */
     async loadAllEndpoints(username = null) {
+        console.log(`Loading all endpoints for user: ${username}`);
         const sections = ['about', 'skills', 'experience', 'projects', 'contact'];
+
+        console.log('Available endpoints:', this.endpoints.map(e => e.name));
+        console.log('Loading sections:', sections);
 
         for (const section of sections) {
             try {
+                console.log(`Starting to load section: ${section}`);
                 await this.loadSectionContent(section, username);
+                console.log(`Completed loading section: ${section}`);
             } catch (error) {
-                console.warn(`Failed to load ${section}:`, error);
+                console.error(`Failed to load ${section}:`, error);
             }
         }
+
+        console.log('Finished loading all sections');
     }
 
     /**
      * Load content for a specific section
      */
     async loadSectionContent(sectionName, username = null) {
+        console.log(`Loading section: ${sectionName} for user: ${username}`);
         const container = document.getElementById(`${sectionName}Content`);
-        if (!container) return;
+        if (!container) {
+            console.error(`Container not found: ${sectionName}Content`);
+            return;
+        }
+        console.log(`Container found for ${sectionName}:`, container);
 
         try {
             // Find the endpoint
@@ -276,21 +292,30 @@ class MultiUserPortfolio {
             );
 
             if (!endpoint) {
-                container.innerHTML = `<p>${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)} information will be added soon.</p>`;
+                console.warn(`Endpoint not found for section: ${sectionName}`);
+                console.log('Available endpoints:', this.endpoints.map(e => e.name));
+                container.innerHTML = `<p>No ${sectionName} information available.</p>`;
                 return;
             }
 
-            // Get the data
-            const data = await this.api.getEndpointData(endpoint.name, username);
+            console.log(`Found endpoint for ${sectionName}:`, endpoint);
 
-            if (data.items && data.items.length > 0) {
-                container.innerHTML = this.formatSectionData(sectionName, data.items);
+            // Get the data
+            console.log(`Calling API for endpoint: ${endpoint.name}, user: ${username}`);
+            const data = await this.api.getEndpointData(endpoint.name, username);
+            console.log(`Data received for ${sectionName}:`, data);
+
+            if (data && Array.isArray(data) && data.length > 0) {
+                console.log(`Formatting ${data.length} items for ${sectionName}`);
+                container.innerHTML = this.formatSectionData(sectionName, data);
+                console.log(`Successfully loaded ${sectionName} with ${data.length} items`);
             } else {
-                container.innerHTML = `<p>${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)} information will be added soon.</p>`;
+                console.log(`No data found for ${sectionName}`);
+                container.innerHTML = `<p>No ${sectionName} information available.</p>`;
             }
 
         } catch (error) {
-            console.warn(`Failed to load ${sectionName}:`, error);
+            console.error(`Failed to load ${sectionName}:`, error);
             container.innerHTML = `<p>Unable to load ${sectionName} information.</p>`;
         }
     }

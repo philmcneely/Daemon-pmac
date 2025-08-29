@@ -120,8 +120,13 @@ class APIClient {
     async getEndpointData(endpointName, username = null) {
         let url = `/api/v1/${endpointName}`;
         if (username) {
-            url = `/api/v1/users/${username}/${endpointName}`;
+            url = `/api/v1/${endpointName}/users/${username}`;
         }
+
+        // Add privacy level parameter
+        const separator = url.includes('?') ? '&' : '?';
+        url += `${separator}level=public_full`;
+
         return await this.request(url);
     }
 
