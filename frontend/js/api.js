@@ -123,9 +123,12 @@ class APIClient {
             url = `/api/v1/${endpointName}/users/${username}`;
         }
 
-        // Add privacy level parameter
-        const separator = url.includes('?') ? '&' : '?';
-        url += `${separator}level=public_full`;
+        // Only add privacy level for endpoints that require it
+        const needsPrivacyLevel = ['resume'];
+        if (needsPrivacyLevel.includes(endpointName)) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += `${separator}level=public_full`;
+        }
 
         return await this.request(url);
     }

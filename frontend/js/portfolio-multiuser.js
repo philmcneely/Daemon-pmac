@@ -364,9 +364,15 @@ class MultiUserPortfolio {
     }
 
     /**
-     * Format experience data
+     * Format experience data (resume)
      */
     formatExperienceData(items) {
+        if (items.length === 1 && items[0].name) {
+            // This is a resume object, format it properly
+            return this.formatResumeData(items[0]);
+        }
+
+        // Fallback to simple experience list
         let html = '<div class="experience-list">';
         items.forEach(item => {
             const content = this.extractContent(item);
@@ -377,13 +383,200 @@ class MultiUserPortfolio {
     }
 
     /**
+     * Format resume data with proper structure
+     */
+    formatResumeData(resume) {
+        let html = '<div class="resume-container">';
+
+        // Header with name and title
+        html += '<div class="resume-header">';
+        html += `<h2 class="resume-name">${resume.name}</h2>`;
+        if (resume.title) {
+            html += `<h3 class="resume-title">${resume.title}</h3>`;
+        }
+        if (resume.summary) {
+            html += `<p class="resume-summary">${resume.summary}</p>`;
+        }
+        html += '</div>';
+
+        // Contact information
+        if (resume.contact) {
+            html += '<div class="resume-section">';
+            html += '<h4>Contact Information</h4>';
+            html += '<div class="contact-grid">';
+            if (resume.contact.email) html += `<div class="contact-item"><strong>Email:</strong> <a href="mailto:${resume.contact.email}">${resume.contact.email}</a></div>`;
+            if (resume.contact.phone) html += `<div class="contact-item"><strong>Phone:</strong> ${resume.contact.phone}</div>`;
+            if (resume.contact.location) html += `<div class="contact-item"><strong>Location:</strong> ${resume.contact.location}</div>`;
+            if (resume.contact.website) html += `<div class="contact-item"><strong>Website:</strong> <a href="${resume.contact.website}" target="_blank">${resume.contact.website}</a></div>`;
+            if (resume.contact.linkedin) html += `<div class="contact-item"><strong>LinkedIn:</strong> <a href="${resume.contact.linkedin}" target="_blank">LinkedIn Profile</a></div>`;
+            if (resume.contact.github) html += `<div class="contact-item"><strong>GitHub:</strong> <a href="${resume.contact.github}" target="_blank">GitHub Profile</a></div>`;
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Experience
+        if (resume.experience && resume.experience.length > 0) {
+            html += '<div class="resume-section">';
+            html += '<h4>Professional Experience</h4>';
+            resume.experience.forEach(exp => {
+                html += '<div class="experience-entry">';
+                html += `<h5 class="position">${exp.position}</h5>`;
+                html += `<div class="company-period">`;
+                html += `<strong>${exp.company}</strong>`;
+                if (exp.start_date || exp.end_date) {
+                    html += ` <span class="period">(${exp.start_date || ''} - ${exp.end_date || 'Present'})</span>`;
+                }
+                html += '</div>';
+                if (exp.description) {
+                    html += `<p class="description">${exp.description}</p>`;
+                }
+                if (exp.achievements && exp.achievements.length > 0) {
+                    html += '<ul class="achievements">';
+                    exp.achievements.forEach(achievement => {
+                        html += `<li>${achievement}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                if (exp.technologies && exp.technologies.length > 0) {
+                    html += '<div class="technologies">';
+                    html += '<strong>Technologies:</strong> ';
+                    html += exp.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join(', ');
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Education
+        if (resume.education && resume.education.length > 0) {
+            html += '<div class="resume-section">';
+            html += '<h4>Education</h4>';
+            resume.education.forEach(edu => {
+                html += '<div class="education-entry">';
+                html += `<h5>${edu.degree}</h5>`;
+                html += `<div class="institution-period">`;
+                html += `<strong>${edu.institution}</strong>`;
+                if (edu.graduation_date) {
+                    html += ` <span class="period">(${edu.graduation_date})</span>`;
+                }
+                html += '</div>';
+                if (edu.details && edu.details.length > 0) {
+                    html += '<ul>';
+                    edu.details.forEach(detail => {
+                        html += `<li>${detail}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Skills
+        if (resume.skills && Object.keys(resume.skills).length > 0) {
+            html += '<div class="resume-section">';
+            html += '<h4>Technical Skills</h4>';
+            html += '<div class="skills-grid">';
+            Object.entries(resume.skills).forEach(([category, skills]) => {
+                html += '<div class="skill-category">';
+                html += `<h6>${category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</h6>`;
+                if (Array.isArray(skills)) {
+                    html += '<div class="skill-tags">';
+                    skills.forEach(skill => {
+                        html += `<span class="skill-tag">${skill}</span>`;
+                    });
+                    html += '</div>';
+                } else if (typeof skills === 'object') {
+                    html += '<div class="skill-details">';
+                    Object.entries(skills).forEach(([key, value]) => {
+                        html += `<div class="skill-item"><strong>${key}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</div>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Projects
+        if (resume.projects && resume.projects.length > 0) {
+            html += '<div class="resume-section">';
+            html += '<h4>Notable Projects</h4>';
+            resume.projects.forEach(project => {
+                html += '<div class="project-entry">';
+                html += `<h5>${project.name}</h5>`;
+                if (project.description) {
+                    html += `<p class="description">${project.description}</p>`;
+                }
+                if (project.technologies && project.technologies.length > 0) {
+                    html += '<div class="technologies">';
+                    html += '<strong>Technologies:</strong> ';
+                    html += project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join(', ');
+                    html += '</div>';
+                }
+                if (project.url) {
+                    html += `<div class="project-link"><a href="${project.url}" target="_blank">View Project</a></div>`;
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Certifications
+        if (resume.certifications && resume.certifications.length > 0) {
+            html += '<div class="resume-section">';
+            html += '<h4>Certifications</h4>';
+            html += '<ul class="certifications-list">';
+            resume.certifications.forEach(cert => {
+                html += `<li>`;
+                html += `<strong>${cert.name}</strong>`;
+                if (cert.issuer) html += ` - ${cert.issuer}`;
+                if (cert.date) html += ` (${cert.date})`;
+                if (cert.credential_id) html += ` - ID: ${cert.credential_id}`;
+                html += `</li>`;
+            });
+            html += '</ul>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
      * Format projects data
      */
     formatProjectsData(items) {
-        let html = '<div class="projects-grid">';
-        items.forEach(item => {
+        let html = '<div class="projects-container">';
+        items.forEach((item, index) => {
             const content = this.extractContent(item);
-            html += `<div class="project-item">${this.formatText(content)}</div>`;
+            const meta = item.meta || {};
+
+            html += '<div class="project-item">';
+
+            // Add project meta information if available
+            if (meta.title && meta.title !== 'Featured Projects & Portfolio') {
+                html += `<div class="project-meta">
+                    <h3 class="project-title">${meta.title}</h3>
+                    ${meta.date ? `<span class="project-date">${meta.date}</span>` : ''}
+                </div>`;
+            }
+
+            // Add the formatted content
+            html += `<div class="project-content">${this.formatText(content)}</div>`;
+
+            // Add tags if available
+            if (meta.tags && meta.tags.length > 0) {
+                html += '<div class="project-tags">';
+                meta.tags.forEach(tag => {
+                    html += `<span class="project-tag">${tag}</span>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
         });
         html += '</div>';
         return html;
@@ -421,16 +614,97 @@ class MultiUserPortfolio {
     }
 
     /**
-     * Format text content
+     * Format text content (with markdown support)
      */
     formatText(content) {
         if (!content) return 'No content available.';
 
-        // Simple text formatting
-        return content
-            .replace(/\n\n/g, '</p><p>')
-            .replace(/\n/g, '<br>')
-            .replace(/^(.*)$/g, '<p>$1</p>');
+        // Convert markdown to HTML
+        return this.markdownToHTML(content);
+    }
+
+    /**
+     * Convert markdown to HTML
+     */
+    markdownToHTML(markdown) {
+        if (!markdown) return '';
+
+        let html = markdown;
+
+        // Handle headings (### before ## before #)
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Handle bold text
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Handle italic text
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Handle inline code
+        html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+
+        // Handle code blocks
+        html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+            return `<pre><code class="language-${lang || 'text'}">${this.escapeHtml(code.trim())}</code></pre>`;
+        });
+
+        // Handle links
+        html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+        // Handle lists (unordered)
+        html = html.replace(/^[\-\*\+] (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+            return '<ul>' + match + '</ul>';
+        });
+
+        // Handle ordered lists
+        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+        // Note: This is a simplified approach for ordered lists
+
+        // Handle line breaks and paragraphs
+        html = html.split('\n\n').map(paragraph => {
+            paragraph = paragraph.trim();
+            if (!paragraph) return '';
+
+            // Don't wrap existing HTML elements in paragraphs
+            if (paragraph.match(/^<(h[1-6]|ul|ol|li|pre|code|blockquote)/)) {
+                return paragraph;
+            }
+
+            // Handle single line breaks within paragraphs
+            paragraph = paragraph.replace(/\n/g, '<br>');
+
+            return `<p>${paragraph}</p>`;
+        }).join('');
+
+        // Clean up any double-wrapped lists
+        html = html.replace(/<ul><ul>/g, '<ul>');
+        html = html.replace(/<\/ul><\/ul>/g, '</ul>');
+
+        // Handle blockquotes
+        html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // Handle horizontal rules
+        html = html.replace(/^---$/gm, '<hr>');
+
+        // Handle emoji shortcuts (basic ones)
+        html = html.replace(/:rocket:/g, '🚀');
+        html = html.replace(/:cloud:/g, '☁️');
+        html = html.replace(/:lock:/g, '🔒');
+        html = html.replace(/:chart_with_upwards_trend:/g, '📊');
+
+        return html;
+    }
+
+    /**
+     * Escape HTML characters
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     /**
