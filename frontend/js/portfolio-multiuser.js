@@ -254,7 +254,7 @@ class MultiUserPortfolio {
      */
     async loadAllEndpoints(username = null) {
         console.log(`Loading all endpoints for user: ${username}`);
-        const sections = ['about', 'skills', 'experience', 'projects', 'contact'];
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'contact'];
 
         console.log('Available endpoints:', this.endpoints.map(e => e.name));
         console.log('Loading sections:', sections);
@@ -277,9 +277,16 @@ class MultiUserPortfolio {
      */
     async loadSectionContent(sectionName, username = null) {
         console.log(`Loading section: ${sectionName} for user: ${username}`);
-        const container = document.getElementById(`${sectionName}Content`);
+
+        // Convert section name to camelCase for container ID
+        let containerId = sectionName;
+        if (sectionName === 'personal-story') {
+            containerId = 'personalStory';
+        }
+
+        const container = document.getElementById(`${containerId}Content`);
         if (!container) {
-            console.error(`Container not found: ${sectionName}Content`);
+            console.error(`Container not found: ${containerId}Content`);
             return;
         }
         console.log(`Container found for ${sectionName}:`, container);
@@ -288,7 +295,8 @@ class MultiUserPortfolio {
             // Find the endpoint
             const endpoint = this.endpoints.find(ep =>
                 ep.name === sectionName ||
-                (sectionName === 'experience' && ep.name === 'resume')
+                (sectionName === 'experience' && ep.name === 'resume') ||
+                (sectionName === 'personal-story' && ep.name === 'personal_story')
             );
 
             if (!endpoint) {
@@ -329,6 +337,8 @@ class MultiUserPortfolio {
         switch (sectionName) {
             case 'about':
                 return this.formatAboutData(items[0]);
+            case 'personal-story':
+                return this.formatPersonalStoryData(items);
             case 'skills':
                 return this.formatSkillsData(items);
             case 'experience':
@@ -348,6 +358,43 @@ class MultiUserPortfolio {
     formatAboutData(item) {
         const content = this.extractContent(item);
         return `<div class="about-content">${this.formatText(content)}</div>`;
+    }
+
+    /**
+     * Format personal story data
+     */
+    formatPersonalStoryData(items) {
+        let html = '<div class="personal-story-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            const meta = item.meta || {};
+
+            html += '<div class="story-item">';
+
+            // Add story meta information if available
+            if (meta.title) {
+                html += `<div class="story-meta">
+                    <h3 class="story-title">${meta.title}</h3>
+                    ${meta.date ? `<span class="story-date">${meta.date}</span>` : ''}
+                </div>`;
+            }
+
+            // Add the formatted content
+            html += `<div class="story-content">${this.formatText(content)}</div>`;
+
+            // Add tags if available
+            if (meta.tags && meta.tags.length > 0) {
+                html += '<div class="story-tags">';
+                meta.tags.forEach(tag => {
+                    html += `<span class="story-tag">${tag}</span>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
     }
 
     /**
@@ -722,6 +769,7 @@ class MultiUserPortfolio {
                     </div>
                     <div class="nav-links">
                         <a href="#about" class="nav-link">About</a>
+                        <a href="#personal-story" class="nav-link">My Story</a>
                         <a href="#skills" class="nav-link">Skills</a>
                         <a href="#experience" class="nav-link">Experience</a>
                         <a href="#projects" class="nav-link">Projects</a>
@@ -757,8 +805,18 @@ class MultiUserPortfolio {
                 </div>
             </section>
 
+            <!-- Personal Story Section -->
+            <section id="personal-story" class="section bg-light">
+                <div class="container">
+                    <h2 class="section-title">My Story</h2>
+                    <div id="personalStoryContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Skills Section -->
-            <section id="skills" class="section bg-light">
+            <section id="skills" class="section">
                 <div class="container">
                     <h2 class="section-title">Skills</h2>
                     <div id="skillsContent" class="content-area">
@@ -768,7 +826,7 @@ class MultiUserPortfolio {
             </section>
 
             <!-- Experience Section -->
-            <section id="experience" class="section">
+            <section id="experience" class="section bg-light">
                 <div class="container">
                     <h2 class="section-title">Experience</h2>
                     <div id="experienceContent" class="content-area">
@@ -778,7 +836,7 @@ class MultiUserPortfolio {
             </section>
 
             <!-- Projects Section -->
-            <section id="projects" class="section bg-light">
+            <section id="projects" class="section">
                 <div class="container">
                     <h2 class="section-title">Projects</h2>
                     <div id="projectsContent" class="content-area">
@@ -788,7 +846,7 @@ class MultiUserPortfolio {
             </section>
 
             <!-- Contact Section -->
-            <section id="contact" class="section">
+            <section id="contact" class="section bg-light">
                 <div class="container">
                     <h2 class="section-title">Contact</h2>
                     <div id="contactContent" class="content-area">
