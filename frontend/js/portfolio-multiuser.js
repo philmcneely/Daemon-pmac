@@ -254,7 +254,7 @@ class MultiUserPortfolio {
      */
     async loadAllEndpoints(username = null) {
         console.log(`Loading all endpoints for user: ${username}`);
-        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'contact'];
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'hobbies', 'contact'];
 
         console.log('Available endpoints:', this.endpoints.map(e => e.name));
         console.log('Loading sections:', sections);
@@ -358,6 +358,8 @@ class MultiUserPortfolio {
             case 'goals-values':
                 // This should not be called as goals-values has special handling
                 return this.formatGoalsValuesData([], []);
+            case 'hobbies':
+                return this.formatHobbiesData(items);
             case 'contact':
                 return this.formatContactData(items[0]);
             default:
@@ -768,6 +770,43 @@ class MultiUserPortfolio {
     }
 
     /**
+     * Format hobbies data
+     */
+    formatHobbiesData(items) {
+        let html = '<div class="hobbies-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            const meta = item.meta || {};
+
+            html += '<div class="hobbies-item">';
+
+            // Add meta information if available
+            if (meta.title) {
+                html += `<div class="hobbies-meta">
+                    <h3 class="hobbies-title">${meta.title}</h3>
+                    ${meta.date ? `<span class="hobbies-date">${meta.date}</span>` : ''}
+                </div>`;
+            }
+
+            // Add the formatted content
+            html += `<div class="hobbies-content">${this.formatText(content)}</div>`;
+
+            // Add tags if available
+            if (meta.tags && meta.tags.length > 0) {
+                html += '<div class="hobbies-tags">';
+                meta.tags.forEach(tag => {
+                    html += `<span class="hobbies-tag">${tag}</span>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
      * Format contact data
      */
     formatContactData(item) {
@@ -963,6 +1002,7 @@ class MultiUserPortfolio {
                         <a href="#projects" class="nav-link">Projects</a>
                         <a href="#achievements" class="nav-link">Achievements</a>
                         <a href="#goals-values" class="nav-link">Goals & Values</a>
+                        <a href="#hobbies" class="nav-link">Interests</a>
                         <a href="#contact" class="nav-link">Contact</a>
                     </div>
                     <div class="nav-toggle">
@@ -1050,6 +1090,16 @@ class MultiUserPortfolio {
                 <div class="container">
                     <h2 class="section-title">Goals & Values</h2>
                     <div id="goalsValuesContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hobbies Section -->
+            <section id="hobbies" class="section">
+                <div class="container">
+                    <h2 class="section-title">Interests</h2>
+                    <div id="hobbiesContent" class="content-area">
                         <div class="loading-content">Loading...</div>
                     </div>
                 </div>
