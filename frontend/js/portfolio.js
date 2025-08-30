@@ -173,62 +173,142 @@ class Portfolio {
         // Update hero section first
         await this.updateHeroSection();
 
-        // Load core sections first
-        await this.loadCoreContent();
-
-        // Load additional sections
-        await this.loadAdditionalContent();
+        // Load all sections in order
+        await this.loadAllSections();
     }
 
     /**
-     * Load core content sections (about, skills, experience, etc.)
+     * Load all portfolio sections
      */
-    async loadCoreContent() {
-        const coreEndpoints = {
-            'about': this.loadAboutContent.bind(this),
-            'skills': this.loadSkillsContent.bind(this),
-            'resume': this.loadExperienceContent.bind(this),
-            'experience': this.loadExperienceContent.bind(this),
-            'projects': this.loadProjectsContent.bind(this),
-            'contact': this.loadContactContent.bind(this),
-            'contact_info': this.loadContactContent.bind(this)
-        };
+    async loadAllSections() {
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'hobbies', 'ideas-philosophy', 'learning-recommendations', 'contact'];
 
-        for (const [endpointName, loadFunction] of Object.entries(coreEndpoints)) {
-            const endpoint = this.endpoints.find(ep => ep.name === endpointName);
-            if (endpoint) {
-                try {
-                    await loadFunction(endpointName);
-                } catch (error) {
-                    console.warn(`Failed to load ${endpointName}:`, error);
-                }
+        console.log('Available endpoints:', this.endpoints.map(e => e.name));
+        console.log('Loading sections:', sections);
+
+        for (const section of sections) {
+            try {
+                console.log(`Starting to load section: ${section}`);
+                await this.loadSectionContent(section);
+                console.log(`Completed loading section: ${section}`);
+            } catch (error) {
+                console.error(`Failed to load ${section}:`, error);
             }
+        }
+
+        console.log('Finished loading all sections');
+    }
+
+    /**
+     * Load content for a specific section
+     */
+    async loadSectionContent(sectionName) {
+        console.log(`Loading section: ${sectionName}`);
+
+        // Convert section name to camelCase for container ID
+        let containerId = sectionName;
+        if (sectionName === 'personal-story') {
+            containerId = 'personalStory';
+        } else if (sectionName === 'goals-values') {
+            containerId = 'goalsValues';
+        } else if (sectionName === 'ideas-philosophy') {
+            containerId = 'ideasPhilosophy';
+        } else if (sectionName === 'learning-recommendations') {
+            containerId = 'learningRecommendations';
+        }
+
+        const container = document.getElementById(`${containerId}Content`);
+        if (!container) {
+            console.error(`Container not found: ${containerId}Content`);
+            return;
+        }
+        console.log(`Container found for ${sectionName}:`, container);
+
+        try {
+            // Special handling for dual/triple-endpoint sections
+            if (sectionName === 'goals-values') {
+                await this.loadGoalsValuesSection(container);
+                return;
+            }
+            if (sectionName === 'ideas-philosophy') {
+                await this.loadIdeasPhilosophySection(container);
+                return;
+            }
+            if (sectionName === 'learning-recommendations') {
+                await this.loadLearningRecommendationsSection(container);
+                return;
+            }
+
+            // Find the endpoint
+            const endpoint = this.endpoints.find(ep =>
+                ep.name === sectionName ||
+                (sectionName === 'experience' && ep.name === 'resume') ||
+                (sectionName === 'personal-story' && ep.name === 'personal_story')
+            );
+
+            if (!endpoint) {
+                console.warn(`Endpoint not found for section: ${sectionName}`);
+                console.log('Available endpoints:', this.endpoints.map(e => e.name));
+                container.innerHTML = `<p>No ${sectionName} information available.</p>`;
+                return;
+            }
+
+            console.log(`Found endpoint for ${sectionName}:`, endpoint);
+
+            // Get the data
+            console.log(`Calling API for endpoint: ${endpoint.name}`);
+            const data = await this.api.getEndpointData(endpoint.name);
+            console.log(`Data received for ${sectionName}:`, data);
+
+            if (data && data.items && data.items.length > 0) {
+                console.log(`Formatting ${data.items.length} items for ${sectionName}`);
+                container.innerHTML = this.formatSectionData(sectionName, data.items);
+                console.log(`Successfully loaded ${sectionName} with ${data.items.length} items`);
+            } else {
+                console.log(`No data found for ${sectionName}`);
+                container.innerHTML = `<p>No ${sectionName} information available.</p>`;
+            }
+
+        } catch (error) {
+            console.error(`Failed to load ${sectionName}:`, error);
+            container.innerHTML = `<p>Unable to load ${sectionName} information.</p>`;
         }
     }
 
     /**
-     * Load additional content sections for miscellaneous endpoints
+     * Format section data for display
      */
-    async loadAdditionalContent() {
-        const coreEndpointNames = ['about', 'skills', 'resume', 'experience', 'projects', 'contact', 'contact_info'];
-        const additionalEndpoints = this.endpoints.filter(ep =>
-            !coreEndpointNames.includes(ep.name) &&
-            !ep.name.includes('system') &&
-            !ep.name.includes('health') &&
-            !ep.name.includes('user')
-        );
+    formatSectionData(sectionName, items) {
+        if (!items || items.length === 0) return '<p>No information available.</p>';
 
-        const additionalContainer = document.getElementById('additionalContent');
-        if (!additionalContainer) return;
-
-        additionalContainer.innerHTML = '';
-
-        for (const endpoint of additionalEndpoints) {
-            try {
-                await this.loadAdditionalSection(endpoint);
-            } catch (error) {
-                console.warn(`Failed to load ${endpoint.name}:`, error);
-            }
+        switch (sectionName) {
+            case 'about':
+                return this.formatAboutData(items[0]);
+            case 'personal-story':
+                return this.formatPersonalStoryData(items);
+            case 'skills':
+                return this.formatSkillsData(items);
+            case 'experience':
+                return this.formatExperienceData(items);
+            case 'projects':
+                return this.formatProjectsData(items);
+            case 'achievements':
+                return this.formatAchievementsData(items);
+            case 'goals-values':
+                // This should not be called as goals-values has special handling
+                return this.formatGoalsValuesData([], []);
+            case 'hobbies':
+                return this.formatHobbiesData(items);
+            case 'ideas-philosophy':
+                // This should not be called as ideas-philosophy has special handling
+                return this.formatIdeasPhilosophyData([], []);
+            case 'learning-recommendations':
+                // This should not be called as learning-recommendations has special handling
+                return this.formatLearningRecommendationsData([], [], []);
+            case 'contact':
+                return this.formatContactData(items[0]);
+            default:
+                return this.formatGenericData(items);
         }
     }
 
@@ -517,6 +597,438 @@ class Portfolio {
                 ${content}
             </div>
         `;
+    }
+
+    /**
+     * Format about data
+     */
+    formatAboutData(item) {
+        const content = this.extractContent(item);
+        return `<div class="about-content">${this.formatContent(content)}</div>`;
+    }
+
+    /**
+     * Format personal story data
+     */
+    formatPersonalStoryData(items) {
+        let html = '<div class="personal-story-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            html += '<div class="story-item">';
+            html += `<div class="story-content">${this.formatContent(content)}</div>`;
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format skills data
+     */
+    formatSkillsData(items) {
+        let html = '<div class="skills-grid">';
+        items.forEach(item => {
+            const content = this.extractContent(item);
+            html += `<div class="skill-item">${this.formatContent(content)}</div>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format experience data (resume)
+     */
+    formatExperienceData(items) {
+        let html = '<div class="experience-list">';
+        items.forEach(item => {
+            const content = this.extractContent(item);
+            html += `<div class="experience-item">${this.formatContent(content)}</div>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format projects data
+     */
+    formatProjectsData(items) {
+        let html = '<div class="projects-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            html += '<div class="project-item">';
+            html += `<div class="project-content">${this.formatContent(content)}</div>`;
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format achievements data
+     */
+    formatAchievementsData(items) {
+        let html = '<div class="achievements-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            html += '<div class="achievement-item">';
+            html += `<div class="achievement-content">${this.formatContent(content)}</div>`;
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format goals-values data (dual-endpoint section)
+     */
+    async formatGoalsValuesData(goalsData, valuesData) {
+        let html = '<div class="goals-values-container">';
+
+        // Goals Section
+        if (goalsData && goalsData.length > 0) {
+            html += '<div class="goals-section">';
+            html += '<h3 class="subsection-title">🎯 Goals</h3>';
+            html += '<div class="goals-items">';
+
+            goalsData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="goals-item">';
+                html += `<div class="goals-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Values Section
+        if (valuesData && valuesData.length > 0) {
+            html += '<div class="values-section">';
+            html += '<h3 class="subsection-title">💎 Values</h3>';
+            html += '<div class="values-items">';
+
+            valuesData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="values-item">';
+                html += `<div class="values-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format hobbies data
+     */
+    formatHobbiesData(items) {
+        let html = '<div class="hobbies-container">';
+        items.forEach((item, index) => {
+            const content = this.extractContent(item);
+            html += '<div class="hobby-item">';
+            html += `<div class="hobby-content">${this.formatContent(content)}</div>`;
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format ideas-philosophy data (dual-endpoint section)
+     */
+    async formatIdeasPhilosophyData(ideasData, quotesData) {
+        let html = '<div class="ideas-philosophy-container">';
+
+        // Ideas Section
+        if (ideasData && ideasData.length > 0) {
+            html += '<div class="ideas-section">';
+            html += '<h3 class="subsection-title">💡 Ideas</h3>';
+            html += '<div class="ideas-items">';
+
+            ideasData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="ideas-item">';
+                html += `<div class="ideas-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Quotes Section
+        if (quotesData && quotesData.length > 0) {
+            html += '<div class="quotes-section">';
+            html += '<h3 class="subsection-title">💬 Philosophy</h3>';
+            html += '<div class="quotes-items">';
+
+            quotesData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="quotes-item">';
+                html += `<div class="quotes-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format learning-recommendations data (triple-endpoint section)
+     */
+    async formatLearningRecommendationsData(learningData, recommendationsData, booksData) {
+        let html = '<div class="learning-recommendations-container">';
+
+        // Learning Section
+        if (learningData && learningData.length > 0) {
+            html += '<div class="learning-section">';
+            html += '<h3 class="subsection-title">🎓 Learning</h3>';
+            html += '<div class="learning-items">';
+
+            learningData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="learning-item">';
+                html += `<div class="learning-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Recommendations Section
+        if (recommendationsData && recommendationsData.length > 0) {
+            html += '<div class="recommendations-section">';
+            html += '<h3 class="subsection-title">📋 Recommendations</h3>';
+            html += '<div class="recommendations-items">';
+
+            recommendationsData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="recommendations-item">';
+                html += `<div class="recommendations-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Books Section
+        if (booksData && booksData.length > 0) {
+            html += '<div class="books-section">';
+            html += '<h3 class="subsection-title">📚 Favorite Books</h3>';
+            html += '<div class="books-items">';
+
+            booksData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="books-item">';
+                html += `<div class="books-content">${this.formatContent(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format contact data
+     */
+    formatContactData(item) {
+        const content = this.extractContent(item);
+        return `<div class="contact-content">${this.formatContent(content)}</div>`;
+    }
+
+    /**
+     * Load goals and values section with dual-endpoint support
+     */
+    async loadGoalsValuesSection(container) {
+        try {
+            console.log('Loading Goals & Values section with dual endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading goals and values...</div>';
+
+            // Find both endpoints
+            const goalsEndpoint = this.endpoints.find(ep => ep.name === 'goals');
+            const valuesEndpoint = this.endpoints.find(ep => ep.name === 'values');
+
+            if (!goalsEndpoint && !valuesEndpoint) {
+                container.innerHTML = '<p>No goals or values information available.</p>';
+                return;
+            }
+
+            // Load data from both endpoints concurrently
+            const promises = [];
+            if (goalsEndpoint) {
+                promises.push(this.api.getEndpointData('goals'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            if (valuesEndpoint) {
+                promises.push(this.api.getEndpointData('values'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            const [goalsData, valuesData] = await Promise.all(promises);
+
+            console.log('Goals data:', goalsData);
+            console.log('Values data:', valuesData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatGoalsValuesData(
+                goalsData.items || [],
+                valuesData.items || []
+            );
+            container.innerHTML = formattedHtml;
+
+            console.log('Goals & Values section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Goals & Values section:', error);
+            container.innerHTML = '<p>Failed to load goals and values information.</p>';
+        }
+    }
+
+    /**
+     * Load ideas and philosophy section with dual-endpoint support
+     */
+    async loadIdeasPhilosophySection(container) {
+        try {
+            console.log('Loading Ideas & Philosophy section with dual endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading ideas and philosophy...</div>';
+
+            // Find both endpoints
+            const ideasEndpoint = this.endpoints.find(ep => ep.name === 'ideas');
+            const quotesEndpoint = this.endpoints.find(ep => ep.name === 'quotes');
+
+            if (!ideasEndpoint && !quotesEndpoint) {
+                container.innerHTML = '<p>No ideas or philosophy information available.</p>';
+                return;
+            }
+
+            // Load data from both endpoints concurrently
+            const promises = [];
+            if (ideasEndpoint) {
+                promises.push(this.api.getEndpointData('ideas'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            if (quotesEndpoint) {
+                promises.push(this.api.getEndpointData('quotes'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            const [ideasData, quotesData] = await Promise.all(promises);
+
+            console.log('Ideas data:', ideasData);
+            console.log('Quotes data:', quotesData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatIdeasPhilosophyData(
+                ideasData.items || [],
+                quotesData.items || []
+            );
+            container.innerHTML = formattedHtml;
+
+            console.log('Ideas & Philosophy section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Ideas & Philosophy section:', error);
+            container.innerHTML = '<p>Failed to load ideas and philosophy information.</p>';
+        }
+    }
+
+    /**
+     * Load learning and recommendations section with triple-endpoint support
+     */
+    async loadLearningRecommendationsSection(container) {
+        try {
+            console.log('Loading Learning & Recommendations section with triple endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading learning and recommendations...</div>';
+
+            // Find all three endpoints
+            const learningEndpoint = this.endpoints.find(ep => ep.name === 'learning');
+            const recommendationsEndpoint = this.endpoints.find(ep => ep.name === 'recommendations');
+            const booksEndpoint = this.endpoints.find(ep => ep.name === 'favorite_books');
+
+            if (!learningEndpoint && !recommendationsEndpoint && !booksEndpoint) {
+                container.innerHTML = '<p>No learning or recommendations information available.</p>';
+                return;
+            }
+
+            // Load data from all three endpoints concurrently
+            const promises = [];
+            if (learningEndpoint) {
+                promises.push(this.api.getEndpointData('learning'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            if (recommendationsEndpoint) {
+                promises.push(this.api.getEndpointData('recommendations'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            if (booksEndpoint) {
+                promises.push(this.api.getEndpointData('favorite_books'));
+            } else {
+                promises.push(Promise.resolve({items: []}));
+            }
+
+            const [learningData, recommendationsData, booksData] = await Promise.all(promises);
+
+            console.log('Learning data:', learningData);
+            console.log('Recommendations data:', recommendationsData);
+            console.log('Books data:', booksData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatLearningRecommendationsData(
+                learningData.items || [],
+                recommendationsData.items || [],
+                booksData.items || []
+            );
+            container.innerHTML = formattedHtml;
+
+            console.log('Learning & Recommendations section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Learning & Recommendations section:', error);
+            container.innerHTML = '<p>Failed to load learning and recommendations information.</p>';
+        }
+    }
+
+    /**
+     * Format generic data
+     */
+    formatGenericData(items) {
+        let html = '<div class="generic-content">';
+        items.forEach(item => {
+            const content = this.extractContent(item);
+            html += `<div class="content-item">${this.formatContent(content)}</div>`;
+        });
+        html += '</div>';
+        return html;
     }
 
     /**

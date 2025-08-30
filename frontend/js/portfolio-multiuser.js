@@ -254,7 +254,7 @@ class MultiUserPortfolio {
      */
     async loadAllEndpoints(username = null) {
         console.log(`Loading all endpoints for user: ${username}`);
-        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'hobbies', 'contact'];
+        const sections = ['about', 'personal-story', 'skills', 'experience', 'projects', 'achievements', 'goals-values', 'hobbies', 'ideas-philosophy', 'learning-recommendations', 'contact'];
 
         console.log('Available endpoints:', this.endpoints.map(e => e.name));
         console.log('Loading sections:', sections);
@@ -284,6 +284,10 @@ class MultiUserPortfolio {
             containerId = 'personalStory';
         } else if (sectionName === 'goals-values') {
             containerId = 'goalsValues';
+        } else if (sectionName === 'ideas-philosophy') {
+            containerId = 'ideasPhilosophy';
+        } else if (sectionName === 'learning-recommendations') {
+            containerId = 'learningRecommendations';
         }
 
         const container = document.getElementById(`${containerId}Content`);
@@ -294,9 +298,17 @@ class MultiUserPortfolio {
         console.log(`Container found for ${sectionName}:`, container);
 
         try {
-            // Special handling for goals-values dual-endpoint section
+            // Special handling for dual-endpoint sections
             if (sectionName === 'goals-values') {
                 await this.loadGoalsValuesSection(container, username);
+                return;
+            }
+            if (sectionName === 'ideas-philosophy') {
+                await this.loadIdeasPhilosophySection(container, username);
+                return;
+            }
+            if (sectionName === 'learning-recommendations') {
+                await this.loadLearningRecommendationsSection(container, username);
                 return;
             }
 
@@ -360,6 +372,12 @@ class MultiUserPortfolio {
                 return this.formatGoalsValuesData([], []);
             case 'hobbies':
                 return this.formatHobbiesData(items);
+            case 'ideas-philosophy':
+                // This should not be called as ideas-philosophy has special handling
+                return this.formatIdeasPhilosophyData([], []);
+            case 'learning-recommendations':
+                // This should not be called as learning-recommendations has special handling
+                return this.formatLearningRecommendationsData([], [], []);
             case 'contact':
                 return this.formatContactData(items[0]);
             default:
@@ -719,6 +737,111 @@ class MultiUserPortfolio {
     }
 
     /**
+     * Format ideas-philosophy data (dual-endpoint section)
+     */
+    async formatIdeasPhilosophyData(ideasData, quotesData) {
+        let html = '<div class="ideas-philosophy-container">';
+
+        // Ideas Section
+        if (ideasData && ideasData.length > 0) {
+            html += '<div class="ideas-section">';
+            html += '<h3 class="subsection-title">💡 Ideas</h3>';
+            html += '<div class="ideas-items">';
+
+            ideasData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="ideas-item">';
+                html += `<div class="ideas-content">${this.formatText(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Quotes Section
+        if (quotesData && quotesData.length > 0) {
+            html += '<div class="quotes-section">';
+            html += '<h3 class="subsection-title">💬 Philosophy</h3>';
+            html += '<div class="quotes-items">';
+
+            quotesData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="quotes-item">';
+                html += `<div class="quotes-content">${this.formatText(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Format learning-recommendations data (triple-endpoint section)
+     */
+    async formatLearningRecommendationsData(learningData, recommendationsData, booksData) {
+        let html = '<div class="learning-recommendations-container">';
+
+        // Learning Section
+        if (learningData && learningData.length > 0) {
+            html += '<div class="learning-section">';
+            html += '<h3 class="subsection-title">🎓 Learning</h3>';
+            html += '<div class="learning-items">';
+
+            learningData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="learning-item">';
+                html += `<div class="learning-content">${this.formatText(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Recommendations Section
+        if (recommendationsData && recommendationsData.length > 0) {
+            html += '<div class="recommendations-section">';
+            html += '<h3 class="subsection-title">📋 Recommendations</h3>';
+            html += '<div class="recommendations-items">';
+
+            recommendationsData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="recommendations-item">';
+                html += `<div class="recommendations-content">${this.formatText(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // Books Section
+        if (booksData && booksData.length > 0) {
+            html += '<div class="books-section">';
+            html += '<h3 class="subsection-title">📚 Favorite Books</h3>';
+            html += '<div class="books-items">';
+
+            booksData.forEach((item, index) => {
+                const content = this.extractContent(item);
+                html += '<div class="books-item">';
+                html += `<div class="books-content">${this.formatText(content)}</div>`;
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
      * Format contact data
      */
     formatContactData(item) {
@@ -773,6 +896,114 @@ class MultiUserPortfolio {
         } catch (error) {
             console.error('Failed to load Goals & Values section:', error);
             container.innerHTML = '<p>Failed to load goals and values information.</p>';
+        }
+    }
+
+    /**
+     * Load ideas and philosophy section with dual-endpoint support
+     */
+    async loadIdeasPhilosophySection(container, username = null) {
+        try {
+            console.log('Loading Ideas & Philosophy section with dual endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading ideas and philosophy...</div>';
+
+            // Find both endpoints
+            const ideasEndpoint = this.endpoints.find(ep => ep.name === 'ideas');
+            const quotesEndpoint = this.endpoints.find(ep => ep.name === 'quotes');
+
+            if (!ideasEndpoint && !quotesEndpoint) {
+                container.innerHTML = '<p>No ideas or philosophy information available.</p>';
+                return;
+            }
+
+            // Load data from both endpoints concurrently
+            const promises = [];
+            if (ideasEndpoint) {
+                promises.push(this.api.getEndpointData('ideas', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            if (quotesEndpoint) {
+                promises.push(this.api.getEndpointData('quotes', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            const [ideasData, quotesData] = await Promise.all(promises);
+
+            console.log('Ideas data:', ideasData);
+            console.log('Quotes data:', quotesData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatIdeasPhilosophyData(ideasData, quotesData);
+            container.innerHTML = formattedHtml;
+
+            console.log('Ideas & Philosophy section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Ideas & Philosophy section:', error);
+            container.innerHTML = '<p>Failed to load ideas and philosophy information.</p>';
+        }
+    }
+
+    /**
+     * Load learning and recommendations section with triple-endpoint support
+     */
+    async loadLearningRecommendationsSection(container, username = null) {
+        try {
+            console.log('Loading Learning & Recommendations section with triple endpoints...');
+
+            // Show loading state
+            container.innerHTML = '<div class="loading-content">Loading learning and recommendations...</div>';
+
+            // Find all three endpoints
+            const learningEndpoint = this.endpoints.find(ep => ep.name === 'learning');
+            const recommendationsEndpoint = this.endpoints.find(ep => ep.name === 'recommendations');
+            const booksEndpoint = this.endpoints.find(ep => ep.name === 'favorite_books');
+
+            if (!learningEndpoint && !recommendationsEndpoint && !booksEndpoint) {
+                container.innerHTML = '<p>No learning or recommendations information available.</p>';
+                return;
+            }
+
+            // Load data from all three endpoints concurrently
+            const promises = [];
+            if (learningEndpoint) {
+                promises.push(this.api.getEndpointData('learning', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            if (recommendationsEndpoint) {
+                promises.push(this.api.getEndpointData('recommendations', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            if (booksEndpoint) {
+                promises.push(this.api.getEndpointData('favorite_books', username));
+            } else {
+                promises.push(Promise.resolve([]));
+            }
+
+            const [learningData, recommendationsData, booksData] = await Promise.all(promises);
+
+            console.log('Learning data:', learningData);
+            console.log('Recommendations data:', recommendationsData);
+            console.log('Books data:', booksData);
+
+            // Format and display the combined data
+            const formattedHtml = await this.formatLearningRecommendationsData(learningData, recommendationsData, booksData);
+            container.innerHTML = formattedHtml;
+
+            console.log('Learning & Recommendations section loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load Learning & Recommendations section:', error);
+            container.innerHTML = '<p>Failed to load learning and recommendations information.</p>';
         }
     }
 
@@ -915,6 +1146,8 @@ class MultiUserPortfolio {
                         <a href="#achievements" class="nav-link">Achievements</a>
                         <a href="#goals-values" class="nav-link">Goals & Values</a>
                         <a href="#hobbies" class="nav-link">Interests</a>
+                        <a href="#ideas-philosophy" class="nav-link">Philosophy</a>
+                        <a href="#learning-recommendations" class="nav-link">Learning</a>
                         <a href="#contact" class="nav-link">Contact</a>
                     </div>
                     <div class="nav-toggle">
@@ -1008,10 +1241,30 @@ class MultiUserPortfolio {
             </section>
 
             <!-- Hobbies Section -->
-            <section id="hobbies" class="section">
+            <section id="hobbies" class="section bg-light">
                 <div class="container">
                     <h2 class="section-title">Interests</h2>
                     <div id="hobbiesContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ideas & Philosophy Section -->
+            <section id="ideas-philosophy" class="section">
+                <div class="container">
+                    <h2 class="section-title">Philosophy</h2>
+                    <div id="ideasPhilosophyContent" class="content-area">
+                        <div class="loading-content">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Learning & Recommendations Section -->
+            <section id="learning-recommendations" class="section bg-light">
+                <div class="container">
+                    <h2 class="section-title">Learning</h2>
+                    <div id="learningRecommendationsContent" class="content-area">
                         <div class="loading-content">Loading...</div>
                     </div>
                 </div>
