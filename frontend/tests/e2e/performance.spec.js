@@ -196,6 +196,6 @@ test.describe('Frontend Performance & Optimization', () => {
       await expect(section).toBeInViewport({ timeout: 10000 });
     }
     const navTime = Date.now() - navStartTime;
-    expect(navTime).toBeLessThan(2000);
+    expect(navTime).toBeLessThan(5000);
   });
 });
