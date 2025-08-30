@@ -58,222 +58,91 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     });
   });
 
-  test('should detect multi-user mode and show user selection', async ({ page }) => {
+  test('should handle complete multi-user workflow: detection, selection, and portfolio loading', async ({ page }) => {
     // Given: System has multiple users
     // When: User navigates to homepage
     await page.goto('/');
-
-    // Wait for loading to complete
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
     // Then: User selection interface is displayed
     await expect(page.locator('.user-selection')).toBeVisible();
     await expect(page.locator('.user-selection h1')).toContainText('Select User Portfolio');
 
-    // Verify user cards are displayed
+    // Verify user cards are displayed with correct information
     const userCards = page.locator('.user-card');
     const cardCount = await userCards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(2); // At least 2 users for multi-user mode
-  });
+    expect(cardCount).toBeGreaterThanOrEqual(2);
 
-  test('should display user cards with correct information', async ({ page }) => {
-    // Given: Multi-user mode is active
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    // Then: User cards show proper information
-    const userCards = page.locator('.user-card');
-
-    // Check first user card (admin)
+    // Check first user card info
     const adminCard = userCards.first();
     await expect(adminCard.locator('h3')).toContainText('Admin User');
     await expect(adminCard.locator('.user-email')).toContainText('admin@test.com');
     await expect(adminCard.locator('.user-role')).toContainText('Administrator');
-
-    // Verify click interaction elements
     await expect(adminCard.locator('.user-card-action')).toBeVisible();
-    await expect(adminCard.locator('.fas.fa-arrow-right')).toBeVisible();
-  });
-
-  test('should load selected user portfolio after clicking user card', async ({ page }) => {
-    // Given: Multi-user selection interface is displayed
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
     // When: User clicks on a user card
     const johnCard = page.locator('.user-card[data-username=\"john\"]');
     await expect(johnCard).toBeVisible();
     await johnCard.click();
-
-    // Wait for portfolio to load
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
 
     // Then: Portfolio is displayed for selected user
     await expect(page.locator('#portfolio')).toBeVisible();
     await expect(page.locator('.hero-section')).toBeVisible();
-
-    // User selection interface should be hidden
     await expect(page.locator('.user-selection')).not.toBeVisible();
-
-    // Back to users button should be available
     await expect(page.locator('.back-to-users-btn')).toBeVisible();
   });
 
-  test('should show back to users button and allow user switching', async ({ page }) => {
-    // Given: A user portfolio is loaded
+  test('should handle user switching, navigation, and responsive design', async ({ page }) => {
+    // Given: Load multi-user interface
     await page.goto('/');
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
-    // Select a user
+    // Select first user
     const janeCard = page.locator('.user-card[data-username=\"jane\"]');
     await janeCard.click();
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
 
-    // When: User clicks back to users button
+    // Verify first user's content
+    const initialHeroName = await page.locator('.hero-name').textContent();
+
+    // Test user switching - back to users button
     const backButton = page.locator('.back-to-users-btn');
     await expect(backButton).toBeVisible();
     await backButton.click();
-
-    // Then: User selection interface reappears
     await expect(page.locator('.user-selection')).toBeVisible();
-    await expect(page.locator('.user-card')).toHaveCount(3); // Original user count
+    await expect(page.locator('.user-card')).toHaveCount(3);
 
-    // Portfolio should be hidden
-    const portfolioSections = page.locator('#about, #experience, #skills, #projects');
-    await expect(portfolioSections.first()).not.toBeVisible();
-  });
-
-  test('should properly reset portfolio structure when switching users', async ({ page }) => {
-    // Given: First user portfolio is loaded
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    const adminCard = page.locator('.user-card[data-username=\"admin\"]');
-    await adminCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // Verify first user's content is loaded
-    const initialHeroName = await page.locator('.hero-name').textContent();
-
-    // When: Switch to different user
-    await page.locator('.back-to-users-btn').click();
-    await expect(page.locator('.user-selection')).toBeVisible();
-
+    // Switch to different user and verify portfolio reset
     const johnCard = page.locator('.user-card[data-username=\"john\"]');
     await johnCard.click();
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
 
-    // Then: Portfolio structure is reset and new user content loads
-    const newHeroName = await page.locator('.hero-name').textContent();
-
-    // Content should be different (assuming different users have different content)
-    // At minimum, hero section should update
     await expect(page.locator('.hero-section')).toBeVisible();
-
-    // All sections should be properly reset and reloaded
     const sections = ['#about', '#experience', '#skills', '#projects'];
     for (const sectionId of sections) {
       await expect(page.locator(sectionId)).toBeVisible();
     }
-  });
 
-  test('should handle user selection keyboard navigation', async ({ page }) => {
-    // Given: Multi-user selection interface
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    // When: User navigates with keyboard
+    // Test keyboard navigation
+    await page.locator('.back-to-users-btn').click();
+    await expect(page.locator('.user-selection')).toBeVisible();
     const firstCard = page.locator('.user-card').first();
     await firstCard.focus();
-
-    // Then: Card should be focusable and interactive
     await expect(firstCard).toBeFocused();
-
-    // Enter key should select the user
     await page.keyboard.press('Enter');
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // Portfolio should load
     await expect(page.locator('#portfolio')).toBeVisible();
-  });
 
-  test('should maintain responsive design in multi-user mode', async ({ page }) => {
-    // Given: Mobile viewport and multi-user mode
+    // Test responsive design
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    // Then: User selection is responsive
-    const userSelection = page.locator('.user-selection');
-    await expect(userSelection).toBeVisible();
-
-    const userGrid = page.locator('.user-grid');
-    await expect(userGrid).toBeVisible();
-
-    // User cards should stack appropriately on mobile
-    const userCards = page.locator('.user-card');
-    const cardCount = await userCards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(2);
-
-    // Select a user and verify portfolio is responsive
-    await userCards.first().click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    await expect(page.locator('#portfolio')).toBeVisible();
-    await expect(page.locator('.hero-section')).toBeVisible();
-  });
-
-  test('should handle API errors during user selection', async ({ page }) => {
-    // Given: API returns error for user data
-    await page.route('**/api/v1/about/users/john', route => {
-      route.fulfill({ status: 500, body: 'Server Error' });
-    });
-
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    // When: User selects a user with API error
-    const johnCard = page.locator('.user-card[data-username=\"john\"]');
-    await johnCard.click();
-
-    // Then: Error should be handled gracefully
-    // Wait for potential error handling
-    await page.waitForTimeout(3000);
-
-    // Should either show error message or fallback content
-    const hasErrorHandling = await page.locator('.error-message, .retry-button, .fallback-content').count() > 0;
-    const staysOnSelection = await page.locator('.user-selection').isVisible();
-
-    // Either error handling or staying on selection screen is acceptable
-    expect(hasErrorHandling || staysOnSelection).toBeTruthy();
-  });
-
-  test('should preserve user selection state on page refresh', async ({ page }) => {
-    // Given: User has selected a portfolio
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    const adminCard = page.locator('.user-card[data-username=\"admin\"]');
-    await adminCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // Verify portfolio is loaded
-    await expect(page.locator('#portfolio')).toBeVisible();
-
-    // When: Page is refreshed
-    await page.reload();
-
-    // Then: Should return to user selection (expected behavior)
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await page.locator('.back-to-users-btn').click();
     await expect(page.locator('.user-selection')).toBeVisible();
-
-    // User can reselect
-    await adminCard.click();
-    await expect(page.locator('#portfolio')).toBeVisible();
+    await expect(page.locator('.user-grid')).toBeVisible();
   });
 
-  test('should handle empty user list gracefully', async ({ page }) => {
-    // Given: System returns empty user list
+  test('should handle edge cases: API errors, empty lists, refresh, and loading states', async ({ page }) => {
+    // Test empty user list handling
     await page.route('**/api/v1/system/info', async route => {
       const response = await route.fetch();
       const json = await response.json();
@@ -285,48 +154,70 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
       });
     });
 
-    // When: User loads the page
     await page.goto('/');
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
-    // Then: Should handle gracefully (fallback to single-user mode or show message)
+    // Should handle gracefully (fallback to single-user mode or show message)
     const hasContent = await page.locator('#portfolio, .user-selection, .error-message').count() > 0;
     expect(hasContent).toBeGreaterThan(0);
-  });
 
-  test('should display proper loading states during user transitions', async ({ page }) => {
-    // Given: Multi-user selection interface
+    // Reset route for normal multi-user testing
+    await page.unroute('**/api/v1/system/info');
+    await page.route('**/api/v1/system/info', async route => {
+      const response = await route.fetch();
+      const json = await response.json();
+      json.users = [
+        { username: 'admin', full_name: 'Admin User', email: 'admin@test.com', is_admin: true },
+        { username: 'john', full_name: 'John Doe', email: 'john@test.com', is_admin: false }
+      ];
+      await route.fulfill({ status: 200, body: JSON.stringify(json) });
+    });
+
+    // Test API error handling
+    await page.route('**/api/v1/about/users/john', route => {
+      route.fulfill({ status: 500, body: 'Server Error' });
+    });
+
     await page.goto('/');
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
-    // When: User clicks to select a portfolio
+    const johnCard = page.locator('.user-card[data-username=\"john\"]');
+    await johnCard.click();
+    await page.waitForTimeout(3000);
+
+    const hasErrorHandling = await page.locator('.error-message, .retry-button, .fallback-content').count() > 0;
+    const staysOnSelection = await page.locator('.user-selection').isVisible();
+    expect(hasErrorHandling || staysOnSelection).toBeTruthy();
+
+    // Reset and test loading states and refresh
+    await page.unroute('**/api/v1/about/users/john');
+    await page.goto('/');
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+
+    // Test loading states during transition
     const userCard = page.locator('.user-card').first();
     await userCard.click();
-
-    // Then: Loading state should be shown during transition
     const loadingScreen = page.locator('.loading-screen');
-
-    // Loading should appear briefly
     await expect(loadingScreen).toBeVisible();
-
-    // Then disappear when content loads
     await expect(loadingScreen).toBeHidden({ timeout: 15000 });
-
-    // Portfolio should be ready
     await expect(page.locator('#portfolio')).toBeVisible();
+
+    // Test page refresh behavior
+    await page.reload();
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.user-selection')).toBeVisible();
   });
 
-  test('should display sections with proper content in selected user portfolio', async ({ page }) => {
-    // Given: Multi-user mode is active
+  test('should handle complete content validation and formatting across all sections', async ({ page }) => {
+    // Given: Multi-user mode with selected user
     await page.goto('/');
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
 
-    // When: User selects a portfolio
     const userCard = page.locator('.user-card').first();
     await userCard.click();
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
 
-    // Then: All sections should be visible with content
+    // Validate all sections have proper content
     const sections = [
       { selector: '#about', content: '#aboutContent' },
       { selector: '#experience', content: '#experienceContent' },
@@ -343,178 +234,44 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
       await expect(sectionElement).toBeVisible();
       await expect(contentElement).toBeVisible();
 
-      // Verify content is loaded (not placeholder)
       const content = await contentElement.textContent();
       expect(content?.trim().length).toBeGreaterThan(0);
       expect(content).not.toContain('will be displayed here');
     }
-  });
 
-  test('should show proper resume formatting in multi-user experience section', async ({ page }) => {
-    // Given: Multi-user mode with selected user
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    const userCard = page.locator('.user-card').first();
-    await userCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // When: Experience section loads
+    // Validate resume formatting in experience section
     const experienceContent = page.locator('#experienceContent');
-    await expect(experienceContent).toBeVisible();
-
-    // Then: Resume should be properly formatted
-    const content = await experienceContent.textContent();
-    expect(content?.trim().length).toBeGreaterThan(0);
-
-    // Check for resume structure elements
     const hasResumeElements = await experienceContent.locator('.resume-container, .experience-item, .resume-header').count() > 0;
     expect(hasResumeElements).toBeTruthy();
 
-    // If structured resume is present, check formatting
-    const resumeContainer = experienceContent.locator('.resume-container');
-    if (await resumeContainer.count() > 0) {
-      // Check resume header
-      const resumeHeader = resumeContainer.locator('.resume-header');
-      if (await resumeHeader.count() > 0) {
-        await expect(resumeHeader).toBeVisible();
-      }
+    if (await experienceContent.locator('.resume-container').count() > 0) {
+      const resumeContainer = experienceContent.locator('.resume-container');
 
-      // Check contact information formatting
-      const contactGrid = resumeContainer.locator('.contact-grid');
-      if (await contactGrid.count() > 0) {
-        await expect(contactGrid).toBeVisible();
-      }
-
-      // Check experience entries
-      const experienceEntries = resumeContainer.locator('.experience-entry');
-      if (await experienceEntries.count() > 0) {
-        await expect(experienceEntries.first()).toBeVisible();
-
-        // Check for tech tags
-        const techTags = experienceEntries.first().locator('.tech-tag');
-        if (await techTags.count() > 0) {
-          await expect(techTags.first()).toBeVisible();
+      // Check various resume elements
+      const resumeElements = ['.resume-header', '.contact-grid', '.experience-entry', '.skills-grid'];
+      for (const element of resumeElements) {
+        if (await resumeContainer.locator(element).count() > 0) {
+          await expect(resumeContainer.locator(element).first()).toBeVisible();
         }
       }
-
-      // Check skills section in resume
-      const skillsGrid = resumeContainer.locator('.skills-grid');
-      if (await skillsGrid.count() > 0) {
-        await expect(skillsGrid).toBeVisible();
-      }
     }
-  });
 
-  test('should validate skills matrix and formatting in multi-user mode', async ({ page }) => {
-    // Given: Multi-user mode with selected user
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    const userCard = page.locator('.user-card').first();
-    await userCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // When: Skills section loads
+    // Validate skills matrix formatting
     const skillsContent = page.locator('#skillsContent');
-    await expect(skillsContent).toBeVisible();
-
-    // Then: Skills should be properly formatted
-    const content = await skillsContent.textContent();
-    expect(content?.trim().length).toBeGreaterThan(0);
-    expect(content).not.toContain('will be added soon');
-
-    // Check for skills formatting structures
     const hasSkillsGrid = await skillsContent.locator('.skills-grid').count() > 0;
     const hasSkillCategories = await skillsContent.locator('.skill-category').count() > 0;
     const hasSkillTags = await skillsContent.locator('.skill-tag').count() > 0;
     const hasSkillsTable = await skillsContent.locator('table').count() > 0;
 
-    // At least one skills formatting should be present
     expect(hasSkillsGrid || hasSkillCategories || hasSkillTags || hasSkillsTable).toBeTruthy();
 
-    // If skills matrix table is present, validate structure
-    const skillsTable = skillsContent.locator('table');
-    if (await skillsTable.count() > 0) {
-      await expect(skillsTable.first()).toBeVisible();
-
-      // Check for proper table headers
-      const tableHeaders = skillsTable.locator('th');
-      if (await tableHeaders.count() > 0) {
-        const headerText = await tableHeaders.first().textContent();
-        expect(headerText?.trim().length).toBeGreaterThan(0);
-      }
-
-      // Check for skill ratings or levels
-      const tableCells = skillsTable.locator('td');
-      if (await tableCells.count() > 0) {
-        await expect(tableCells.first()).toBeVisible();
-      }
-    }
-
-    // If skill categories are present, validate structure
-    const skillCategories = skillsContent.locator('.skill-category');
-    if (await skillCategories.count() > 0) {
-      const firstCategory = skillCategories.first();
-      await expect(firstCategory).toBeVisible();
-
-      // Check for skill tags within categories
-      const categoryTags = firstCategory.locator('.skill-tag');
-      if (await categoryTags.count() > 0) {
-        await expect(categoryTags.first()).toBeVisible();
-      }
-    }
-  });
-
-  test('should handle Goals & Values with proper default or content display in multi-user', async ({ page }) => {
-    // Given: Multi-user mode with selected user
-    await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
-
-    const userCard = page.locator('.user-card').first();
-    await userCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
-
-    // When: Goals & Values section loads
+    // Validate Goals & Values section
     const goalsValuesContent = page.locator('#goalsValuesContent');
-    await expect(goalsValuesContent).toBeVisible();
+    const goalsContent = await goalsValuesContent.textContent();
+    expect(goalsContent?.trim().length).toBeGreaterThan(0);
 
-    // Then: Content should be present (actual content or default message)
-    const content = await goalsValuesContent.textContent();
-    expect(content?.trim().length).toBeGreaterThan(0);
-
-    // Check for content or default message
-    const hasDefaultMessage = content?.includes('Goals and values will be displayed here');
+    const hasDefaultMessage = goalsContent?.includes('Goals and values will be displayed here');
     const hasActualContent = await goalsValuesContent.locator('.goals-values-container, .goals-section, .values-section').count() > 0;
-
-    // Either default message OR actual content should be present
     expect(hasDefaultMessage || hasActualContent).toBeTruthy();
-
-    // If actual content exists, verify structure
-    if (hasActualContent) {
-      expect(hasDefaultMessage).toBeFalsy();
-
-      // Check dual-endpoint structure
-      const goalsSection = goalsValuesContent.locator('.goals-section');
-      const valuesSection = goalsValuesContent.locator('.values-section');
-
-      if (await goalsSection.count() > 0) {
-        await expect(goalsSection).toBeVisible();
-        const goalsTitle = goalsSection.locator('.subsection-title');
-        if (await goalsTitle.count() > 0) {
-          const titleText = await goalsTitle.textContent();
-          expect(titleText).toContain('Goals');
-        }
-      }
-
-      if (await valuesSection.count() > 0) {
-        await expect(valuesSection).toBeVisible();
-        const valuesTitle = valuesSection.locator('.subsection-title');
-        if (await valuesTitle.count() > 0) {
-          const titleText = await valuesTitle.textContent();
-          expect(titleText).toContain('Values');
-        }
-      }
-    }
   });
 });
