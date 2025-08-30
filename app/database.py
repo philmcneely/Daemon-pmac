@@ -244,15 +244,53 @@ def init_db():
         - Should be called before any database operations
         - Ensures database directory exists before creating tables
     """
-    # Ensure database directory exists for SQLite databases
-    if settings.database_url.startswith("sqlite://"):
-        # Extract database path from URL
-        db_path = settings.database_url.replace("sqlite:///", "")
-        db_dir = os.path.dirname(db_path)
-        if db_dir and not os.path.exists(db_dir):
-            os.makedirs(db_dir, exist_ok=True)
+    import logging
 
-    Base.metadata.create_all(bind=engine)
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Ensure database directory exists for SQLite databases
+        if settings.database_url.startswith("sqlite://"):
+            # Extract database path from URL
+            db_path = settings.database_url.replace("sqlite:///", "")
+            db_dir = os.path.dirname(db_path)
+
+            logger.info(f"Database URL: {settings.database_url}")
+            logger.info(f"Database path: {db_path}")
+            logger.info(f"Database directory: {db_dir}")
+            logger.info(f"Current working directory: {os.getcwd()}")
+            exists_status = os.path.exists(db_dir) if db_dir else "N/A"
+            logger.info(f"Directory exists: {exists_status}")
+
+            if db_dir and not os.path.exists(db_dir):
+                logger.info(f"Creating directory: {db_dir}")
+                os.makedirs(db_dir, exist_ok=True)
+                logger.info(f"Directory created successfully")
+
+            # Check if we can write to the directory
+            if db_dir:
+                test_file = os.path.join(db_dir, ".write_test")
+                try:
+                    with open(test_file, "w") as f:
+                        f.write("test")
+                    os.remove(test_file)
+                    logger.info(f"Write test successful for directory: {db_dir}")
+                except Exception as e:
+                    logger.error(f"Write test failed for directory {db_dir}: {e}")
+                    raise
+
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        logger.error(f"Database URL: {settings.database_url}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        if settings.database_url.startswith("sqlite://"):
+            db_path = settings.database_url.replace("sqlite:///", "")
+            logger.error(f"Database path: {db_path}")
+            logger.error(f"Database directory: {os.path.dirname(db_path)}")
+        raise
 
 
 def create_default_endpoints(db: Session):
