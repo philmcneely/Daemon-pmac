@@ -4,20 +4,20 @@ services:
   daemon-api:
     build: .
     ports:
-      - "8004:8004"
+      - "${PORT:-8007}:${PORT:-8007}"
     environment:
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - DATABASE_URL=sqlite:///./data/daemon.db
       - BACKUP_DIR=./backups
       - HOST=0.0.0.0
-      - PORT=8004
+      - PORT=${PORT:-8007}
     volumes:
       - ./data:/app/data
       - ./backups:/app/backups
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8004/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:${PORT:-8007}/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

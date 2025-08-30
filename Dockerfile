@@ -27,12 +27,12 @@ RUN useradd --create-home --shell /bin/bash appuser && \
 
 USER appuser
 
-# Expose port
-EXPOSE 8004
+# Expose port (can be overridden via environment)
+EXPOSE 8007
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8004/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8007}/health || exit 1
 
 # Command to run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8004"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8007"]

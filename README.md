@@ -234,10 +234,10 @@ Configure these GitHub secrets for full CI/CD:
 
 ### Single User Mode (1 user)
 ```bash
-# Simple, clean endpoints
-curl "http://localhost:8000/api/v1/resume"
-curl "http://localhost:8000/api/v1/skills"
-curl "http://localhost:8000/api/v1/hobbies"
+# Simple, clean endpoints (default port 8007)
+curl "http://localhost:8007/api/v1/resume"
+curl "http://localhost:8007/api/v1/skills"
+curl "http://localhost:8007/api/v1/hobbies"
 ```
 
 ### Multi-User Mode (2+ users)
@@ -246,8 +246,8 @@ curl "http://localhost:8000/api/v1/hobbies"
 python -m app.cli create-user kime
 
 # User-specific endpoints with privacy levels
-curl "http://localhost:8000/api/v1/resume/users/pmac?level=ai_safe"
-curl "http://localhost:8000/api/v1/skills/users/kime?level=business_card"
+curl "http://localhost:8007/api/v1/resume/users/pmac?level=ai_safe"
+curl "http://localhost:8007/api/v1/skills/users/kime?level=business_card"
 ```
 
 ## 📚 API Examples
@@ -336,20 +336,55 @@ PUT /api/v1/privacy/settings
 GET /api/v1/privacy/preview/resume?level=business_card
 ```
 
-## 🚀 Deployment
+### 🚀 Deployment
 
 ### Local Development
 
 ```bash
 # Using virtual environment (recommended)
 source venv/bin/activate
-python dev.py
+
+# Quick development start (recommended)
+./scripts/dev-start.sh
+# API: http://localhost:8007
+# Frontend: http://localhost:8006
+
+# Legacy single server method
+python dev.py  # Runs on port 8004
 ```
 
 ### Docker Deployment
 
+**Quick Start with Docker Compose:**
 ```bash
+# Start with default settings
 docker-compose up --build
+
+# Access API at http://localhost:8004
+# Includes nginx reverse proxy on ports 80/443 (if enabled)
+```
+
+**Custom Docker Configuration:**
+```bash
+# Create custom environment
+cp .env.example .env
+# Edit .env with your settings
+
+# Single container deployment
+docker build -t daemon-pmac .
+docker run -p 8007:8007 --env-file .env daemon-pmac
+
+# Multi-container with nginx
+docker-compose --profile nginx up --build
+```
+
+**Docker Environment Variables:**
+```bash
+# In .env for docker-compose
+SECRET_KEY=your-secure-secret-key
+PORT=8007
+DATABASE_URL=sqlite:///./data/daemon.db
+BACKUP_ENABLED=true
 ```
 
 ### Remote Server (Raspberry Pi/Linux)
@@ -576,8 +611,8 @@ If your server is running in Germany and you're in the USA, here are several way
 
 #### **1. Direct API Access**
 ```bash
-# Set your server URL
-export DAEMON_URL="https://daemon.pmac.dev"
+# Set your server URL (use your actual domain/IP)
+export DAEMON_URL="https://daemon.pmac.dev"  # or http://YOUR_SERVER_IP:8007
 
 # Create users via API (requires admin token)
 curl -X POST "$DAEMON_URL/auth/register" \
@@ -791,8 +826,8 @@ This project is independently developed and is not officially affiliated with Da
 
 #### Getting Started
 ```bash
-# 1. Login to get JWT token
-curl -X POST "http://localhost:8000/auth/login" \
+# 1. Login to get JWT token (use your actual port)
+curl -X POST "http://localhost:8007/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=pmac&password=your_password"
 
@@ -811,10 +846,10 @@ curl -X POST "http://localhost:8000/auth/login" \
 ```bash
 # 2. Use token in requests
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:8000/api/v1/resume"
+  "http://localhost:8007/api/v1/resume"
 
 # 3. Update data (authenticated endpoints)
-curl -X POST "http://localhost:8000/api/v1/ideas" \
+curl -X POST "http://localhost:8007/api/v1/ideas" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "New Idea", "description": "A great concept"}'
@@ -866,7 +901,7 @@ FastAPI automatically generates interactive API documentation:
 
 ### Swagger UI (Recommended)
 ```
-http://localhost:8000/docs
+http://localhost:8007/docs
 ```
 - **Interactive**: Test endpoints directly in browser
 - **Authentication**: Built-in JWT token support
@@ -875,7 +910,7 @@ http://localhost:8000/docs
 
 ### ReDoc (Alternative)
 ```
-http://localhost:8000/redoc
+http://localhost:8007/redoc
 ```
 - **Clean design**: Focused on readability
 - **Comprehensive**: Detailed schema documentation
@@ -883,7 +918,7 @@ http://localhost:8000/redoc
 
 ### OpenAPI Schema
 ```
-http://localhost:8000/openapi.json
+http://localhost:8007/openapi.json
 ```
 - **Raw schema**: For automated tooling
 - **Client generation**: Use with OpenAPI generators
