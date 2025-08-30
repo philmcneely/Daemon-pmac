@@ -58,7 +58,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'python ../frontend_server.py',
+      command: 'python frontend_server.py',
       port: 8006,
       reuseExistingServer: !process.env.CI,
       cwd: '../..',
