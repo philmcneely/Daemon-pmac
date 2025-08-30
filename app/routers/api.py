@@ -691,6 +691,15 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
         return {
             "mode": "single_user",
             "user": single_user.username if single_user else None,
+            "user_info": (
+                {
+                    "username": single_user.username,
+                    "full_name": single_user.full_name,
+                    "email": single_user.email,
+                }
+                if single_user
+                else None
+            ),
             "endpoint_pattern": "/api/v1/{endpoint_name}",
             "example": "/api/v1/resume",
         }

@@ -16,7 +16,7 @@ class APIClient {
      * Determine the API base URL based on current location
      */
     getAPIBaseURL() {
-        // Auto-detect: if frontend is on port 8006, API is on 8007
+        // Auto-detect: if frontend is on port 8006, API is on 8000
         // If on same port (like 8004), use same origin
         const protocol = window.location.protocol;
         const hostname = window.location.hostname;
@@ -100,13 +100,23 @@ class APIClient {
         try {
             // Use system info endpoint which includes user list and mode
             const systemInfo = await this.request('/api/v1/system/info');
-            if (systemInfo && systemInfo.users) {
-                // Return user objects with username and full_name
-                return systemInfo.users.map(user => ({
-                    username: user.username,
-                    full_name: user.full_name,
-                    email: user.email
-                }));
+
+            if (systemInfo) {
+                if (systemInfo.mode === 'multi_user' && systemInfo.users) {
+                    // Multi-user mode: return user objects with username and full_name
+                    return systemInfo.users.map(user => ({
+                        username: user.username,
+                        full_name: user.full_name,
+                        email: user.email
+                    }));
+                } else if (systemInfo.mode === 'single_user' && systemInfo.user_info) {
+                    // Single-user mode: use the user_info object which has all details
+                    return [{
+                        username: systemInfo.user_info.username,
+                        full_name: systemInfo.user_info.full_name,
+                        email: systemInfo.user_info.email
+                    }];
+                }
             }
             return [];
         } catch (error) {

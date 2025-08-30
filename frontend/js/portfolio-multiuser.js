@@ -195,7 +195,9 @@ class MultiUserPortfolio {
         console.log('Loading single user content...');
 
         // In single-user mode, load content without username
+        console.log('DEBUG: About to call loadPortfolioContent with username=null');
         await this.loadPortfolioContent();
+        console.log('DEBUG: loadPortfolioContent completed');
 
         // Hide loading and show portfolio
         this.hideLoadingScreen();
@@ -206,14 +208,18 @@ class MultiUserPortfolio {
      * Load portfolio content (works for both single and multi-user)
      */
     async loadPortfolioContent(username = null) {
-        console.log(`Loading portfolio content${username ? ` for user: ${username}` : ''}...`);
+        console.log(`Loading portfolio content${username ? ` for user: ${username}` : ' in single-user mode'}...`);
 
         try {
+            console.log('DEBUG: About to load hero section');
             // Load basic user info for hero section
             await this.loadHeroSection(username);
+            console.log('DEBUG: Hero section loaded');
 
+            console.log('DEBUG: About to load all endpoints');
             // Load all endpoint data
             await this.loadAllEndpoints(username);
+            console.log('DEBUG: All endpoints loaded');
 
         } catch (error) {
             console.error('Failed to load portfolio content:', error);
@@ -330,8 +336,18 @@ class MultiUserPortfolio {
 
             // Get the data
             console.log(`Calling API for endpoint: ${endpoint.name}, user: ${username}`);
-            const data = await this.api.getEndpointData(endpoint.name, username);
-            console.log(`Data received for ${sectionName}:`, data);
+            const response = await this.api.getEndpointData(endpoint.name, username);
+            console.log(`Response received for ${sectionName}:`, response);
+
+            // Extract items from response (API returns {items: [...]} format)
+            const rawData = response?.items || response;
+            console.log(`Data extracted for ${sectionName}:`, rawData);
+
+            // For single-user mode, extract the nested data property if it exists
+            const data = Array.isArray(rawData) ? rawData.map(item => item.data || item) : rawData;
+            console.log(`DEBUG: response.items exists: ${!!response?.items}`);
+            console.log(`DEBUG: data is array: ${Array.isArray(data)}`);
+            console.log(`DEBUG: data length: ${data?.length}`);
 
             if (data && Array.isArray(data) && data.length > 0) {
                 console.log(`Formatting ${data.length} items for ${sectionName}`);
@@ -882,7 +898,11 @@ class MultiUserPortfolio {
                 promises.push(Promise.resolve([]));
             }
 
-            const [goalsData, valuesData] = await Promise.all(promises);
+            const [goalsResponse, valuesResponse] = await Promise.all(promises);
+
+            // Extract items from responses
+            const goalsData = goalsResponse?.items || goalsResponse || [];
+            const valuesData = valuesResponse?.items || valuesResponse || [];
 
             console.log('Goals data:', goalsData);
             console.log('Values data:', valuesData);
@@ -932,7 +952,11 @@ class MultiUserPortfolio {
                 promises.push(Promise.resolve([]));
             }
 
-            const [ideasData, quotesData] = await Promise.all(promises);
+            const [ideasResponse, quotesResponse] = await Promise.all(promises);
+
+            // Extract items from responses
+            const ideasData = ideasResponse?.items || ideasResponse || [];
+            const quotesData = quotesResponse?.items || quotesResponse || [];
 
             console.log('Ideas data:', ideasData);
             console.log('Quotes data:', quotesData);

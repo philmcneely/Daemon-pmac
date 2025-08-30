@@ -1,0 +1,135 @@
+INFO:     Will watch for changes in these directories: ['/Users/philmcneely/git/Daemon-pmac']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [47432] using StatReload
+INFO:     Started server process [47513]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_073056.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_073056.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+INFO:app.main:GET /api/v1/system/info - 200 - 0.010s
+INFO:     127.0.0.1:55168 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET / - 200 - 0.001s
+INFO:     127.0.0.1:55298 - "GET /?id=0a85710f-6c30-4c5e-9f10-1d293ce028f8&vscodeBrowserReqId=1756557083363 HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/goals - 200 - 0.009s
+INFO:     127.0.0.1:55368 - "GET /api/v1/goals HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/about - 200 - 0.004s
+INFO:     127.0.0.1:55409 - "GET /api/v1/about HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/system/info - 200 - 0.004s
+INFO:     127.0.0.1:55479 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/goals - 200 - 0.004s
+INFO:     127.0.0.1:55480 - "GET /api/v1/goals HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/about - 200 - 0.004s
+INFO:     127.0.0.1:55481 - "GET /api/v1/about HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/about - 200 - 0.004s
+INFO:     127.0.0.1:55764 - "GET /api/v1/about HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [47513]
+INFO:     Started server process [49954]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_073318.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_073318.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+INFO:app.main:GET /api/v1/system/info - 200 - 0.011s
+INFO:     127.0.0.1:57486 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET / - 200 - 0.001s
+INFO:     127.0.0.1:57556 - "GET /?id=0bab7e86-3061-4f88-9a0f-826bb20c7ec8&vscodeBrowserReqId=1756557551146 HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/system/info - 200 - 0.006s
+INFO:     127.0.0.1:57601 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET /docs - 200 - 0.000s
+INFO:     127.0.0.1:57702 - "GET /docs HTTP/1.1" 200 OK
+INFO:app.main:GET /openapi.json - 200 - 0.047s
+INFO:     127.0.0.1:57702 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:app.main:GET / - 200 - 0.001s
+INFO:     127.0.0.1:57704 - "GET / HTTP/1.1" 200 OK
+INFO:app.main:GET /favicon.ico - 404 - 0.000s
+INFO:     127.0.0.1:57704 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:app.main:OPTIONS /api/v1/system/info - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/system/info - 200 - 0.005s
+INFO:     127.0.0.1:58239 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/system/info - 200 - 0.004s
+INFO:     127.0.0.1:58239 - "GET /api/v1/system/info HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/about - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/about HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/about - 200 - 0.007s
+INFO:     127.0.0.1:58239 - "GET /api/v1/about HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/personal_story - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/personal_story HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/personal_story - 200 - 0.004s
+INFO:     127.0.0.1:58239 - "GET /api/v1/personal_story HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/skills - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/skills HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/skills - 200 - 0.005s
+INFO:     127.0.0.1:58239 - "GET /api/v1/skills HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/resume - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/resume?level=public_full HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/resume - 200 - 0.018s
+INFO:     127.0.0.1:58239 - "GET /api/v1/resume?level=public_full HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/projects - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/projects HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/projects - 200 - 0.004s
+INFO:     127.0.0.1:58239 - "GET /api/v1/projects HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/achievements - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/achievements HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/achievements - 200 - 0.004s
+INFO:     127.0.0.1:58239 - "GET /api/v1/achievements HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/goals - 200 - 0.000s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/goals HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/values - 200 - 0.000s
+INFO:     127.0.0.1:58241 - "OPTIONS /api/v1/values HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/goals - 200 - 0.008s
+INFO:     127.0.0.1:58239 - "GET /api/v1/goals HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/values - 200 - 0.008s
+INFO:     127.0.0.1:58241 - "GET /api/v1/values HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/hobbies - 200 - 0.000s
+INFO:     127.0.0.1:58241 - "OPTIONS /api/v1/hobbies HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/hobbies - 200 - 0.004s
+INFO:     127.0.0.1:58241 - "GET /api/v1/hobbies HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/ideas - 200 - 0.000s
+INFO:     127.0.0.1:58241 - "OPTIONS /api/v1/ideas HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/quotes - 200 - 0.001s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/quotes HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/ideas - 200 - 0.008s
+INFO:     127.0.0.1:58239 - "GET /api/v1/ideas HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/quotes - 200 - 0.009s
+INFO:     127.0.0.1:58241 - "GET /api/v1/quotes HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/learning - 200 - 0.001s
+INFO:     127.0.0.1:58241 - "OPTIONS /api/v1/learning HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/recommendations - 200 - 0.001s
+INFO:     127.0.0.1:58239 - "OPTIONS /api/v1/recommendations HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/favorite_books - 200 - 0.000s
+INFO:     127.0.0.1:58243 - "OPTIONS /api/v1/favorite_books HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/learning - 200 - 0.009s
+INFO:     127.0.0.1:58241 - "GET /api/v1/learning HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/recommendations - 200 - 0.011s
+INFO:     127.0.0.1:58239 - "GET /api/v1/recommendations HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/favorite_books - 200 - 0.011s
+INFO:     127.0.0.1:58243 - "GET /api/v1/favorite_books HTTP/1.1" 200 OK
+INFO:app.main:OPTIONS /api/v1/contact - 200 - 0.000s
+INFO:     127.0.0.1:58243 - "OPTIONS /api/v1/contact HTTP/1.1" 200 OK
+INFO:app.main:GET /api/v1/contact - 200 - 0.004s
+INFO:     127.0.0.1:58243 - "GET /api/v1/contact HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [49954]
+INFO:     Started server process [78158]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_081517.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_081517.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
