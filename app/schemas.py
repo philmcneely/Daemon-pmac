@@ -39,6 +39,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
+    full_name: Optional[str] = Field(None, max_length=100, description="Display name")
     email: str = Field(..., pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
 

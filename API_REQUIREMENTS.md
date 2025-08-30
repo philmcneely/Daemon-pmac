@@ -35,6 +35,45 @@ Before each commit/push:
 4. Example files must be complete and functional
 5. Documentation must be updated and accurate
 
+### User Model Enhancement Requirements
+
+#### User Full Name Display Enhancement
+**Requirement**: Add `full_name` field to User model to support proper display names instead of technical usernames.
+
+**Context**: Portfolio interface currently shows technical usernames like "jane" instead of proper names like "Jane Chen". Frontend is already prepared to use `user.full_name || user.username` pattern.
+
+**Implementation Requirements**:
+1. **Database Schema**: Add `full_name` column to `users` table
+   - Type: VARCHAR(100)
+   - Nullable: True (optional field)
+   - Default: NULL
+2. **User Model Updates**:
+   - Add `full_name: Optional[str]` field to SQLAlchemy User model
+   - Update model validation to handle optional full names
+3. **Schema Updates**:
+   - Add `full_name` field to `UserBase` schema (optional)
+   - Ensure `UserResponse` includes `full_name` field
+   - Update `UserCreate` schema to accept `full_name` during registration
+4. **API Endpoint Updates**:
+   - User registration endpoint should accept `full_name`
+   - User list endpoints should return `full_name` in responses
+   - User update endpoints should allow `full_name` modification
+5. **Testing Requirements**:
+   - Unit tests for User model with full_name field
+   - API tests for user creation/update with full_name
+   - E2E tests for portfolio display with full names
+6. **Migration Requirements**:
+   - Database migration script to add full_name column
+   - Backward compatibility for existing users (NULL full_name values)
+7. **Documentation Updates**:
+   - OpenAPI schema updates for user-related endpoints
+   - Example user data with full_name field
+
+**Expected Behavior**:
+- Portfolio displays "Jane Chen" instead of "jane"
+- User cards show proper names while maintaining username for authentication
+- Backward compatibility maintained for users without full names
+
 ---
 
 ### Original Specification

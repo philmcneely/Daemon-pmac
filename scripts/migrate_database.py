@@ -225,6 +225,24 @@ def init_basic_tables():
             print("✓ Users table already exists")
 
 
+def add_full_name_column():
+    """Add full_name column to users table if it doesn't exist"""
+    with engine.connect() as conn:
+        # Check if column exists
+        inspector = inspect(engine)
+        columns = inspector.get_columns("users")
+        column_names = [col["name"] for col in columns]
+
+        if "full_name" in column_names:
+            print("✓ Users.full_name column already exists")
+            return
+
+        print("Adding full_name column to users table...")
+        conn.execute(text("ALTER TABLE users ADD COLUMN full_name VARCHAR(100)"))
+        conn.commit()
+        print("✓ Users.full_name column added")
+
+
 def main():
     """Run all migrations"""
     print("🚀 Running database migrations for multi-user features...")
@@ -235,6 +253,9 @@ def main():
         print("Initializing base database...")
         init_basic_tables()
         print("✓ Base database initialized")
+
+        # Add full_name column to users table
+        add_full_name_column()
 
         # Create new tables
         create_user_privacy_settings_table()

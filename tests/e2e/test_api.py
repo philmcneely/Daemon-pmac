@@ -534,8 +534,9 @@ def test_system_mode_detection(client, admin_user, regular_user):
     data = response.json()
     assert data["mode"] == "multi_user"
     assert len(data["users"]) >= 2  # At least admin and regular user
-    assert "admin" in data["users"]
-    assert "user" in data["users"]
+    usernames = [user["username"] for user in data["users"]]
+    assert "admin" in usernames
+    assert "user" in usernames
     assert data["endpoint_pattern"] == "/api/v1/{endpoint_name}/users/{username}"
 
 

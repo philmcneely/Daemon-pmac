@@ -101,10 +101,11 @@ class APIClient {
             // Use system info endpoint which includes user list and mode
             const systemInfo = await this.request('/api/v1/system/info');
             if (systemInfo && systemInfo.users) {
-                // Convert username array to user objects for compatibility
-                return systemInfo.users.map(username => ({
-                    username: username,
-                    display_name: username.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                // Return user objects with username and full_name
+                return systemInfo.users.map(user => ({
+                    username: user.username,
+                    full_name: user.full_name,
+                    email: user.email
                 }));
             }
             return [];

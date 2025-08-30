@@ -698,7 +698,14 @@ def get_adaptive_endpoint_info(db: Session) -> Dict[str, Any]:
         users = db.query(User).filter(User.is_active == True).all()
         return {
             "mode": "multi_user",
-            "users": [user.username for user in users],
+            "users": [
+                {
+                    "username": user.username,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                }
+                for user in users
+            ],
             "endpoint_pattern": "/api/v1/{endpoint_name}/users/{username}",
             "example": "/api/v1/resume/users/john",
             "privacy_levels": [
