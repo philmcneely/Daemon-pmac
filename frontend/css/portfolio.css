@@ -258,11 +258,12 @@ a:hover {
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 1.2rem;
 }
 
 .nav-link {
     font-weight: 500;
+    font-size: 0.9rem;
     color: var(--text-secondary);
     transition: var(--transition);
     position: relative;

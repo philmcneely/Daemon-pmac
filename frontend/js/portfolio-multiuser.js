@@ -1163,10 +1163,6 @@ class MultiUserPortfolio {
                 <div class="hero-content">
                     <h1 id="heroName">Loading...</h1>
                     <p id="heroTitle">Loading...</p>
-                    <div class="hero-cta">
-                        <a href="#contact" class="btn-primary">Get In Touch</a>
-                        <a href="#projects" class="btn-secondary">View Work</a>
-                    </div>
                 </div>
             </section>
 
