@@ -104,7 +104,7 @@ class MultiUserPortfolio {
                     <p>Choose a user to view their personal portfolio:</p>
                     <div class="user-grid">
                         ${this.users.map(user => `
-                            <div class="user-card" data-username="${user.username}">
+                            <div class="user-card" data-username="${user.username}" tabindex="0">
                                 <div class="user-avatar">
                                     <i class="fas fa-user"></i>
                                 </div>
@@ -132,6 +132,15 @@ class MultiUserPortfolio {
             card.addEventListener('click', () => {
                 const username = card.dataset.username;
                 this.selectUser(username);
+            });
+
+            // Add keyboard support
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const username = card.dataset.username;
+                    this.selectUser(username);
+                }
             });
         });
 

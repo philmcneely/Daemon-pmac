@@ -71,7 +71,7 @@ test.describe('Frontend Performance & Optimization', () => {
     expect(sectionsLoadTime).toBeLessThan(5000);
 
     // Test responsive interactions
-    const interactiveElement = page.locator('.nav-link, .user-card, .hero-section').first();
+    const interactiveElement = page.locator('.nav-link, .user-card, .hero').first();
     await expect(interactiveElement).toBeVisible();
     await interactiveElement.click();
     await expect(page.locator('#portfolio, .user-selection')).toBeVisible();
@@ -102,7 +102,7 @@ test.describe('Frontend Performance & Optimization', () => {
         if (cardCount > 1) {
           await userCards.nth(i % cardCount).click();
           await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
-          const backButton = page.locator('.back-to-users-btn');
+          const backButton = page.locator('.back-button');
           if (await backButton.isVisible()) {
             await backButton.click();
             await expect(page.locator('.user-selection')).toBeVisible();

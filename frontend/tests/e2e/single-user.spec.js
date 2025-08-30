@@ -34,9 +34,9 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Verify portfolio homepage loads and hero section shows user details
-    await expect(page.locator('.hero-section')).toBeVisible();
+    await expect(page.locator('.hero')).toBeVisible();
 
-    const heroName = page.locator('.hero-name');
+    const heroName = page.locator('#heroName');
     const heroTitle = page.locator('.hero-title');
 
     await expect(heroName).toBeVisible();
@@ -173,7 +173,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
     // Test mobile responsive design
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page.locator('#portfolio')).toBeVisible();
-    await expect(page.locator('.hero-section')).toBeVisible();
+    await expect(page.locator('.hero')).toBeVisible();
 
     // Test deep links to specific sections
     await page.goto('/#about');
@@ -208,7 +208,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
 
     // Should handle errors gracefully
     const hasErrorHandling = await page.locator('.error-message, .retry-button, .fallback-content').count() > 0;
-    const hasBasicContent = await page.locator('.hero-section').isVisible();
+    const hasBasicContent = await page.locator('.hero').isVisible();
 
     // Either error handling or basic content should be present
     expect(hasErrorHandling || hasBasicContent).toBeTruthy();

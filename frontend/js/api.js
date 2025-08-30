@@ -107,7 +107,8 @@ class APIClient {
                     return systemInfo.users.map(user => ({
                         username: user.username,
                         full_name: user.full_name,
-                        email: user.email
+                        email: user.email,
+                        is_admin: user.is_admin
                     }));
                 } else if (systemInfo.mode === 'single_user' && systemInfo.user_info) {
                     // Single-user mode: use the user_info object which has all details

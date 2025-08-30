@@ -91,9 +91,9 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
 
     // Then: Portfolio is displayed for selected user
     await expect(page.locator('#portfolio')).toBeVisible();
-    await expect(page.locator('.hero-section')).toBeVisible();
+    await expect(page.locator('.hero')).toBeVisible();
     await expect(page.locator('.user-selection')).not.toBeVisible();
-    await expect(page.locator('.back-to-users-btn')).toBeVisible();
+    await expect(page.locator('.back-button')).toBeVisible();
   });
 
   test('should handle user switching, navigation, and responsive design', async ({ page }) => {
@@ -107,10 +107,10 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Verify first user's content
-    const initialHeroName = await page.locator('.hero-name').textContent();
+    const initialHeroName = await page.locator('#heroName').textContent();
 
     // Test user switching - back to users button
-    const backButton = page.locator('.back-to-users-btn');
+    const backButton = page.locator('.back-button');
     await expect(backButton).toBeVisible();
     await backButton.click();
     await expect(page.locator('.user-selection')).toBeVisible();
@@ -121,14 +121,14 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     await johnCard.click();
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
-    await expect(page.locator('.hero-section')).toBeVisible();
+    await expect(page.locator('.hero')).toBeVisible();
     const sections = ['#about', '#experience', '#skills', '#projects'];
     for (const sectionId of sections) {
       await expect(page.locator(sectionId)).toBeVisible();
     }
 
     // Test keyboard navigation
-    await page.locator('.back-to-users-btn').click();
+    await page.locator('.back-button').click();
     await expect(page.locator('.user-selection')).toBeVisible();
     const firstCard = page.locator('.user-card').first();
     await firstCard.focus();
@@ -139,7 +139,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
 
     // Test responsive design
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.locator('.back-to-users-btn').click();
+    await page.locator('.back-button').click();
     await expect(page.locator('.user-selection')).toBeVisible();
     await expect(page.locator('.user-grid')).toBeVisible();
   });
@@ -161,7 +161,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Should handle gracefully (fallback to single-user mode or show message)
-    const hasContent = await page.locator('#portfolio, .user-selection, .error-message').count() > 0;
+    const hasContent = await page.locator('#portfolio, .user-selection, .error-message').count();
     expect(hasContent).toBeGreaterThan(0);
 
     // Reset route for normal multi-user testing
