@@ -142,27 +142,90 @@ chmod 600 .env*
 # Add to .gitignore (already included)
 ```
 
-## 🐳 Docker Alternative (Optional)
+## 🐳 Docker Deployment Options
 
-For containerized deployment:
+Docker provides flexible deployment options - you can deploy just what you need:
+
+### Option 1: API Only (Headless)
+Perfect for API integrations, mobile apps, or when you have a custom frontend:
+```bash
+# Just the API
+docker-compose up daemon-api
+
+# Or with nginx reverse proxy
+docker-compose --profile nginx up daemon-api nginx
+```
+- **API**: http://localhost:8004/ (or https via nginx)
+- **Use cases**: Mobile apps, API integrations, custom frontends
+
+### Option 2: Frontend Only
+Deploy just the frontend if you have an external API:
+```bash
+# Frontend only (requires DAEMON_API_URL set to external API)
+docker-compose --profile frontend up daemon-frontend
+```
+- **Frontend**: http://localhost:8005/
+- **Use cases**: Frontend development, separate API hosting
+
+### Option 3: Full Stack (API + Frontend)
+Complete deployment with both components:
+```bash
+# Both API and frontend
+docker-compose --profile frontend up daemon-api daemon-frontend
+
+# With nginx reverse proxy
+docker-compose --profile frontend --profile nginx up
+```
+- **Frontend**: http://localhost:8005/
+- **API**: http://localhost:8004/
+- **Nginx**: http://localhost/ (with path routing)
+
+### Option 4: Production with Nginx
+Full production setup with reverse proxy:
 ```yaml
-# docker-compose.yml
+# docker-compose.prod.yml
 version: '3.8'
 services:
   daemon-api:
     build: .
     environment:
-      - PORT=8007
-    ports:
-      - "8007:8007"
+      - PORT=8004
+    expose:
+      - "8004"
+    # No direct port exposure - only through nginx
 
   daemon-frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     environment:
-      - FRONTEND_PORT=8006
-      - DAEMON_API_URL=http://daemon-api:8007
+      - FRONTEND_PORT=8005
+      - DAEMON_API_URL=http://daemon-api:8004
+    expose:
+      - "8005"
+    # No direct port exposure - only through nginx
+
+  nginx:
+    image: nginx:alpine
     ports:
-      - "8006:8006"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-multiapp.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - daemon-api
+      - daemon-frontend
+```
+
+### Environment Configuration
+```bash
+# .env file for Docker deployment
+PORT=8004                    # API port
+FRONTEND_PORT=8005          # Frontend port
+DAEMON_API_URL=             # Auto-detected if not set
+SECRET_KEY=your-secret-key
+EXTERNAL_DOMAIN=yourdomain.com
 ```
 
 ## 🔄 Legacy Single-Server Mode

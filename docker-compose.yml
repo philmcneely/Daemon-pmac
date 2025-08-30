@@ -23,6 +23,22 @@ services:
       retries: 5
       start_period: 30s
 
+  # Optional: Frontend server
+  daemon-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-8005}:${FRONTEND_PORT:-8005}"
+    environment:
+      - FRONTEND_PORT=${FRONTEND_PORT:-8005}
+      - DAEMON_API_URL=http://daemon-api:${PORT:-8004}
+    depends_on:
+      - daemon-api
+    restart: unless-stopped
+    profiles:
+      - frontend
+
   # Optional: Nginx reverse proxy
   nginx:
     image: nginx:alpine

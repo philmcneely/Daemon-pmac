@@ -355,28 +355,53 @@ python dev.py  # Runs on port 8004
 
 ### Docker Deployment
 
-**Quick Start with Docker Compose:**
+Docker provides **flexible deployment options** - deploy only what you need:
+
+#### API Only (Headless Deployment)
+Perfect for API integrations, mobile apps, or custom frontends:
 ```bash
-# Start with default settings
-docker-compose up --build
+# Just the API server
+docker-compose up daemon-api
 
 # Access API at http://localhost:8004
-# Includes nginx reverse proxy on ports 80/443 (if enabled)
+# Use cases: Mobile apps, API integrations, external frontends
 ```
 
-**Custom Docker Configuration:**
+#### Full Stack Deployment
+Complete setup with both API and frontend:
+```bash
+# API + Frontend
+docker-compose --profile frontend up
+
+# Access Frontend at http://localhost:8005
+# Access API at http://localhost:8004
+```
+
+#### Production with Nginx
+Full production setup with reverse proxy:
+```bash
+# Complete production stack
+docker-compose --profile frontend --profile nginx up
+
+# Access via nginx at http://localhost (port 80)
+# SSL support on port 443 (configure SSL certificates)
+```
+
+#### Custom Configuration
 ```bash
 # Create custom environment
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your settings (ports, domains, etc.)
 
-# Single container deployment
-docker build -t daemon-pmac .
-docker run -p 8004:8004 --env-file .env daemon-pmac
-
-# Multi-container with nginx
-docker-compose --profile nginx up --build
+# Deploy with custom settings
+docker-compose --env-file .env up
 ```
+
+**Use Cases:**
+- **API Only**: Perfect for developers who want to build their own frontend
+- **Frontend Only**: Great for frontend development against external APIs
+- **Full Stack**: Complete solution for traditional web applications
+- **Production**: Enterprise-ready with nginx, SSL, and proper security
 
 **Docker Environment Variables:**
 ```bash
