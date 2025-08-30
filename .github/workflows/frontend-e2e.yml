@@ -34,7 +34,7 @@ jobs:
 
     - name: Set up database
       run: |
-        python -c "from app.database import init_db; init_db()"
+        python -c "from dev import setup_dev_environment; setup_dev_environment()"
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
