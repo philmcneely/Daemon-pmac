@@ -315,4 +315,206 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     // Portfolio should be ready
     await expect(page.locator('#portfolio')).toBeVisible();
   });
+
+  test('should display sections with proper content in selected user portfolio', async ({ page }) => {
+    // Given: Multi-user mode is active
+    await page.goto('/');
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+
+    // When: User selects a portfolio
+    const userCard = page.locator('.user-card').first();
+    await userCard.click();
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+
+    // Then: All sections should be visible with content
+    const sections = [
+      { selector: '#about', content: '#aboutContent' },
+      { selector: '#experience', content: '#experienceContent' },
+      { selector: '#skills', content: '#skillsContent' },
+      { selector: '#personal-story', content: '#personalStoryContent' },
+      { selector: '#projects', content: '#projectsContent' },
+      { selector: '#contact', content: '#contactContent' }
+    ];
+
+    for (const section of sections) {
+      const sectionElement = page.locator(section.selector);
+      const contentElement = page.locator(section.content);
+
+      await expect(sectionElement).toBeVisible();
+      await expect(contentElement).toBeVisible();
+
+      // Verify content is loaded (not placeholder)
+      const content = await contentElement.textContent();
+      expect(content?.trim().length).toBeGreaterThan(0);
+      expect(content).not.toContain('will be displayed here');
+    }
+  });
+
+  test('should show proper resume formatting in multi-user experience section', async ({ page }) => {
+    // Given: Multi-user mode with selected user
+    await page.goto('/');
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+
+    const userCard = page.locator('.user-card').first();
+    await userCard.click();
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+
+    // When: Experience section loads
+    const experienceContent = page.locator('#experienceContent');
+    await expect(experienceContent).toBeVisible();
+
+    // Then: Resume should be properly formatted
+    const content = await experienceContent.textContent();
+    expect(content?.trim().length).toBeGreaterThan(0);
+
+    // Check for resume structure elements
+    const hasResumeElements = await experienceContent.locator('.resume-container, .experience-item, .resume-header').count() > 0;
+    expect(hasResumeElements).toBeTruthy();
+
+    // If structured resume is present, check formatting
+    const resumeContainer = experienceContent.locator('.resume-container');
+    if (await resumeContainer.count() > 0) {
+      // Check resume header
+      const resumeHeader = resumeContainer.locator('.resume-header');
+      if (await resumeHeader.count() > 0) {
+        await expect(resumeHeader).toBeVisible();
+      }
+
+      // Check contact information formatting
+      const contactGrid = resumeContainer.locator('.contact-grid');
+      if (await contactGrid.count() > 0) {
+        await expect(contactGrid).toBeVisible();
+      }
+
+      // Check experience entries
+      const experienceEntries = resumeContainer.locator('.experience-entry');
+      if (await experienceEntries.count() > 0) {
+        await expect(experienceEntries.first()).toBeVisible();
+
+        // Check for tech tags
+        const techTags = experienceEntries.first().locator('.tech-tag');
+        if (await techTags.count() > 0) {
+          await expect(techTags.first()).toBeVisible();
+        }
+      }
+
+      // Check skills section in resume
+      const skillsGrid = resumeContainer.locator('.skills-grid');
+      if (await skillsGrid.count() > 0) {
+        await expect(skillsGrid).toBeVisible();
+      }
+    }
+  });
+
+  test('should validate skills matrix and formatting in multi-user mode', async ({ page }) => {
+    // Given: Multi-user mode with selected user
+    await page.goto('/');
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+
+    const userCard = page.locator('.user-card').first();
+    await userCard.click();
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+
+    // When: Skills section loads
+    const skillsContent = page.locator('#skillsContent');
+    await expect(skillsContent).toBeVisible();
+
+    // Then: Skills should be properly formatted
+    const content = await skillsContent.textContent();
+    expect(content?.trim().length).toBeGreaterThan(0);
+    expect(content).not.toContain('will be added soon');
+
+    // Check for skills formatting structures
+    const hasSkillsGrid = await skillsContent.locator('.skills-grid').count() > 0;
+    const hasSkillCategories = await skillsContent.locator('.skill-category').count() > 0;
+    const hasSkillTags = await skillsContent.locator('.skill-tag').count() > 0;
+    const hasSkillsTable = await skillsContent.locator('table').count() > 0;
+
+    // At least one skills formatting should be present
+    expect(hasSkillsGrid || hasSkillCategories || hasSkillTags || hasSkillsTable).toBeTruthy();
+
+    // If skills matrix table is present, validate structure
+    const skillsTable = skillsContent.locator('table');
+    if (await skillsTable.count() > 0) {
+      await expect(skillsTable.first()).toBeVisible();
+
+      // Check for proper table headers
+      const tableHeaders = skillsTable.locator('th');
+      if (await tableHeaders.count() > 0) {
+        const headerText = await tableHeaders.first().textContent();
+        expect(headerText?.trim().length).toBeGreaterThan(0);
+      }
+
+      // Check for skill ratings or levels
+      const tableCells = skillsTable.locator('td');
+      if (await tableCells.count() > 0) {
+        await expect(tableCells.first()).toBeVisible();
+      }
+    }
+
+    // If skill categories are present, validate structure
+    const skillCategories = skillsContent.locator('.skill-category');
+    if (await skillCategories.count() > 0) {
+      const firstCategory = skillCategories.first();
+      await expect(firstCategory).toBeVisible();
+
+      // Check for skill tags within categories
+      const categoryTags = firstCategory.locator('.skill-tag');
+      if (await categoryTags.count() > 0) {
+        await expect(categoryTags.first()).toBeVisible();
+      }
+    }
+  });
+
+  test('should handle Goals & Values with proper default or content display in multi-user', async ({ page }) => {
+    // Given: Multi-user mode with selected user
+    await page.goto('/');
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+
+    const userCard = page.locator('.user-card').first();
+    await userCard.click();
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+
+    // When: Goals & Values section loads
+    const goalsValuesContent = page.locator('#goalsValuesContent');
+    await expect(goalsValuesContent).toBeVisible();
+
+    // Then: Content should be present (actual content or default message)
+    const content = await goalsValuesContent.textContent();
+    expect(content?.trim().length).toBeGreaterThan(0);
+
+    // Check for content or default message
+    const hasDefaultMessage = content?.includes('Goals and values will be displayed here');
+    const hasActualContent = await goalsValuesContent.locator('.goals-values-container, .goals-section, .values-section').count() > 0;
+
+    // Either default message OR actual content should be present
+    expect(hasDefaultMessage || hasActualContent).toBeTruthy();
+
+    // If actual content exists, verify structure
+    if (hasActualContent) {
+      expect(hasDefaultMessage).toBeFalsy();
+
+      // Check dual-endpoint structure
+      const goalsSection = goalsValuesContent.locator('.goals-section');
+      const valuesSection = goalsValuesContent.locator('.values-section');
+
+      if (await goalsSection.count() > 0) {
+        await expect(goalsSection).toBeVisible();
+        const goalsTitle = goalsSection.locator('.subsection-title');
+        if (await goalsTitle.count() > 0) {
+          const titleText = await goalsTitle.textContent();
+          expect(titleText).toContain('Goals');
+        }
+      }
+
+      if (await valuesSection.count() > 0) {
+        await expect(valuesSection).toBeVisible();
+        const valuesTitle = valuesSection.locator('.subsection-title');
+        if (await valuesTitle.count() > 0) {
+          const titleText = await valuesTitle.textContent();
+          expect(titleText).toContain('Values');
+        }
+      }
+    }
+  });
 });

@@ -1329,9 +1329,213 @@ This document provides comprehensive Given-When-Then specifications for all 234 
 
 ---
 
+## Section 12: Frontend E2E Tests (frontend/tests/e2e/)
+
+### Single User Mode Frontend Tests
+
+**Test Case 235: Single User Mode Portfolio Homepage Load**
+- **Given:** System is in single-user mode
+- **When:** User navigates to homepage
+- **Then:** Page loads with portfolio structure AND displays hero section AND shows proper title
+
+**Test Case 236: Hero Section with User Information**
+- **Given:** Single-user portfolio is loaded
+- **When:** Hero section loads
+- **Then:** Hero name is visible AND hero title is visible AND content is populated (not default values)
+
+**Test Case 237: About Section Content Validation**
+- **Given:** Single-user portfolio is loaded
+- **When:** About section loads
+- **Then:** Section is visible with content AND content is not default placeholder AND has formatted content structure (paragraphs, headings, lists)
+
+**Test Case 238: Experience/Resume Section with Proper Formatting**
+- **Given:** Single-user portfolio is loaded
+- **When:** Experience section loads
+- **Then:** Section is visible with content AND content is not placeholder AND resume elements are present (resume-container, experience-item, resume-header) AND proper resume formatting is displayed (name, title, experience entries, skills grid if present)
+
+**Test Case 239: Skills Section with Matrix Formatting**
+- **Given:** Single-user portfolio is loaded
+- **When:** Skills section loads
+- **Then:** Section is visible with content AND content is not placeholder AND skills formatting structures are present (skills-grid, skill-categories, skill-tags, or tables) AND skills matrix tables have proper headers and data if present
+
+**Test Case 240: Projects Section with Content Structure**
+- **Given:** Single-user portfolio is loaded
+- **When:** Projects section loads
+- **Then:** Section is visible with content AND content is not placeholder AND project formatting structures are present AND project items show titles, technology tags, and content
+
+**Test Case 241: Personal Story Section Content**
+- **Given:** Single-user portfolio is loaded
+- **When:** Personal Story section loads
+- **Then:** Section is visible with content AND content is not placeholder AND story formatting is present (story-container, story-items, paragraphs) AND narrative elements are properly displayed
+
+**Test Case 242: Contact Section Information**
+- **Given:** Single-user portfolio is loaded
+- **When:** Contact section loads
+- **Then:** Section is visible with content AND contact structures are present (contact-methods, contact-method, formatted content) AND email links work properly if present AND external links are functional
+
+**Test Case 243: Goals & Values with Default or Content Display**
+- **Given:** Single-user portfolio is loaded
+- **When:** Goals & Values section loads
+- **Then:** Section is visible AND either default message OR actual content is present AND if content exists, proper dual-endpoint structure is shown (goals-section, values-section with subsection titles) AND default message is not shown when content exists
+
+**Test Case 244: Navigation Between Sections**
+- **Given:** Single-user portfolio is loaded
+- **When:** User clicks navigation links
+- **Then:** Navigation links are visible AND clicking navigates to correct sections AND sections come into viewport properly
+
+**Test Case 245: API Error Handling**
+- **Given:** API server is potentially unavailable
+- **When:** User loads portfolio with mocked API failures
+- **Then:** Error handling is displayed OR graceful degradation occurs AND either error state OR content is shown
+
+**Test Case 246: Mobile Responsive Layout**
+- **Given:** Mobile viewport is set
+- **When:** User loads portfolio
+- **Then:** Layout adapts to mobile AND hero section is responsive AND navigation works on mobile
+
+**Test Case 247: No-User Mode Prevention**
+- **Given:** Single-user mode is active
+- **When:** All sections are loaded
+- **Then:** All portfolio sections are present and visible AND user selection mode is not visible
+
+**Test Case 248: Meta Tags and SEO Elements**
+- **Given:** Single-user portfolio loads
+- **When:** Page loads
+- **Then:** Proper meta tags are set AND viewport meta tag is configured correctly
+
+**Test Case 249: Deep Links to Sections**
+- **Given:** User navigates directly to a section URL
+- **When:** Page loads with section anchor
+- **Then:** Page loads and scrolls to correct section AND portfolio is fully functional
+
+### Multi User Mode Frontend Tests
+
+**Test Case 250: Multi User Mode Detection**
+- **Given:** Multiple users exist in system
+- **When:** User navigates to homepage
+- **Then:** User selection interface is displayed AND multiple user cards are shown AND portfolio sections are hidden
+
+**Test Case 251: User Card Display and Information**
+- **Given:** Multi-user mode is active
+- **When:** User selection interface loads
+- **Then:** User cards display properly AND cards show user names and information AND cards are interactive
+
+**Test Case 252: User Portfolio Selection**
+- **Given:** Multi-user selection interface is displayed
+- **When:** User clicks on a user card
+- **Then:** Portfolio loads for selected user AND hero section displays AND user selection interface is hidden AND back to users button is available
+
+**Test Case 253: User Switching and Reset**
+- **Given:** A user portfolio is loaded in multi-user mode
+- **When:** User clicks back to users button
+- **Then:** User selection interface reappears AND original user count is displayed AND portfolio sections are hidden
+
+**Test Case 254: Portfolio Structure Reset Between Users**
+- **Given:** First user portfolio is loaded
+- **When:** User switches to second user
+- **Then:** Portfolio structure resets properly AND new user content loads AND hero information updates
+
+**Test Case 255: Multi User Section Content Validation**
+- **Given:** Multi-user mode with selected user
+- **When:** All portfolio sections load
+- **Then:** All sections are visible with content AND content is not placeholder text AND proper formatting is maintained
+
+**Test Case 256: Multi User Resume Formatting**
+- **Given:** Multi-user mode with selected user
+- **When:** Experience section loads
+- **Then:** Resume is properly formatted AND resume structure elements are present (resume-container, resume-header, contact-grid, experience-entries) AND technology tags are displayed if present
+
+**Test Case 257: Multi User Skills Matrix Validation**
+- **Given:** Multi-user mode with selected user
+- **When:** Skills section loads
+- **Then:** Skills are properly formatted AND skills formatting structures are present AND skills matrix tables have proper headers and data if present AND skill categories show proper structure
+
+**Test Case 258: Multi User Goals & Values Handling**
+- **Given:** Multi-user mode with selected user
+- **When:** Goals & Values section loads
+- **Then:** Content is present (actual content or default message) AND dual-endpoint structure is maintained if content exists AND proper subsection titles are displayed
+
+**Test Case 259: Empty User List Handling**
+- **Given:** System returns empty user list
+- **When:** User loads the page
+- **Then:** System handles gracefully with fallback to single-user mode or error message
+
+**Test Case 260: Loading States During User Transitions**
+- **Given:** Multi-user selection interface is displayed
+- **When:** User clicks to select a portfolio
+- **Then:** Loading state is shown during transition AND loading disappears when content loads AND portfolio is ready
+
+### API Integration Tests
+
+**Test Case 261: System Info Endpoint Integration**
+- **Given:** Frontend loads
+- **When:** System info API is called
+- **Then:** User mode is determined correctly AND user list is retrieved if multi-user AND system information is displayed properly
+
+**Test Case 262: Endpoint Data Loading**
+- **Given:** Portfolio is loading content
+- **When:** API endpoints are called for each section
+- **Then:** All sections load data successfully AND proper content formatting is applied AND API errors are handled gracefully
+
+**Test Case 263: Dual Endpoint Sections**
+- **Given:** Goals & Values or Ideas & Philosophy sections load
+- **When:** Multiple API endpoints are called concurrently
+- **Then:** Data from multiple endpoints is combined correctly AND proper formatting is applied AND loading states are managed
+
+**Test Case 264: API Error Recovery**
+- **Given:** API calls may fail
+- **When:** Network issues or server errors occur
+- **Then:** Graceful error handling is displayed AND fallback content is shown AND retry functionality works if implemented
+
+### Performance Tests
+
+**Test Case 265: Page Load Performance**
+- **Given:** Portfolio application starts
+- **When:** Initial page load occurs
+- **Then:** Page loads within acceptable time limits AND loading states are shown appropriately AND content appears progressively
+
+**Test Case 266: Section Loading Performance**
+- **Given:** Portfolio is loaded
+- **When:** Multiple sections load concurrently
+- **Then:** Sections load efficiently AND loading indicators work properly AND user can interact with loaded sections
+
+**Test Case 267: Image and Asset Loading**
+- **Given:** Portfolio contains images and assets
+- **When:** Media content loads
+- **Then:** Images load properly AND alt text is provided AND loading is optimized
+
+**Test Case 268: Memory Usage During Navigation**
+- **Given:** User navigates between sections
+- **When:** Extended navigation occurs
+- **Then:** Memory usage remains stable AND no memory leaks occur AND performance is maintained
+
+### Accessibility Tests
+
+**Test Case 269: Keyboard Navigation**
+- **Given:** Portfolio is loaded
+- **When:** User navigates using keyboard only
+- **Then:** All interactive elements are accessible AND proper tab order is maintained AND focus indicators are visible
+
+**Test Case 270: Screen Reader Compatibility**
+- **Given:** Portfolio is loaded with screen reader
+- **When:** Screen reader processes the page
+- **Then:** Content is properly announced AND headings have proper hierarchy AND semantic HTML is used
+
+**Test Case 271: Color Contrast and Visual Accessibility**
+- **Given:** Portfolio visual design
+- **When:** Accessibility audit is performed
+- **Then:** Color contrast meets WCAG standards AND text is readable AND visual indicators are sufficient
+
+**Test Case 272: Responsive Accessibility**
+- **Given:** Portfolio on various screen sizes
+- **When:** Accessibility features are tested across viewports
+- **Then:** Accessibility is maintained on mobile AND touch targets are appropriate AND responsive design doesn't break accessibility
+
+---
+
 ## Summary
 
-This document contains **234 test cases** covering all E2E functionality in the Daemon personal API system. The tests are organized into 11 major sections:
+This document contains **272 test cases** covering all E2E functionality in the Daemon personal API system. The tests are organized into 12 major sections:
 
 1. **Core Application Tests** (22 cases) - Basic API functionality, endpoints, CRUD operations
 2. **Authentication Tests** (15 cases) - Login, registration, password management, user profiles
@@ -1344,6 +1548,7 @@ This document contains **234 test cases** covering all E2E functionality in the 
 9. **Endpoint-Specific Tests** (60 cases) - Individual endpoint functionality across 5 major endpoints
 10. **URL Pattern Tests** (3 cases) - URL pattern consistency and special behaviors
 11. **Utility Function Tests** (10 cases) - System health, backups, validation helpers
+12. **Frontend E2E Tests** (38 cases) - Single-user mode, multi-user mode, API integration, performance, accessibility
 
 Each test case follows the **Given-When-Then** format with:
 - **Given:** Clear preconditions without implementation details
@@ -1358,6 +1563,9 @@ The tests cover:
 - ✅ **Authentication/Authorization** - Access control scenarios
 - ✅ **Multi-user scenarios** - Data isolation and privacy
 - ✅ **Data integrity** - CRUD operations and validation
+- ✅ **Frontend functionality** - Portfolio display, content validation, responsive design
+- ✅ **User experience** - Navigation, accessibility, performance
+- ✅ **API integration** - Frontend-backend communication, error handling
 
 This provides comprehensive test coverage documentation that can be used for:
 - Test case validation and verification
@@ -1365,3 +1573,5 @@ This provides comprehensive test coverage documentation that can be used for:
 - Security compliance verification (OWASP)
 - Test automation reference
 - Quality assurance planning
+- Frontend testing validation
+- User experience verification
