@@ -36,25 +36,6 @@ jobs:
       run: |
         python -c "from app.database import init_db; init_db()"
 
-    - name: Start API server
-      run: |
-        python -m uvicorn app.main:app --host 0.0.0.0 --port 8007 &
-        sleep 5
-      env:
-        DATABASE_URL: sqlite:///./test.db
-
-    - name: Start Frontend server
-      run: |
-        python frontend_server.py &
-        sleep 3
-      env:
-        FRONTEND_PORT: 8006
-
-    - name: Verify servers are running
-      run: |
-        curl -f http://localhost:8007/health || exit 1
-        curl -f http://localhost:8006/ || exit 1
-
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
