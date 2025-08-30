@@ -1,50 +1,267 @@
-# Frontend Tests
+# Frontend E2E Tests
 
-This directory contains automated tests for the portfolio frontend.
+This directory contains comprehensive end-to-end tests for the Daemon portfolio frontend using Playwright.
 
-## Test Suite
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 16+
+- Python 3.11+
+- API server dependencies installed (`pip install -r requirements.txt` from project root)
+
+### Installation
+```bash
+cd frontend/tests
+npm install
+npx playwright install
+```
 
 ### Running Tests
+```bash
+# Run all tests
+./run-tests.sh
 
-1. **Via Web Browser**: Open `index.html` in a web browser
-2. **Via Frontend Server**: Access `http://localhost:8006/tests/` when frontend server is running
-3. **Note**: API server should be running on `http://localhost:8007/` for full functionality
+# Run specific test suite
+./run-tests.sh single-user
+./run-tests.sh multi-user
 
-### Test Categories
+# Run with visible browser
+./run-tests.sh --headed
 
-#### 1. API Connection Tests
-- APIClient class functionality
-- Base URL detection
-- System info endpoint connectivity
-- Health endpoint responsiveness
-- Error handling
+# Debug mode
+./run-tests.sh --debug api-integration
 
-#### 2. Content Loading Tests
-- Portfolio class initialization
-- DOM element detection
-- Content extraction and formatting
-- Endpoint name formatting
-- Section rendering
+# Generate HTML report
+./run-tests.sh --report
+```
 
-#### 3. UI/UX Tests
-- Navigation elements
-- Hero section presence
-- Content sections
-- Loading screen functionality
-- Button elements
+## 📋 Test Suites
 
-#### 4. Responsive Design Tests
-- Viewport configuration
-- CSS Grid layout
-- Media query support
-- Font loading
-- Mobile/desktop detection
+### 1. Single User Mode Tests (`single-user.spec.js`)
+**Purpose**: Validates single-user portfolio functionality
+- Portfolio homepage loading
+- Hero section population
+- Section content loading (About, Experience, Skills, Projects, Personal Story)
+- Navigation between sections
+- Contact section functionality
+- API error handling
+- Mobile responsiveness
+- Deep linking to sections
+- Meta tags and SEO elements
 
-#### 5. Performance Tests
-- Page load timing
-- Resource count optimization
-- DOM complexity analysis
-- Script and stylesheet efficiency
+### 2. Multi User Mode Tests (`multi-user.spec.js`)
+**Purpose**: Validates multi-user mode detection and user selection
+- Multi-user mode detection
+- User selection interface
+- User card display with correct information
+- User portfolio loading after selection
+- Back to users functionality
+- Portfolio structure reset between users
+- Keyboard navigation in user selection
+- Mobile responsive user selection
+- API error handling during user selection
+- Loading states during user transitions
+
+### 3. API Integration Tests (`api-integration.spec.js`)
+**Purpose**: Tests frontend-backend communication and error scenarios
+- System info API connection
+- API server unavailable scenarios
+- Slow API response handling
+- Malformed API response handling
+- API request retry mechanisms
+- Partial API failure handling
+- Network timeout handling
+- CORS error handling
+- Intermittent connectivity scenarios
+- Contextual error messaging
+
+### 4. Performance Tests (`performance.spec.js`)
+**Purpose**: Validates loading performance and resource optimization
+- Initial page load timing
+- Resource loading efficiency
+- Concurrent section loading
+- Responsive interactions during loading
+- Image and media optimization
+- Memory usage during extended use
+- API call pattern optimization
+- Smooth user experience during updates
+- Large content volume handling
+- Slow network performance
+
+### 5. Accessibility Tests (`accessibility.spec.js`)
+**Purpose**: Ensures WCAG 2.1 AA compliance and screen reader compatibility
+- Semantic HTML structure
+- Full keyboard navigation support
+- ARIA labels and roles validation
+- Color contrast requirements
+- Screen reader compatibility
+- 200% zoom support without horizontal scrolling
+- Focus management
+- Accessible error messages
+- High contrast mode support
+- Form accessibility (if forms exist)
+
+## 🏗️ Test Architecture
+
+### Configuration
+- **Base URL**: `http://localhost:8006` (Frontend)
+- **API URL**: `http://localhost:8007` (Backend)
+- **Browsers**: Chrome, Firefox, Safari, Mobile Chrome, Mobile Safari
+- **Retry Strategy**: 2 retries on CI, 0 locally
+- **Timeouts**: 30s global, 10s assertions
+
+### Test Helpers (`helpers/test-setup.js`)
+Utility functions for common test patterns:
+- `setupSingleUser()` - Configure single-user mode
+- `setupMultiUser()` - Configure multi-user mode
+- `mockEndpointData()` - Mock API responses
+- `waitForPortfolioLoad()` - Wait for complete loading
+- `selectUser()` - User selection in multi-user mode
+- `navigateToSection()` - Section navigation
+- `mockAPIError()` - Simulate API failures
+- `createSampleContent()` - Generate test data
+
+### Test Data Management
+Tests use mocked API responses to ensure consistent scenarios:
+- User data mocking for single/multi-user modes
+- Endpoint content mocking for section tests
+- Error scenario simulation
+- Network condition simulation
+
+## 🎯 Running in Different Modes
+
+### Development Mode
+```bash
+# Quick test run with visible browser
+./run-tests.sh --headed
+
+# Debug specific failing test
+./run-tests.sh --debug single-user
+
+# Setup servers only (for manual testing)
+./run-tests.sh --setup-only
+```
+
+### CI/CD Mode
+```bash
+# Automated CI run
+./run-tests.sh --ci
+
+# With HTML report generation
+./run-tests.sh --ci --report
+```
+
+### Custom Configuration
+```bash
+# Custom ports
+./run-tests.sh --port 3000 --api-port 8000
+
+# Extended timeout for slower environments
+./run-tests.sh --timeout 90000
+```
+
+## 📊 Test Reports
+
+### HTML Reports
+Generated in `playwright-report/` directory:
+- Test execution timeline
+- Screenshots of failures
+- Video recordings of failed tests
+- Detailed error traces
+- Performance metrics
+
+### CI Integration
+- GitHub Actions workflow in `.github/workflows/frontend-e2e.yml`
+- Automatic report uploads on test completion
+- Artifact retention for 30 days
+- Multi-browser testing matrix
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Port Conflicts
+```bash
+# Kill existing processes
+./run-tests.sh --cleanup-only
+# Or manually
+pkill -f "uvicorn.*:8007"
+pkill -f "frontend_server.*8006"
+```
+
+#### Browser Installation
+```bash
+# Reinstall Playwright browsers
+npx playwright install --with-deps
+```
+
+#### API Connection Issues
+```bash
+# Verify API server
+curl http://localhost:8007/health
+
+# Check frontend server
+curl http://localhost:8006/
+```
+
+#### Test Debugging
+```bash
+# Debug mode with breakpoints
+./run-tests.sh --debug --headed
+
+# Run single test file
+npx playwright test single-user.spec.js --headed
+
+# Verbose output
+npx playwright test --reporter=line
+```
+
+### Environment Variables
+- `CI=true` - Enables CI-specific behaviors
+- `FRONTEND_PORT` - Frontend server port
+- `API_PORT` - API server port
+- `TEST_TIMEOUT` - Global test timeout
+
+## 🎨 Writing New Tests
+
+### Test Structure
+```javascript
+import { test, expect } from '@playwright/test';
+import { setupSingleUser, waitForPortfolioLoad } from './helpers/test-setup.js';
+
+test.describe('Feature Group', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupSingleUser(page);
+  });
+
+  test('should validate specific behavior', async ({ page }) => {
+    // Given: Setup condition
+    await page.goto('/');
+
+    // When: Perform action
+    await waitForPortfolioLoad(page);
+
+    // Then: Verify result
+    await expect(page.locator('#portfolio')).toBeVisible();
+  });
+});
+```
+
+### Best Practices
+- Use descriptive test names with Given-When-Then structure
+- Leverage helper functions for common operations
+- Mock external dependencies consistently
+- Test both happy path and error scenarios
+- Include accessibility checks in UI tests
+- Use appropriate timeouts for different operations
+- Clean up state between tests
+
+## 📚 Additional Resources
+
+- [Playwright Documentation](https://playwright.dev/docs/intro)
+- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [Frontend Portfolio Specification](../docs/FRONTEND_PORTFOLIO_SPECIFICATION.md)
+- [API Requirements](../docs/API_REQUIREMENTS.md)
 
 ## Test Results
 

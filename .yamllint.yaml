@@ -10,8 +10,8 @@ rules:
   # Indentation must be consistent (2 spaces)
   # More relaxed for GitHub Actions workflows which can have complex nesting
   indentation:
-    spaces: consistent
-    indent-sequences: consistent
+    spaces: 2
+    indent-sequences: whatever
     check-multi-line-strings: false
 
   # Trailing spaces not allowed
