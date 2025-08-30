@@ -133,3 +133,73 @@ INFO:app.utils:Backup created: daemon_backup_20250830_081517.db (217088 bytes)
 INFO:app.main:Initial backup created: daemon_backup_20250830_081517.db
 INFO:app.main:Application startup complete
 INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [78158]
+INFO:     Started server process [79484]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_081711.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_081711.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79484]
+INFO:     Started server process [79508]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_081719.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_081719.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79508]
+INFO:     Started server process [79832]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_081815.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_081815.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79832]
+INFO:     Started server process [82665]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_082104.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_082104.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/routers/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:app.main:Shutting down Daemon application...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [82665]
+INFO:     Started server process [82695]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting Daemon application...
+INFO:app.main:Database initialized successfully
+INFO:app.utils:Backup created: daemon_backup_20250830_082114.db (217088 bytes)
+INFO:app.main:Initial backup created: daemon_backup_20250830_082114.db
+INFO:app.main:Application startup complete
+INFO:     Application startup complete.
