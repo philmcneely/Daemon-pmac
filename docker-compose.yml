@@ -23,16 +23,35 @@ services:
       retries: 5
       start_period: 30s
 
-  # Optional: Frontend server
-  daemon-frontend:
+  # Frontend server (development)
+  daemon-frontend-dev:
     build:
       context: .
-      dockerfile: frontend/Dockerfile
+      dockerfile: frontend/Dockerfile.dev
     ports:
       - "${FRONTEND_PORT:-8005}:${FRONTEND_PORT:-8005}"
     environment:
       - FRONTEND_PORT=${FRONTEND_PORT:-8005}
       - DAEMON_API_URL=http://daemon-api:${PORT:-8004}
+    depends_on:
+      - daemon-api
+    restart: unless-stopped
+    profiles:
+      - frontend-dev
+
+  # Frontend server (production with nginx + SSL)
+  daemon-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DAEMON_API_URL=http://daemon-api:${PORT:-8004}
+    volumes:
+      # Mount custom SSL certificates in production
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - daemon-api
     restart: unless-stopped

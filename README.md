@@ -367,24 +367,37 @@ docker-compose up daemon-api
 # Use cases: Mobile apps, API integrations, external frontends
 ```
 
-#### Full Stack Deployment
-Complete setup with both API and frontend:
+#### Development Deployment
+Complete setup for development:
 ```bash
-# API + Frontend
-docker-compose --profile frontend up
+# API + Frontend (development servers)
+docker-compose --profile frontend-dev up
 
-# Access Frontend at http://localhost:8005
+# Access Frontend at http://localhost:8005 (Python server)
 # Access API at http://localhost:8004
 ```
 
-#### Production with Nginx
-Full production setup with reverse proxy:
+#### Production Deployment
+Enterprise-ready with nginx, SSL, and security:
 ```bash
-# Complete production stack
-docker-compose --profile frontend --profile nginx up
+# Setup SSL certificates first
+./scripts/setup-ssl.sh
 
-# Access via nginx at http://localhost (port 80)
-# SSL support on port 443 (configure SSL certificates)
+# Production stack with nginx + SSL
+docker-compose -f docker-compose.prod.yml up -d
+
+# Access via HTTPS at https://yourdomain.com
+# Automatic HTTP to HTTPS redirect
+```
+
+#### API Only (Headless)
+Perfect for API integrations, mobile apps, or custom frontends:
+```bash
+# Just the API server
+docker-compose up daemon-api
+
+# Access API at http://localhost:8004
+# Use cases: Mobile apps, API integrations, external frontends
 ```
 
 #### Custom Configuration

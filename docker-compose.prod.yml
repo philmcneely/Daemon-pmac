@@ -1,0 +1,89 @@
+# Production Docker Compose configuration
+version: '3.8'
+
+services:
+  daemon-api:
+    build: .
+    expose:
+      - "8004"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=sqlite:///./data/daemon.db
+      - BACKUP_DIR=./backups
+      - HOST=0.0.0.0
+      - PORT=8004
+      - CORS_ORIGINS=["https://${DOMAIN:-localhost}"]
+    volumes:
+      - daemon_data:/app/data
+      - daemon_backups:/app/backups
+      - daemon_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+
+  daemon-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DAEMON_API_URL=http://daemon-api:8004
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      # Mount real SSL certificates in production
+      - ${SSL_CERT_PATH:-./ssl/cert.pem}:/etc/nginx/ssl/nginx-selfsigned.crt:ro
+      - ${SSL_KEY_PATH:-./ssl/key.pem}:/etc/nginx/ssl/nginx-selfsigned.key:ro
+      # Mount custom nginx config if needed
+      - ${NGINX_CONF_PATH:-./frontend/nginx.prod.conf}:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - daemon-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - frontend
+      - backend
+
+  # Optional: External nginx reverse proxy for multiple apps
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx-multiapp.conf:/etc/nginx/nginx.conf:ro
+      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
+    depends_on:
+      - daemon-frontend
+    restart: unless-stopped
+    profiles:
+      - reverse-proxy
+    networks:
+      - frontend
+
+volumes:
+  daemon_data:
+    driver: local
+  daemon_backups:
+    driver: local
+  daemon_logs:
+    driver: local
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true

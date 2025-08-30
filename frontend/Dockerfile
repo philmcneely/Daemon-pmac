@@ -1,32 +1,44 @@
-# Frontend-only Dockerfile
-FROM python:3.12-slim
+# Multi-stage production frontend with nginx
+FROM nginx:alpine as production
 
-WORKDIR /app
+# Install dependencies for SSL and health checks
+RUN apk add --no-cache curl openssl
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Create nginx user and directories
+RUN addgroup -g 1001 -S nginx-user && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-user -g nginx-user nginx-user
 
 # Copy frontend files
-COPY frontend/ ./frontend/
-COPY frontend_server.py .
+COPY frontend/ /usr/share/nginx/html/
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash appuser && \
-    chown -R appuser:appuser /app
+# Copy nginx configuration
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
+COPY frontend/default.conf /etc/nginx/conf.d/default.conf
 
-USER appuser
+# Create SSL directory and generate self-signed certificates (for development)
+RUN mkdir -p /etc/nginx/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/nginx-selfsigned.key \
+    -out /etc/nginx/ssl/nginx-selfsigned.crt \
+    -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=localhost"
 
-# Set default port
-ENV FRONTEND_PORT=8005
+# Set proper permissions
+RUN chown -R nginx-user:nginx-user /usr/share/nginx/html && \
+    chown -R nginx-user:nginx-user /var/cache/nginx && \
+    chown -R nginx-user:nginx-user /var/log/nginx && \
+    chown -R nginx-user:nginx-user /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown nginx-user:nginx-user /var/run/nginx.pid
 
-# Expose port
-EXPOSE 8005
+# Expose HTTP and HTTPS
+EXPOSE 80 443
 
-# Health check for frontend
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${FRONTEND_PORT:-8005}/ || exit 1
+    CMD curl -f http://localhost/ || exit 1
 
-# Run frontend server
-CMD ["sh", "-c", "python frontend_server.py --port ${FRONTEND_PORT:-8005}"]
+# Use non-root user
+USER nginx-user
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
