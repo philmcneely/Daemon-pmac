@@ -1,3 +1,41 @@
+# Changes Log
+
+## Version 0.2.2 (2025-08-30)
+
+### 🎨 Content Formatting & Documentation
+- **Added comprehensive Markdown Style Guide** (`docs/MARKDOWN_STYLE_GUIDE.md`)
+  - Standardized content block formatting with H4 headers
+  - Multiple bullet point indentation techniques (4-space, HTML, non-breaking space)
+  - Best practices for code blocks, tables, and links
+  - Good vs poor formatting examples
+
+### 🚀 Deployment Improvements
+- **Fixed port inconsistencies** throughout documentation
+  - Updated all examples from port 8000 to 8007 (actual default)
+  - Clarified Docker vs bare metal deployment options
+- **Enhanced Docker configuration**
+  - Made ports configurable via environment variables
+  - Improved docker-compose.yml with flexible port settings
+  - Updated Dockerfile to use PORT environment variable
+- **Improved deployment documentation**
+  - Added comprehensive Docker setup instructions
+  - Clarified environment configuration options
+  - Better distinction between development and production modes
+
+### 🧪 Testing Stability
+- **Fixed all E2E test failures** (13/13 tests now passing)
+  - Enhanced content validation to handle empty states gracefully
+  - Updated CI database setup to create admin user
+  - Improved test reliability across different environments
+
+### 📋 CI/CD Pipeline
+- **Green CI status** across all workflows
+  - Frontend E2E tests: 100% pass rate
+  - All quality gates: passing
+  - Ready for production deployment
+
+---
+
 # Changes Made: Resume Endpoint and Attribution Updates
 
 ## 🆕 New Resume Endpoint
