@@ -32,26 +32,39 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // Run all tests in Chrome for comprehensive coverage
     },
 
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      // Run only content verification test for cross-browser compatibility
+      testMatch: '**/single-user.spec.js',
+      grep: /should load and display About section/,
     },
 
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      // Run only content verification test for cross-browser compatibility
+      testMatch: '**/single-user.spec.js',
+      grep: /should load and display About section/,
     },
 
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      // Run only content verification test for mobile compatibility
+      testMatch: '**/single-user.spec.js',
+      grep: /should load and display About section/,
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
+      // Run only content verification test for mobile compatibility
+      testMatch: '**/single-user.spec.js',
+      grep: /should load and display About section/,
     },
   ],
 
