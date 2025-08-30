@@ -360,7 +360,55 @@ docker-compose logs daemon-api | grep health
 docker-compose logs daemon-frontend | grep health
 ```
 
-## Troubleshooting
+## Testing Docker Deployments
+
+### Local Testing
+
+Test all Docker containers and communication locally:
+
+```bash
+# Run comprehensive Docker test suite
+./scripts/test-docker.sh
+
+# Test specific configurations
+API_PORT=8014 FRONTEND_DEV_PORT=8015 ./scripts/test-docker.sh
+
+# Debug mode (no cleanup)
+CLEANUP=false ./scripts/test-docker.sh
+```
+
+### CI/CD Testing
+
+The GitHub Actions CI pipeline automatically tests:
+- ✅ Individual container functionality
+- ✅ Multi-container communication
+- ✅ Docker Compose profile validation
+- ✅ Production deployment readiness
+- ✅ Resource constraints and performance
+
+See [Docker Testing Documentation](DOCKER_TESTING.md) for detailed test descriptions.
+
+### Manual Testing
+
+Test individual components:
+
+```bash
+# Test API container only
+docker build -t daemon-api:test .
+docker run -d -p 8004:8004 daemon-api:test
+curl http://localhost:8004/health
+
+# Test frontend production container
+docker build -f frontend/Dockerfile -t daemon-frontend:test .
+docker run -d -p 80:80 -p 443:443 daemon-frontend:test
+curl https://localhost/  # (self-signed cert warning expected)
+
+# Test container communication
+docker network create test-net
+docker run -d --network test-net --name api daemon-api:test
+docker run -d --network test-net -p 80:80 daemon-frontend:test
+curl http://localhost/
+```
 
 ### Port Conflicts
 ```bash

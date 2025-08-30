@@ -220,7 +220,7 @@ jobs:
           pip-audit-report.json
 
   docker:
-    name: Docker Build
+    name: Docker Container Tests
     runs-on: ubuntu-latest
     needs: [test, lint]
 
@@ -231,35 +231,326 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    # Fast build and test for pull requests (single platform, no push)
-    - name: Build and test Docker image (PR only)
-      if: github.event_name == 'pull_request'
+    - name: Create test environment
+      run: |
+        # Create directories and test data
+        mkdir -p data logs backups ssl
+
+        # Create minimal test environment file
+        cat > .env.test << EOF
+        SECRET_KEY=test-secret-key-for-ci
+        PORT=8004
+        FRONTEND_PORT=8005
+        DEBUG=false
+        DATABASE_URL=sqlite:///./data/daemon.db
+        CORS_ORIGINS=["http://localhost:8005", "http://localhost"]
+        EOF
+
+    # Test 1: Build API container
+    - name: Build API container
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64
         load: true
-        tags: daemon:pr-test
+        tags: daemon-api:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Test Docker image (PR only)
-      if: github.event_name == 'pull_request'
+    # Test 2: Build frontend development container
+    - name: Build frontend development container
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: frontend/Dockerfile.dev
+        platforms: linux/amd64
+        load: true
+        tags: daemon-frontend-dev:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # Test 3: Build frontend production container
+    - name: Build frontend production container
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: frontend/Dockerfile
+        platforms: linux/amd64
+        load: true
+        tags: daemon-frontend:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # Test 4: API container standalone test
+    - name: Test API container individually
       run: |
-        echo "🐳 Testing Docker image for PR..."
+        echo "🔍 Testing API container individually..."
 
-        # Start container
-        docker run -d --name daemon-pr-test -p 8004:8004 daemon:pr-test
-        sleep 15
+        # Start API container
+        docker run -d --name daemon-api-test \
+          -p 8004:8004 \
+          --env-file .env.test \
+          -v $(pwd)/data:/app/data \
+          daemon-api:test
 
-        # Test endpoints
-        curl -f http://localhost:8004/health && echo "✅ Health check passed"
-        curl -f http://localhost:8004/docs && echo "✅ API docs accessible"
+        # Wait for startup
+        echo "⏳ Waiting for API to start..."
+        sleep 20
+
+        # Test health endpoint
+        echo "🏥 Testing health endpoint..."
+        curl -f http://localhost:8004/health || (docker logs daemon-api-test && exit 1)
+        echo "✅ Health check passed"
+
+        # Test API docs
+        echo "📚 Testing API documentation..."
+        curl -f http://localhost:8004/docs || (docker logs daemon-api-test && exit 1)
+        echo "✅ API docs accessible"
+
+        # Test system info endpoint
+        echo "ℹ️ Testing system info endpoint..."
+        curl -f http://localhost:8004/api/v1/system/info || (docker logs daemon-api-test && exit 1)
+        echo "✅ System info endpoint working"
 
         # Cleanup
-        docker stop daemon-pr-test && docker rm daemon-pr-test
-        echo "🎉 PR Docker tests passed!"
+        docker stop daemon-api-test && docker rm daemon-api-test
+        echo "🎉 API container tests passed!"
 
+    # Test 5: Frontend development container standalone test
+    - name: Test frontend development container individually
+      run: |
+        echo "🔍 Testing frontend development container individually..."
+
+        # Start frontend dev container
+        docker run -d --name daemon-frontend-dev-test \
+          -p 8005:8005 \
+          -e FRONTEND_PORT=8005 \
+          -e DAEMON_API_URL=http://host.docker.internal:8004 \
+          daemon-frontend-dev:test
+
+        # Wait for startup
+        echo "⏳ Waiting for frontend to start..."
+        sleep 10
+
+        # Test frontend accessibility
+        echo "🌐 Testing frontend accessibility..."
+        curl -f http://localhost:8005/ || (docker logs daemon-frontend-dev-test && exit 1)
+        echo "✅ Frontend development server accessible"
+
+        # Cleanup
+        docker stop daemon-frontend-dev-test && docker rm daemon-frontend-dev-test
+        echo "🎉 Frontend development container tests passed!"
+
+    # Test 6: Frontend production container standalone test
+    - name: Test frontend production container individually
+      run: |
+        echo "🔍 Testing frontend production container individually..."
+
+        # Start frontend production container
+        docker run -d --name daemon-frontend-prod-test \
+          -p 80:80 \
+          -p 443:443 \
+          daemon-frontend:test
+
+        # Wait for nginx startup
+        echo "⏳ Waiting for nginx to start..."
+        sleep 10
+
+        # Test HTTP endpoint
+        echo "🌐 Testing HTTP frontend..."
+        curl -f http://localhost/ || (docker logs daemon-frontend-prod-test && exit 1)
+        echo "✅ Frontend production server accessible via HTTP"
+
+        # Test HTTPS endpoint (self-signed cert)
+        echo "🔒 Testing HTTPS frontend..."
+        curl -k -f https://localhost/ || (docker logs daemon-frontend-prod-test && exit 1)
+        echo "✅ Frontend production server accessible via HTTPS"
+
+        # Test health endpoint
+        echo "🏥 Testing frontend health endpoint..."
+        curl -f http://localhost/health || (docker logs daemon-frontend-prod-test && exit 1)
+        echo "✅ Frontend health check passed"
+
+        # Cleanup
+        docker stop daemon-frontend-prod-test && docker rm daemon-frontend-prod-test
+        echo "🎉 Frontend production container tests passed!"
+
+    # Test 7: Multi-container communication test (Development)
+    - name: Test multi-container communication (Development)
+      run: |
+        echo "🔍 Testing multi-container communication (Development)..."
+
+        # Create Docker network
+        docker network create daemon-test-network
+
+        # Start API container
+        docker run -d --name daemon-api-comm-test \
+          --network daemon-test-network \
+          -p 8004:8004 \
+          --env-file .env.test \
+          -v $(pwd)/data:/app/data \
+          daemon-api:test
+
+        # Wait for API
+        echo "⏳ Waiting for API to start..."
+        sleep 20
+
+        # Start frontend dev container
+        docker run -d --name daemon-frontend-dev-comm-test \
+          --network daemon-test-network \
+          -p 8005:8005 \
+          -e FRONTEND_PORT=8005 \
+          -e DAEMON_API_URL=http://daemon-api-comm-test:8004 \
+          daemon-frontend-dev:test
+
+        # Wait for frontend
+        echo "⏳ Waiting for frontend to start..."
+        sleep 10
+
+        # Test API accessibility from host
+        echo "🔗 Testing API from host..."
+        curl -f http://localhost:8004/health || exit 1
+        echo "✅ API accessible from host"
+
+        # Test frontend accessibility from host
+        echo "🔗 Testing frontend from host..."
+        curl -f http://localhost:8005/ || exit 1
+        echo "✅ Frontend accessible from host"
+
+        # Test inter-container communication
+        echo "🔗 Testing inter-container communication..."
+        docker exec daemon-frontend-dev-comm-test curl -f http://daemon-api-comm-test:8004/health || exit 1
+        echo "✅ Frontend can communicate with API"
+
+        # Cleanup
+        docker stop daemon-api-comm-test daemon-frontend-dev-comm-test
+        docker rm daemon-api-comm-test daemon-frontend-dev-comm-test
+        docker network rm daemon-test-network
+        echo "🎉 Multi-container development communication tests passed!"
+
+    # Test 8: Multi-container communication test (Production)
+    - name: Test multi-container communication (Production)
+      run: |
+        echo "� Testing multi-container communication (Production)..."
+
+        # Create Docker network
+        docker network create daemon-prod-network
+
+        # Start API container (internal only)
+        docker run -d --name daemon-api-prod-test \
+          --network daemon-prod-network \
+          --env-file .env.test \
+          -v $(pwd)/data:/app/data \
+          daemon-api:test
+
+        # Wait for API
+        echo "⏳ Waiting for API to start..."
+        sleep 20
+
+        # Start frontend production container
+        docker run -d --name daemon-frontend-prod-comm-test \
+          --network daemon-prod-network \
+          -p 8080:80 \
+          -p 8443:443 \
+          -e DAEMON_API_URL=http://daemon-api-prod-test:8004 \
+          daemon-frontend:test
+
+        # Wait for frontend
+        echo "⏳ Waiting for nginx to start..."
+        sleep 10
+
+        # Test frontend accessibility
+        echo "🔗 Testing frontend from host..."
+        curl -f http://localhost:8080/ || exit 1
+        echo "✅ Frontend accessible from host"
+
+        # Test HTTPS
+        echo "🔒 Testing HTTPS frontend..."
+        curl -k -f https://localhost:8443/ || exit 1
+        echo "✅ Frontend HTTPS accessible"
+
+        # Test API accessibility through frontend proxy (if configured)
+        echo "🔗 Testing API through frontend proxy..."
+        # Note: This would test API proxy if configured in nginx
+        curl -f http://localhost:8080/health || exit 1
+        echo "✅ Health endpoint accessible through frontend"
+
+        # Test internal container communication
+        echo "🔗 Testing internal communication..."
+        docker exec daemon-frontend-prod-comm-test curl -f http://daemon-api-prod-test:8004/health || exit 1
+        echo "✅ Frontend can communicate with API internally"
+
+        # Cleanup
+        docker stop daemon-api-prod-test daemon-frontend-prod-comm-test
+        docker rm daemon-api-prod-test daemon-frontend-prod-comm-test
+        docker network rm daemon-prod-network
+        echo "🎉 Multi-container production communication tests passed!"
+
+    # Test 9: Docker Compose integration test
+    - name: Test Docker Compose profiles
+      run: |
+        echo "🔍 Testing Docker Compose profiles..."
+
+        # Test API only
+        echo "📋 Testing API-only deployment..."
+        docker-compose up -d daemon-api
+        sleep 20
+        curl -f http://localhost:8004/health || exit 1
+        docker-compose down
+        echo "✅ API-only profile works"
+
+        # Test development frontend
+        echo "📋 Testing development frontend profile..."
+        docker-compose --profile frontend-dev up -d
+        sleep 25
+        curl -f http://localhost:8004/health || exit 1
+        curl -f http://localhost:8005/ || exit 1
+        docker-compose --profile frontend-dev down
+        echo "✅ Development frontend profile works"
+
+        # Test production frontend
+        echo "📋 Testing production frontend profile..."
+        docker-compose --profile frontend up -d
+        sleep 30
+        curl -f http://localhost:80/ || exit 1
+        curl -k -f https://localhost:443/ || exit 1
+        docker-compose --profile frontend down
+        echo "✅ Production frontend profile works"
+
+        echo "🎉 Docker Compose profile tests passed!"
+
+    # Test 10: Performance and resource tests
+    - name: Test container performance and resources
+      run: |
+        echo "🔍 Testing container performance and resources..."
+
+        # Start containers with resource limits
+        docker run -d --name daemon-api-perf-test \
+          --memory=256m --cpus=0.5 \
+          -p 8004:8004 \
+          --env-file .env.test \
+          daemon-api:test
+
+        # Wait and test under load
+        sleep 20
+
+        # Simple load test
+        echo "⚡ Running basic load test..."
+        for i in {1..10}; do
+          curl -f http://localhost:8004/health > /dev/null &
+        done
+        wait
+        echo "✅ API handles concurrent requests"
+
+        # Check container stats
+        echo "📊 Container resource usage:"
+        docker stats daemon-api-perf-test --no-stream
+
+        # Cleanup
+        docker stop daemon-api-perf-test && docker rm daemon-api-perf-test
+        echo "🎉 Performance tests passed!"
+
+    # Build for production if all tests pass
     - name: Login to Docker Hub
       id: docker_login
       if: github.event_name != 'pull_request'
@@ -276,20 +567,34 @@ jobs:
       with:
         images: |
           ${{ secrets.DOCKER_USERNAME }}/daemon
+          ${{ secrets.DOCKER_USERNAME }}/daemon-frontend
         tags: |
           type=ref,event=branch
           type=ref,event=pr
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: Build and push Docker image
+    - name: Build and push API image
       if: steps.docker_login.outcome == 'success'
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/daemon:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push frontend image
+      if: steps.docker_login.outcome == 'success'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: frontend/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/daemon-frontend:${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

@@ -425,6 +425,23 @@ DATABASE_URL=sqlite:///./data/daemon.db
 BACKUP_ENABLED=true
 ```
 
+#### Docker Testing
+
+Comprehensive testing ensures containers work individually and together:
+
+```bash
+# Test all Docker configurations locally
+./scripts/test-docker.sh
+
+# CI automatically tests:
+# ✅ Individual container functionality
+# ✅ Multi-container communication
+# ✅ Production deployment readiness
+# ✅ Resource constraints and performance
+```
+
+For detailed Docker testing documentation, see [Docker Testing Guide](docs/DOCKER_TESTING.md).
+
 ### Remote Server (Raspberry Pi/Linux)
 
 ```bash
