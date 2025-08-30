@@ -26,13 +26,20 @@ RUN mkdir -p backups logs data && \
 RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app
 
+# Create a script to fix volume permissions at runtime
+RUN echo '#!/bin/bash' > /app/fix-permissions.sh && \
+    echo 'if [ -d /app/data ]; then' >> /app/fix-permissions.sh && \
+    echo '  chown -R appuser:appuser /app/data /app/logs /app/backups 2>/dev/null || true' >> /app/fix-permissions.sh && \
+    echo '  chmod -R 755 /app/data /app/logs /app/backups 2>/dev/null || true' >> /app/fix-permissions.sh && \
+    echo 'fi' >> /app/fix-permissions.sh && \
+    echo 'exec "$@"' >> /app/fix-permissions.sh && \
+    chmod +x /app/fix-permissions.sh && \
+    chown appuser:appuser /app/fix-permissions.sh
+
 USER appuser
 
 # Set default port as environment variable
 ENV PORT=8004
-ENV DATABASE_URL=sqlite:///./data/daemon.db
-ENV HOST=0.0.0.0
-ENV BACKUP_DIR=./backups
 
 # Expose port (can be overridden via environment)
 EXPOSE 8004
