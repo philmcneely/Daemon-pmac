@@ -18,8 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create directories
-RUN mkdir -p backups logs
+# Create directories and ensure proper permissions
+RUN mkdir -p backups logs data && \
+    chmod 755 data backups logs
 
 # Create non-root user (use appuser to avoid conflict with existing daemon user)
 RUN useradd --create-home --shell /bin/bash appuser && \
@@ -29,6 +30,9 @@ USER appuser
 
 # Set default port as environment variable
 ENV PORT=8004
+ENV DATABASE_URL=sqlite:///./data/daemon.db
+ENV HOST=0.0.0.0
+ENV BACKUP_DIR=./backups
 
 # Expose port (can be overridden via environment)
 EXPOSE 8004
