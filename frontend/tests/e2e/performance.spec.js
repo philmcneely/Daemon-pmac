@@ -37,7 +37,7 @@ test.describe('Frontend Performance & Optimization', () => {
 
     // When: User loads the homepage
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
     await expect(page.locator('#portfolio, .user-selection')).toBeVisible();
 
     const loadTime = Date.now() - startTime;
@@ -58,7 +58,7 @@ test.describe('Frontend Performance & Optimization', () => {
     const isMultiUser = await page.locator('.user-selection').isVisible();
     if (isMultiUser) {
       await page.locator('.user-card').first().click();
-      await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+      await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
     }
 
     // Test concurrent section loading
@@ -91,7 +91,7 @@ test.describe('Frontend Performance & Optimization', () => {
     });
 
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     const isMultiUser = await page.locator('.user-selection').isVisible();
     if (isMultiUser) {
@@ -101,7 +101,7 @@ test.describe('Frontend Performance & Optimization', () => {
         const cardCount = await userCards.count();
         if (cardCount > 1) {
           await userCards.nth(i % cardCount).click();
-          await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+          await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
           const backButton = page.locator('.back-to-users-btn');
           if (await backButton.isVisible()) {
             await backButton.click();
@@ -151,7 +151,7 @@ test.describe('Frontend Performance & Optimization', () => {
 
     const startTime = Date.now();
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     const loadTime = Date.now() - startTime;
     expect(loadTime).toBeLessThan(15000);
@@ -162,7 +162,7 @@ test.describe('Frontend Performance & Optimization', () => {
     const isMultiUser = await page.locator('.user-selection').isVisible();
     if (isMultiUser) {
       await page.locator('.user-card').first().click();
-      await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+      await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
     }
 
     const sections = ['#about', '#experience', '#skills', '#projects'];

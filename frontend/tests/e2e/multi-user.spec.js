@@ -62,7 +62,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     // Given: System has multiple users
     // When: User navigates to homepage
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Then: User selection interface is displayed
     await expect(page.locator('.user-selection')).toBeVisible();
@@ -84,7 +84,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     const johnCard = page.locator('.user-card[data-username=\"john\"]');
     await expect(johnCard).toBeVisible();
     await johnCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Then: Portfolio is displayed for selected user
     await expect(page.locator('#portfolio')).toBeVisible();
@@ -96,12 +96,12 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
   test('should handle user switching, navigation, and responsive design', async ({ page }) => {
     // Given: Load multi-user interface
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Select first user
     const janeCard = page.locator('.user-card[data-username=\"jane\"]');
     await janeCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Verify first user's content
     const initialHeroName = await page.locator('.hero-name').textContent();
@@ -116,7 +116,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     // Switch to different user and verify portfolio reset
     const johnCard = page.locator('.user-card[data-username=\"john\"]');
     await johnCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     await expect(page.locator('.hero-section')).toBeVisible();
     const sections = ['#about', '#experience', '#skills', '#projects'];
@@ -131,7 +131,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     await firstCard.focus();
     await expect(firstCard).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
     await expect(page.locator('#portfolio')).toBeVisible();
 
     // Test responsive design
@@ -155,7 +155,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     });
 
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Should handle gracefully (fallback to single-user mode or show message)
     const hasContent = await page.locator('#portfolio, .user-selection, .error-message').count() > 0;
@@ -179,7 +179,7 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     });
 
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     const johnCard = page.locator('.user-card[data-username=\"john\"]');
     await johnCard.click();
@@ -192,30 +192,30 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
     // Reset and test loading states and refresh
     await page.unroute('**/api/v1/about/users/john');
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Test loading states during transition
     const userCard = page.locator('.user-card').first();
     await userCard.click();
     const loadingScreen = page.locator('.loading-screen');
     await expect(loadingScreen).toBeVisible();
-    await expect(loadingScreen).toBeHidden({ timeout: 15000 });
+    await expect(loadingScreen).toBeHidden({ timeout: 3000 });
     await expect(page.locator('#portfolio')).toBeVisible();
 
     // Test page refresh behavior
     await page.reload();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
     await expect(page.locator('.user-selection')).toBeVisible();
   });
 
   test('should handle complete content validation and formatting across all sections', async ({ page }) => {
     // Given: Multi-user mode with selected user
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     const userCard = page.locator('.user-card').first();
     await userCard.click();
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Validate all sections have proper content
     const sections = [

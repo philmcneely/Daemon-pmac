@@ -31,7 +31,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
   test('should load complete portfolio with hero, about, experience, and skills sections', async ({ page }) => {
     // Given: Single-user portfolio is loaded
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Verify portfolio homepage loads and hero section shows user details
     await expect(page.locator('.hero-section')).toBeVisible();
@@ -97,7 +97,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
   test('should display projects, personal story, and contact sections with proper content', async ({ page }) => {
     // Given: Single-user portfolio is loaded
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Verify Projects section
     const projectsSection = page.locator('#projects');
@@ -157,7 +157,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
   test('should handle Goals & Values, mobile responsive, and deep links', async ({ page }) => {
     // Given: Single-user portfolio is loaded
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Test Goals & Values section
     const goalsValuesContent = page.locator('#goalsValuesContent');
@@ -201,7 +201,7 @@ test.describe('Single User Mode - Portfolio Frontend', () => {
     });
 
     await page.goto('/');
-    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('.loading-screen')).toBeHidden({ timeout: 3000 });
 
     // Should still load basic portfolio structure
     await expect(page.locator('#portfolio')).toBeVisible();
