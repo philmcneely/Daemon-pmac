@@ -74,6 +74,7 @@ h2 {
 
 h3 {
     font-size: 1.75rem;
+    margin-top: 1rem;
 }
 
 h4 {
@@ -890,8 +891,13 @@ a:hover {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Content Area Styles for Multi-User */
@@ -899,7 +905,9 @@ a:hover {
     min-height: 100px;
 }
 
-.about-content, .contact-content, .generic-content {
+.about-content,
+.contact-content,
+.generic-content {
     line-height: 1.8;
 }
 
@@ -920,12 +928,14 @@ a:hover {
     border-left: 4px solid var(--primary);
 }
 
-.experience-list, .projects-grid {
+.experience-list,
+.projects-grid {
     display: grid;
     gap: 1.5rem;
 }
 
-.experience-item, .project-item {
+.experience-item,
+.project-item {
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: var(--border-radius);
@@ -933,7 +943,8 @@ a:hover {
     box-shadow: var(--shadow);
 }
 
-.experience-item:hover, .project-item:hover {
+.experience-item:hover,
+.project-item:hover {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
     transition: var(--transition);
@@ -988,6 +999,17 @@ a:hover {
 .content-markdown h2:first-child,
 .content-markdown h3:first-child {
     margin-top: 0;
+}
+
+/* Specific spacing for goals content headings */
+.goals-content h1,
+.goals-content h2,
+.goals-content h3,
+.goals-content h4,
+.goals-content h5,
+.goals-content h6 {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .content-markdown ul,
@@ -1241,7 +1263,9 @@ a:hover {
     text-decoration: underline;
 }
 
-.experience-entry, .education-entry, .project-entry {
+.experience-entry,
+.education-entry,
+.project-entry {
     margin-bottom: 2rem;
     padding: 1.5rem;
     border: 1px solid var(--border);
@@ -1250,19 +1274,24 @@ a:hover {
     transition: var(--transition);
 }
 
-.experience-entry:hover, .education-entry:hover, .project-entry:hover {
+.experience-entry:hover,
+.education-entry:hover,
+.project-entry:hover {
     box-shadow: var(--shadow);
     transform: translateY(-1px);
 }
 
-.experience-entry h5, .education-entry h5, .project-entry h5 {
+.experience-entry h5,
+.education-entry h5,
+.project-entry h5 {
     font-size: 1.2rem;
     color: var(--primary);
     margin-bottom: 0.5rem;
     font-weight: 600;
 }
 
-.company-period, .institution-period {
+.company-period,
+.institution-period {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1270,7 +1299,8 @@ a:hover {
     color: var(--text-secondary);
 }
 
-.company-period strong, .institution-period strong {
+.company-period strong,
+.institution-period strong {
     color: var(--text-primary);
     font-size: 1.05rem;
 }
@@ -1477,7 +1507,8 @@ a:hover {
     margin-right: 0.5rem;
 }
 
-.tech-tag, .skill-tag {
+.tech-tag,
+.skill-tag {
     display: inline-block;
     background: var(--primary);
     color: white;
@@ -1489,7 +1520,8 @@ a:hover {
     transition: var(--transition);
 }
 
-.tech-tag:hover, .skill-tag:hover {
+.tech-tag:hover,
+.skill-tag:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
 }
@@ -1592,7 +1624,8 @@ a:hover {
         grid-template-columns: 1fr;
     }
 
-    .company-period, .institution-period {
+    .company-period,
+    .institution-period {
         flex-direction: column;
         align-items: flex-start;
     }
@@ -1603,7 +1636,10 @@ a:hover {
 }
 
 /* Markdown Content Styling */
-.project-content h1, .about-content h1, .skill-item h1, .content-item h1 {
+.project-content h1,
+.about-content h1,
+.skill-item h1,
+.content-item h1 {
     font-size: 1.8rem;
     color: var(--primary);
     margin: 1.5rem 0 1rem 0;
@@ -1611,7 +1647,10 @@ a:hover {
     line-height: 1.3;
 }
 
-.project-content h2, .about-content h2, .skill-item h2, .content-item h2 {
+.project-content h2,
+.about-content h2,
+.skill-item h2,
+.content-item h2 {
     font-size: 1.5rem;
     color: var(--primary);
     margin: 1.3rem 0 0.8rem 0;
@@ -1621,7 +1660,10 @@ a:hover {
     padding-bottom: 0.5rem;
 }
 
-.project-content h3, .about-content h3, .skill-item h3, .content-item h3 {
+.project-content h3,
+.about-content h3,
+.skill-item h3,
+.content-item h3 {
     font-size: 1.3rem;
     color: var(--text-primary);
     margin: 1.2rem 0 0.6rem 0;
@@ -1629,23 +1671,35 @@ a:hover {
     line-height: 1.3;
 }
 
-.project-content p, .about-content p, .skill-item p, .content-item p {
+.project-content p,
+.about-content p,
+.skill-item p,
+.content-item p {
     margin-bottom: 1rem;
     line-height: 1.7;
     color: var(--text-primary);
 }
 
-.project-content strong, .about-content strong, .skill-item strong, .content-item strong {
+.project-content strong,
+.about-content strong,
+.skill-item strong,
+.content-item strong {
     color: var(--primary);
     font-weight: 600;
 }
 
-.project-content em, .about-content em, .skill-item em, .content-item em {
+.project-content em,
+.about-content em,
+.skill-item em,
+.content-item em {
     font-style: italic;
     color: var(--text-secondary);
 }
 
-.project-content code, .about-content code, .skill-item code, .content-item code {
+.project-content code,
+.about-content code,
+.skill-item code,
+.content-item code {
     background: var(--background-alt);
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
@@ -1655,7 +1709,10 @@ a:hover {
     border: 1px solid var(--border);
 }
 
-.project-content pre, .about-content pre, .skill-item pre, .content-item pre {
+.project-content pre,
+.about-content pre,
+.skill-item pre,
+.content-item pre {
     background: var(--background-alt);
     padding: 1rem;
     border-radius: var(--border-radius);
@@ -1664,7 +1721,10 @@ a:hover {
     margin: 1rem 0;
 }
 
-.project-content pre code, .about-content pre code, .skill-item pre code, .content-item pre code {
+.project-content pre code,
+.about-content pre code,
+.skill-item pre code,
+.content-item pre code {
     background: none;
     border: none;
     padding: 0;
@@ -1672,29 +1732,44 @@ a:hover {
     color: var(--text-primary);
 }
 
-.project-content ul, .about-content ul, .skill-item ul, .content-item ul {
+.project-content ul,
+.about-content ul,
+.skill-item ul,
+.content-item ul {
     margin: 1rem 0;
     padding-left: 1.5rem;
 }
 
-.project-content ul li, .about-content ul li, .skill-item ul li, .content-item ul li {
+.project-content ul li,
+.about-content ul li,
+.skill-item ul li,
+.content-item ul li {
     margin-bottom: 0.5rem;
     color: var(--text-primary);
     line-height: 1.6;
 }
 
-.project-content ol, .about-content ol, .skill-item ol, .content-item ol {
+.project-content ol,
+.about-content ol,
+.skill-item ol,
+.content-item ol {
     margin: 1rem 0;
     padding-left: 1.5rem;
 }
 
-.project-content ol li, .about-content ol li, .skill-item ol li, .content-item ol li {
+.project-content ol li,
+.about-content ol li,
+.skill-item ol li,
+.content-item ol li {
     margin-bottom: 0.5rem;
     color: var(--text-primary);
     line-height: 1.6;
 }
 
-.project-content blockquote, .about-content blockquote, .skill-item blockquote, .content-item blockquote {
+.project-content blockquote,
+.about-content blockquote,
+.skill-item blockquote,
+.content-item blockquote {
     border-left: 4px solid var(--primary);
     padding: 1rem 1.5rem;
     margin: 1.5rem 0;
@@ -1704,21 +1779,30 @@ a:hover {
     color: var(--text-secondary);
 }
 
-.project-content hr, .about-content hr, .skill-item hr, .content-item hr {
+.project-content hr,
+.about-content hr,
+.skill-item hr,
+.content-item hr {
     border: none;
     height: 2px;
     background: linear-gradient(to right, var(--primary), transparent);
     margin: 2rem 0;
 }
 
-.project-content a, .about-content a, .skill-item a, .content-item a {
+.project-content a,
+.about-content a,
+.skill-item a,
+.content-item a {
     color: var(--accent);
     text-decoration: none;
     font-weight: 500;
     transition: var(--transition);
 }
 
-.project-content a:hover, .about-content a:hover, .skill-item a:hover, .content-item a:hover {
+.project-content a:hover,
+.about-content a:hover,
+.skill-item a:hover,
+.content-item a:hover {
     color: var(--primary);
     text-decoration: underline;
 }
