@@ -24,6 +24,46 @@ CLEANUP=${CLEANUP:-true}
 echo -e "${BLUE}🐳 Docker Container Test Suite${NC}"
 echo "=============================================="
 
+# Function to test database initialization (Docker simulation)
+test_database_init() {
+    echo -e "${BLUE}🗄️ Test 0: Database initialization simulation${NC}"
+
+    # Test with different database paths to simulate Docker scenarios
+    local test_db_path="./test_data/test_daemon.db"
+
+    echo "Testing database initialization with path: $test_db_path"
+
+    # Set environment variables to simulate Docker container environment
+    export DATABASE_URL="sqlite:///$test_db_path"
+    export PORT=8004
+    export HOST=0.0.0.0
+
+    # Test database initialization
+    python -c "
+from app.database import init_db
+from app.config import settings
+import os
+
+print(f'Testing with DATABASE_URL: {settings.database_url}')
+init_db()
+print('✅ Database initialization successful')
+
+# Verify database file was created
+db_path = settings.database_url.replace('sqlite:///', '')
+if os.path.exists(db_path):
+    print('✅ Database file created successfully')
+else:
+    raise Exception('❌ Database file not found')
+"
+
+    # Clean up test database
+    rm -rf test_data/
+    unset DATABASE_URL PORT HOST
+
+    echo -e "${GREEN}✅ Database initialization test passed${NC}"
+    echo
+}
+
 # Function to cleanup containers
 cleanup_containers() {
     echo -e "${YELLOW}🧹 Cleaning up containers...${NC}"
@@ -80,11 +120,6 @@ test_endpoint() {
     fi
 }
 
-# Trap to cleanup on exit
-if [ "$CLEANUP" = true ]; then
-    trap cleanup_containers EXIT
-fi
-
 echo -e "${BLUE}📋 Test Configuration:${NC}"
 echo "  API Port: $API_PORT"
 echo "  Frontend Dev Port: $FRONTEND_DEV_PORT"
@@ -93,6 +128,22 @@ echo "  Frontend Prod HTTPS Port: $FRONTEND_PROD_HTTPS_PORT"
 echo "  Wait Time: $WAIT_TIME seconds"
 echo "  Cleanup: $CLEANUP"
 echo
+
+# Test 0: Database initialization simulation (pre-Docker test)
+test_database_init
+
+# Check if Docker is available
+if ! command -v docker &> /dev/null; then
+    echo -e "${YELLOW}⚠️ Docker not found in PATH. Skipping Docker tests.${NC}"
+    echo -e "${GREEN}✅ Database initialization test completed successfully${NC}"
+    echo "To run full Docker tests, install Docker and run this script again."
+    exit 0
+fi
+
+# Trap to cleanup on exit (only after Docker is confirmed available)
+if [ "$CLEANUP" = true ]; then
+    trap cleanup_containers EXIT
+fi
 
 # Test 1: Build all containers
 echo -e "${BLUE}🏗️ Test 1: Building all containers${NC}"
