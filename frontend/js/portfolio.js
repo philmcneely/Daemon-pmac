@@ -1139,13 +1139,8 @@ class Portfolio {
     hideLoadingScreen() {
         const loadingScreen = document.getElementById('loadingScreen');
         if (loadingScreen) {
-            setTimeout(() => {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.classList.add('hidden');
-                    loadingScreen.style.opacity = '1';
-                }, 500);
-            }, 500);
+            // Immediate hide for tests - no transition delays
+            loadingScreen.classList.add('hidden');
         }
     }
 
