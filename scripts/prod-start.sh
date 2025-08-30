@@ -18,8 +18,8 @@ fi
 
 # Set production defaults
 export DEPLOYMENT_MODE=production
-export PORT=${PORT:-8007}
-export FRONTEND_PORT=${FRONTEND_PORT:-8006}
+export PORT=${PORT:-8004}
+export FRONTEND_PORT=${FRONTEND_PORT:-8005}
 
 # Validate required environment variables
 if [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "your-super-secret-key-here-change-me" ]; then

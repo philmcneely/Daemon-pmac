@@ -17,8 +17,8 @@ fi
 
 # Set development defaults
 export DEPLOYMENT_MODE=development
-export PORT=${PORT:-8007}
-export FRONTEND_PORT=${FRONTEND_PORT:-8006}
+export PORT=${PORT:-8004}
+export FRONTEND_PORT=${FRONTEND_PORT:-8005}
 
 # Function to check if port is in use
 check_port() {

@@ -31,11 +31,11 @@ USER appuser
 ENV PORT=8007
 
 # Expose port (can be overridden via environment)
-EXPOSE $PORT
+EXPOSE 8004
 
-# Health check with proper variable substitution
-HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=5 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=5
+    CMD curl -f http://localhost:${PORT:-8004}/health || exit 1
 
-# Command to run the application with environment variable
-CMD sh -c "python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+# Command to run the application
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8004}"]

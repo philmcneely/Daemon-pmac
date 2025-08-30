@@ -8,8 +8,8 @@ This project supports flexible deployment options from simple development to com
 ```bash
 ./scripts/dev-start.sh
 ```
-- API: http://localhost:8007/
-- Frontend: http://localhost:8006/
+- API: http://localhost:8004/
+- Frontend: http://localhost:8005/
 - Auto-reload enabled
 
 ### Production (Single App)
@@ -22,9 +22,9 @@ This project supports flexible deployment options from simple development to com
 
 ### Multi-App Hosting
 ```bash
-./scripts/multi-app-start.sh daemon 8007 8006
-./scripts/multi-app-start.sh app2 8017 8016
-./scripts/multi-app-start.sh app3 8027 8026
+./scripts/multi-app-start.sh daemon 8004 8005
+./scripts/multi-app-start.sh app2 8014 8015
+./scripts/multi-app-start.sh app3 8024 8025
 ```
 
 ## 📁 Configuration Files
@@ -35,8 +35,8 @@ This project supports flexible deployment options from simple development to com
 cp .env.example .env
 
 # Key settings for multi-app hosting:
-PORT=8007                    # API server port
-FRONTEND_PORT=8006          # Frontend server port
+PORT=8004                    # API server port
+FRONTEND_PORT=8005          # Frontend server port
 DEPLOYMENT_MODE=production  # development, production, multi-app
 EXTERNAL_DOMAIN=yourdomain.com
 DAEMON_API_URL=https://yourdomain.com/daemon/api  # For path-based routing
@@ -53,10 +53,10 @@ DAEMON_API_URL=https://yourdomain.com/daemon/api  # For path-based routing
 
 ### Strategy 1: Path-Based (Recommended)
 ```
-yourdomain.com/daemon/     → Daemon Frontend (port 8006)
-yourdomain.com/daemon/api/ → Daemon API (port 8007)
-yourdomain.com/app2/       → App2 Frontend (port 8016)
-yourdomain.com/app2/api/   → App2 API (port 8017)
+yourdomain.com/daemon/     → Daemon Frontend (port 8005)
+yourdomain.com/daemon/api/ → Daemon API (port 8004)
+yourdomain.com/app2/       → App2 Frontend (port 8015)
+yourdomain.com/app2/api/   → App2 API (port 8014)
 ```
 
 **Advantages:**
@@ -66,10 +66,10 @@ yourdomain.com/app2/api/   → App2 API (port 8017)
 
 ### Strategy 2: Subdomain-Based
 ```
-daemon.yourdomain.com → Daemon Frontend (port 8006)
-api.daemon.yourdomain.com → Daemon API (port 8007)
-app2.yourdomain.com → App2 Frontend (port 8016)
-api.app2.yourdomain.com → App2 API (port 8017)
+daemon.yourdomain.com → Daemon Frontend (port 8005)
+api.daemon.yourdomain.com → Daemon API (port 8004)
+app2.yourdomain.com → App2 Frontend (port 8015)
+api.app2.yourdomain.com → App2 API (port 8014)
 ```
 
 **Advantages:**
@@ -84,15 +84,15 @@ api.app2.yourdomain.com → App2 API (port 8017)
 Base: 8000-8099 (internal apps)
 
 Daemon Portfolio:
-- API: 8007, Frontend: 8006
+- API: 8004, Frontend: 8005
 
 App 2:
-- API: 8017, Frontend: 8016
+- API: 8014, Frontend: 8015
 
 App 3:
-- API: 8027, Frontend: 8026
+- API: 8024, Frontend: 8025
 
-Pattern: API = X7, Frontend = X6
+Pattern: API = X4, Frontend = X5
 ```
 
 ### External Ports
@@ -181,10 +181,10 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8004
 ### Health Checks
 ```bash
 # API Health
-curl http://localhost:8007/health
+curl http://localhost:8004/health
 
 # Frontend Health
-curl -I http://localhost:8006/
+curl -I http://localhost:8005/
 
 # Through nginx
 curl https://yourdomain.com/daemon/api/health
