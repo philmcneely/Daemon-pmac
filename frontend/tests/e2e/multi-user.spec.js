@@ -29,6 +29,9 @@ test.describe('Multi User Mode - Portfolio Frontend', () => {
       const response = await route.fetch();
       const json = await response.json();
 
+      // CRITICAL: Set mode to multi_user for proper detection
+      json.mode = "multi_user";
+
       // Ensure multiple users exist for multi-user mode
       json.users = [
         {

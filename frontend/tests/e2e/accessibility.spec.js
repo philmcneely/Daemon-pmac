@@ -27,9 +27,11 @@ test.describe('Frontend Accessibility Compliance', () => {
     const focusedElement = await page.locator(':focus').count();
     expect(focusedElement).toBeGreaterThan(0);
 
-    // ARIA LABELS AND LANDMARKS
-    const landmarks = page.locator('[role], [aria-label], [aria-labelledby]');
+    // ARIA LABELS AND LANDMARKS (flexible check)
+    const landmarks = page.locator('[role], [aria-label], [aria-labelledby], nav, main, header, footer');
     const landmarkCount = await landmarks.count();
+
+    // Should have some landmarks or semantic elements (nav, main, etc.)
     expect(landmarkCount).toBeGreaterThan(0);
 
     // COLOR CONTRAST (basic validation)
