@@ -978,9 +978,17 @@ async def get_endpoint_data(
     if active_only:
         query = query.filter(DataEntry.is_active == True)
 
-    # Adaptive user filtering logic
+    # SECURITY FIX: Proper user filtering for both single and multi-user modes
     if is_single_user_mode(db):
-        pass  # No user filtering
+        # FIXED: In single-user mode, only return data for the single active user
+        single_user = get_single_user(db)
+        if single_user:
+            # STRICT SECURITY: Only return data created by the single user
+            # Do NOT include orphaned data (created_by_id = NULL)
+            query = query.filter(DataEntry.created_by_id == single_user.id)
+        else:
+            # No users in system - return empty result
+            query = query.filter(DataEntry.id == -1)  # No results
     else:
         if current_user:
             query = query.filter(
@@ -1349,10 +1357,17 @@ async def get_endpoint_item(
         DataEntry.is_active == True,
     )
 
-    # Adaptive user filtering logic
+    # SECURITY FIX: Proper user filtering for both single and multi-user modes
     if is_single_user_mode(db):
-        # Single-user mode: show all data regardless of owner
-        pass  # No user filtering
+        # FIXED: In single-user mode, only return data for the single active user
+        single_user = get_single_user(db)
+        if single_user:
+            # STRICT SECURITY: Only return data created by the single user
+            # Do NOT include orphaned data (created_by_id = NULL)
+            query = query.filter(DataEntry.created_by_id == single_user.id)
+        else:
+            # No users in system - return empty result
+            query = query.filter(DataEntry.id == -1)  # No results
     else:
         # Multi-user mode: filter by user ownership
         if current_user:
