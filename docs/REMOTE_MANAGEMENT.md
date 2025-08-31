@@ -30,7 +30,7 @@ The cleanest way to manage your remote server is through the API:
 ```bash
 # Set your server URL as an environment variable
 export DAEMON_URL="https://daemon.example.com"
-export DAEMON_ADMIN_USER="admin"
+ADMIN_USER="jime"
 export DAEMON_ADMIN_PASS="your_secure_password"
 ```
 
@@ -74,7 +74,7 @@ create_user() {
 
 # Usage
 TOKEN=$(get_token)
-create_user "kime" "kime@example.com" "secure_password"
+create_user "janee" "janee@example.com" "secure_password"
 ```
 
 #### **Data Management**
@@ -127,7 +127,7 @@ ssh daemon-server "cd /opt/daemon && venv/bin/python -m app.cli import-all-data"
 ssh daemon-server
 cd /opt/daemon
 source venv/bin/activate
-python -m app.cli create-user kime --admin
+python -m app.cli create-user janee --admin
 python -m app.cli import-user-data admin --data-dir data/private/admin
 ```
 
@@ -146,7 +146,7 @@ ssh daemon-server "docker exec daemon-container python -m app.cli import-all-dat
 ```bash
 # Upload user data directories
 scp -r ./data/private/admin/ daemon-server:/opt/daemon/data/private/admin/
-scp -r ./data/private/kime/ daemon-server:/opt/daemon/data/private/kime/
+scp -r ./data/private/janee/ daemon-server:/opt/daemon/data/private/janee/
 
 # Upload and import in one go
 upload_and_import() {
@@ -275,7 +275,7 @@ fi
 echo "✓ Authentication successful"
 
 # Create users
-create_user "kime" "kime@example.com"
+create_user "janee" "janee@example.com"
 create_user "brianc" "brian.c@example.com"
 create_user "sarah" "sarah@example.com"
 
@@ -414,7 +414,7 @@ ssh -T daemon-server "echo 'Connection successful'"
 # Verify credentials
 curl -X POST "$DAEMON_URL/auth/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "username=pmac&password=wrongpassword"
+    -d "username=jime&password=wrongpassword"
 
 # Check token expiration
 echo "$TOKEN" | base64 -d | jq .
@@ -431,7 +431,7 @@ ssh daemon-server "ls -la /opt/daemon/data/private/"
 
 # Verify data format (deployment specific)
 # For Docker deployment:
-ssh daemon-server "docker exec daemon-container python -m json.tool /app/data/private/pmac/resume.json"
+ssh daemon-server "docker exec daemon-container python -m json.tool /app/data/private/jime/resume.json"
 
 # For bare metal deployment:
 ssh daemon-server "cd /opt/daemon && venv/bin/python -m json.tool data/private/username/resume.json"

@@ -197,11 +197,11 @@ curl "http://localhost:8004/api/v1/hobbies"
 ### Multi-User Mode (2+ users)
 ```bash
 # Create second user (triggers multi-user mode)
-python -m app.cli create-user kime
+python -m app.cli create-user janee
 
 # User-specific endpoints with privacy levels
 curl "http://localhost:8004/api/v1/resume/users/username?level=ai_safe"
-curl "http://localhost:8004/api/v1/skills/users/kime?level=business_card"
+curl "http://localhost:8004/api/v1/skills/users/janee?level=business_card"
 ```
 
 ## 📚 API Examples
@@ -238,10 +238,10 @@ POST /auth/register
 }
 
 # Complete user setup (admin only)
-POST /api/v1/setup/user/kime
+POST /api/v1/setup/user/janee
 {
-  "username": "kime",
-  "email": "kime@example.com",
+  "username": "janee",
+  "email": "janee@example.com",
   "password": "secure_password"
 }
 ```
@@ -254,7 +254,7 @@ The system automatically filters sensitive data for public access:
 **Original Data:**
 ```json
 {
-  "name": "Phil McNeely",
+  "name": "Jim Experior",
   "contact": {
     "email": "user@example.com",
     "phone": "+1-555-123-4567",
@@ -267,7 +267,7 @@ The system automatically filters sensitive data for public access:
 **Public Filtered (`ai_safe` level):**
 ```json
 {
-  "name": "Phil McNeely",
+  "name": "Jim Experior",
   "contact": {
     "email": "user@example.com"
   }
@@ -635,15 +635,15 @@ curl -X POST "$DAEMON_URL/auth/register" \
 # Login to get admin token
 TOKEN=$(curl -X POST "$DAEMON_URL/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=pmac&password=secure_password" | jq -r '.access_token')
+  -d "username=jime&password=secure_password" | jq -r '.access_token')
 
 # Create additional users
-curl -X POST "$DAEMON_URL/api/v1/setup/user/kime" \
+curl -X POST "$DAEMON_URL/api/v1/setup/user/janee" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "kime",
-    "email": "kime@example.com",
+    "username": "janee",
+    "email": "janee@example.com",
     "password": "secure_password"
   }'
 ```
@@ -654,8 +654,8 @@ curl -X POST "$DAEMON_URL/api/v1/setup/user/kime" \
 ssh user@your-german-server.com
 
 # Use CLI commands on the server
-python -m app.cli create-user pmac
-python -m app.cli create-user kime --admin
+python -m app.cli create-user jime
+python -m app.cli create-user janee --admin
 python -m app.cli import-all-data --base-dir /data/private
 ```
 
@@ -672,10 +672,10 @@ curl -X POST "$DAEMON_URL/api/v1/import/all" \
 #### **4. Docker Volume Management**
 ```bash
 # If using Docker, copy data to container
-docker cp ./data/private/pmac/ daemon-container:/app/data/private/pmac/
+docker cp ./data/private/jime/ daemon-container:/app/data/private/jime/
 
 # Import data
-docker exec daemon-container python -m app.cli import-user-data pmac
+docker exec daemon-container python -m app.cli import-user-data jime
 ```
 
 #### **5. Automated Setup Script**
@@ -695,7 +695,7 @@ TOKEN=$(curl -s -X POST "$DAEMON_URL/auth/login" \
   -d "username=$ADMIN_USER&password=$ADMIN_PASS" | jq -r '.access_token')
 
 # Create users
-for user in kime brianc; do
+for user in janee brianc; do
   echo "Creating user: $user"
   curl -X POST "$DAEMON_URL/api/v1/setup/user/$user" \
     -H "Authorization: Bearer $TOKEN" \
@@ -732,23 +732,23 @@ Since your server is in Germany (CET/CEST), keep in mind:
 POST /api/v1/import/all?base_directory=data/private
 
 # Import specific user's data
-POST /api/v1/import/user/pmac?data_directory=data/private/pmac
+POST /api/v1/import/user/jime?data_directory=data/private/jime
 
 # Import single file
-POST /api/v1/import/file?file_path=data/private/pmac/resume.json&endpoint_name=resume
+POST /api/v1/import/file?file_path=data/private/jime/resume.json&endpoint_name=resume
 ```
 
 ### **CLI Data Management**
 ```bash
 # Create user with automatic data import
-python -m app.cli create-user pmac --import-data
+python -m app.cli create-user jime --import-data
 
 # Import data for existing users
-python -m app.cli import-user-data pmac --data-dir data/private/pmac
+python -m app.cli import-user-data jime --data-dir data/private/jime
 python -m app.cli import-all-data --base-dir data/private
 
 # Export user data (backup)
-python -m app.cli export-user-data pmac --output-dir ./backups/
+python -m app.cli export-user-data jime --output-dir ./backups/
 ```
 
 ### **Expected Directory Structure**
@@ -759,13 +759,13 @@ data/
 │   ├── skills_example.json
 │   └── hobbies_example.json
 └── private/              # User data (ignored by git)
-    ├── pmac/
-    │   ├── resume_pmac.json
-    │   ├── skills_pmac.json
-    │   └── hobbies_pmac.json
-    ├── kime/
-    │   ├── resume_kime.json
-    │   └── skills_kime.json
+    ├── jime/
+    │   ├── resume_jime.json
+    │   ├── skills_jime.json
+    │   └── hobbies_jime.json
+    ├── janee/
+    │   ├── resume_janee.json
+    │   └── skills_janee.json
     └── brianc/
         └── resume_brianc.json
 ```
@@ -838,14 +838,14 @@ This project is independently developed and is not officially affiliated with Da
 # 1. Login to get JWT token (use your actual port)
 curl -X POST "http://localhost:8004/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=pmac&password=your_password"
+  -d "username=jime&password=your_password"
 
 # Response:
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
   "token_type": "bearer",
   "user": {
-    "username": "pmac",
+    "username": "jime",
     "is_admin": true
   }
 }

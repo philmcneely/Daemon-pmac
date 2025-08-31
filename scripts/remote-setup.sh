@@ -5,7 +5,7 @@ set -e  # Exit on any error
 
 # Configuration
 DAEMON_URL="${DAEMON_URL:-https://daemon.pmac.dev}"
-ADMIN_USER="${ADMIN_USER:-pmac}"
+ADMIN_USER="${ADMIN_USER:-jime}"
 ADMIN_PASS="${ADMIN_PASS}"
 
 # Colors for output
@@ -344,11 +344,11 @@ Usage:
 
 Environment Variables:
   DAEMON_URL     # Server URL (default: https://daemon.pmac.dev)
-  ADMIN_USER     # Admin username (default: pmac)
+  ADMIN_USER     # Admin username (default: jime)
   ADMIN_PASS     # Admin password (prompted if not set)
 
 Examples:
-  $0 create-user kime kime@example.com
+  $0 create-user janee janee@example.com
   $0 import-all
   DAEMON_URL=https://my-server.com $0 status
 EOF

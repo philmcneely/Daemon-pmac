@@ -20,7 +20,7 @@ Usage:
         return db.query(User).all()
 
     # Create new database entries
-    new_user = User(username="pmac", email="pmac@example.com")
+    new_user = User(username="jime", email="jime@example.com")
     db.add(new_user)
     db.commit()
 

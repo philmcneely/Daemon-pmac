@@ -70,7 +70,7 @@ class Portfolio {
             console.log('Updating hero section...');
 
             // Default values
-            let name = 'Phil McNeely';  // Extract from your email
+            let name = 'Jim Experior';  // Extract from your email
             let title = 'Full Stack Developer';
 
             // Check contact endpoint first for email/name extraction
