@@ -101,8 +101,15 @@ test_endpoint() {
     local expect_success=${3:-true}
 
     echo -e "${BLUE}🔍 Testing $name: $url${NC}"
+
+    # Use -k flag for HTTPS URLs with self-signed certificates
+    local curl_flags="-f -s"
+    if [[ $url == https://* ]]; then
+        curl_flags="-f -s -k"
+    fi
+
     if [ "$expect_success" = true ]; then
-        if curl -f -s "$url" > /dev/null; then
+        if curl $curl_flags "$url" > /dev/null; then
             echo -e "${GREEN}✅ $name: SUCCESS${NC}"
             return 0
         else
@@ -110,7 +117,7 @@ test_endpoint() {
             return 1
         fi
     else
-        if curl -f -s "$url" > /dev/null; then
+        if curl $curl_flags "$url" > /dev/null; then
             echo -e "${RED}❌ $name: Expected failure but succeeded${NC}"
             return 1
         else

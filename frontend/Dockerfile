@@ -27,6 +27,7 @@ RUN chown -R nginx-user:nginx-user /usr/share/nginx/html && \
     chown -R nginx-user:nginx-user /var/cache/nginx && \
     chown -R nginx-user:nginx-user /var/log/nginx && \
     chown -R nginx-user:nginx-user /etc/nginx/conf.d && \
+    chown -R nginx-user:nginx-user /etc/nginx/ssl && \
     touch /var/run/nginx.pid && \
     chown nginx-user:nginx-user /var/run/nginx.pid
 
