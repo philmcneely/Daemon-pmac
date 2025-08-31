@@ -4,7 +4,6 @@ This directory contains internal project documentation for development, deployme
 
 ## Development Documentation
 
-- **[COPILOT_INSTRUCTIONS.md](COPILOT_INSTRUCTIONS.md)** - GitHub Copilot workflow instructions and CLI handling patterns
 - **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Detailed project architecture and file organization
 - **[VSCODE_SETUP.md](VSCODE_SETUP.md)** - VS Code development environment configuration
 

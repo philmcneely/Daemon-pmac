@@ -5,7 +5,7 @@
 ## Implementation Requirements & Process
 
 ### Critical Process Rules
-1. **MUST follow COPILOT_INSTRUCTIONS.md** - Especially for GitHub CLI operations (use `gh_temp/` directory for output redirection)
+1. **ALWAYS test thoroughly** - Especially for GitHub CLI operations (use `gh_temp/` directory for output redirection)
 2. **ONE ENDPOINT AT A TIME** - Create each endpoint individually, test thoroughly, then commit and push before starting the next
 3. **COMPREHENSIVE TESTING** - Each endpoint must pass ALL tests (unit, e2e, integration) before pushing to CI
 4. **NO BROKEN CI** - Ensure tests pass locally AND in CI before any commit/push operations

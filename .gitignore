@@ -109,3 +109,9 @@ bandit-report.json
 # Local configuration
 .env.local
 config.local.py
+
+# Copilot instruction files (private development guidance)
+.copilot-instructions
+.github/copilot-instructions.md
+docs/COPILOT_INSTRUCTIONS.md
+docs/section_implementation_blueprint.md
