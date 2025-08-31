@@ -493,28 +493,28 @@ jobs:
 
         # Test API only
         echo "📋 Testing API-only deployment..."
-        docker-compose up -d daemon-api
+        docker compose up -d daemon-api
         sleep 20
         curl -f http://localhost:8004/health || exit 1
-        docker-compose down
+        docker compose down
         echo "✅ API-only profile works"
 
         # Test development frontend
         echo "📋 Testing development frontend profile..."
-        docker-compose --profile frontend-dev up -d
+        docker compose --profile frontend-dev up -d
         sleep 25
         curl -f http://localhost:8004/health || exit 1
         curl -f http://localhost:8005/ || exit 1
-        docker-compose --profile frontend-dev down
+        docker compose --profile frontend-dev down
         echo "✅ Development frontend profile works"
 
         # Test production frontend
         echo "📋 Testing production frontend profile..."
-        docker-compose --profile frontend up -d
+        docker compose --profile frontend up -d
         sleep 30
         curl -f http://localhost:80/ || exit 1
         curl -k -f https://localhost:443/ || exit 1
-        docker-compose --profile frontend down
+        docker compose --profile frontend down
         echo "✅ Production frontend profile works"
 
         echo "🎉 Docker Compose profile tests passed!"
