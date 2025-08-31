@@ -1,5 +1,33 @@
 # Changes Log
 
+## Version 0.3.1 (2025-08-31)
+
+### 🔄 Database Migration System
+- **Added comprehensive database migration system**
+  - New `scripts/version_tracker.py` for database version tracking and schema validation
+  - New `scripts/migrate_comprehensive.py` for automated migrations with safety checks
+  - Pre-migration safety checks including disk space and schema integrity validation
+  - Automatic backup creation before migrations with rollback capability
+  - Support for all migration paths: v0.1.x → v0.2.x → v0.3.x
+  - Command-line interface with status checking and forced migration options
+
+### 📚 Enhanced Documentation
+- **Comprehensive migration documentation** in `docs/DATABASE_MIGRATIONS.md`
+  - Docker container-to-container upgrade procedures
+  - Bare metal upgrade procedures with step-by-step instructions
+  - Version-specific migration matrix with breaking changes documentation
+  - Rollback procedures and troubleshooting guides
+- **Migration tools documentation** in `scripts/README.md`
+  - Detailed usage examples and feature descriptions
+  - Safety features and backup procedures
+  - Migration workflow for new installations and upgrades
+
+### 🛡️ Safety Features
+- **Automatic database backups** before all migrations
+- **Schema integrity validation** before and after migrations
+- **Disk space verification** (requires 3x database size for safety)
+- **Rollback capability** on migration failure with clear restore instructions
+
 ## Version 0.3.0 (2025-08-31)
 
 ### 🧹 Repository Cleanup & Naming Convention
