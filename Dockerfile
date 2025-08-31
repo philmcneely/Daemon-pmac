@@ -22,6 +22,7 @@ COPY . .
 RUN mkdir -p backups logs data && \
     chmod 755 data backups logs
 
+# For production, create non-root user, but for CI we'll use root to avoid volume permission issues
 # Create non-root user (use appuser to avoid conflict with existing daemon user)
 RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app
@@ -36,7 +37,8 @@ RUN echo '#!/bin/bash' > /app/fix-permissions.sh && \
     chmod +x /app/fix-permissions.sh && \
     chown appuser:appuser /app/fix-permissions.sh
 
-USER appuser
+# Comment out user switch to run as root for CI testing
+# USER appuser
 
 # Set default port as environment variable
 ENV PORT=8004

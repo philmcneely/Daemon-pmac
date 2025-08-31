@@ -243,7 +243,7 @@ jobs:
         FRONTEND_PORT=8005
         DEBUG=false
         DATABASE_URL=sqlite:///./data/daemon.db
-        CORS_ORIGINS=["http://localhost:8005", "http://localhost"]
+        CORS_ORIGINS=["http://localhost:8005","http://localhost"]
         EOF
 
     # Test 1: Build API container
