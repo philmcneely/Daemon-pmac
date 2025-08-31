@@ -38,8 +38,5 @@ EXPOSE 80 443
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
 
-# Use non-root user
-USER nginx-user
-
-# Start nginx
+# Start nginx (runs as root, drops to nginx-user for workers)
 CMD ["nginx", "-g", "daemon off;"]
