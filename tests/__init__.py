@@ -1,6 +1,6 @@
 """
 Module: tests
-Description: Test suite package for Daemon-pmac with unit and E2E test coverage
+Description: Test suite package for Daemon with unit and E2E test coverage
 
 Author: pmac
 Created: 2025-08-28

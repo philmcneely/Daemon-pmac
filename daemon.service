@@ -6,9 +6,9 @@ After=network.target
 Type=exec
 User=daemon
 Group=daemon
-WorkingDirectory=/opt/daemon-pmac
-Environment=PATH=/opt/daemon-pmac/venv/bin
-ExecStart=/opt/daemon-pmac/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/opt/daemon
+Environment=PATH=/opt/daemon/venv/bin
+ExecStart=/opt/daemon/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
 
@@ -17,7 +17,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/opt/daemon-pmac
+ReadWritePaths=/opt/daemon
 
 # Resource limits
 LimitNOFILE=65535

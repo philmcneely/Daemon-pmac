@@ -13,7 +13,7 @@ NC='\033[0m'
 
 DOMAIN=""
 EMAIL=""
-SSL_DIR="/opt/daemon-pmac/ssl"
+SSL_DIR="/opt/daemon/ssl"
 LETSENCRYPT=false
 
 # Parse arguments
@@ -85,7 +85,7 @@ if [ "$LETSENCRYPT" = true ]; then
     sudo chmod 644 $SSL_DIR/cert.pem
 
     # Update nginx configuration
-    sudo tee /etc/nginx/sites-available/daemon-pmac > /dev/null <<EOF
+    sudo tee /etc/nginx/sites-available/daemon > /dev/null <<EOF
 # Redirect HTTP to HTTPS
 server {
     listen 80;
@@ -164,7 +164,7 @@ else
     sudo chmod 644 $SSL_DIR/cert.pem
 
     # Update nginx configuration for self-signed
-    sudo tee /etc/nginx/sites-available/daemon-pmac > /dev/null <<EOF
+    sudo tee /etc/nginx/sites-available/daemon > /dev/null <<EOF
 server {
     listen 80;
     server_name _;

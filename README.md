@@ -8,7 +8,7 @@
 
 An **adaptive personal API framework** that seamlessly scales from single-user simplicity to multi-user complexity with comprehensive privacy controls. Built with FastAPI and inspired by [Daniel Miessler's Daemon project](https://github.com/danielmiessler/Daemon).
 
-> **Adaptive Design**: Automatically switches between single-user mode (simple `/api/v1/resume`) and multi-user mode (`/api/v1/resume/users/pmac`) based on the number of users in the system.
+> **Adaptive Design**: Automatically switches between single-user mode (simple `/api/v1/resume`) and multi-user mode (`/api/v1/resume/users/username`) based on the number of users in the system.
 
 ## ✨ Key Features
 
@@ -53,7 +53,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create first user (becomes admin automatically)
-python -m app.cli create-user pmac
+python -m app.cli create-user your-username
 
 # Start the server
 python dev.py
@@ -77,7 +77,7 @@ This script will:
 
 **VS Code Integration**: Open the project with:
 ```bash
-code daemon-pmac.code-workspace
+code daemon.code-workspace
 ```
 
 #### Manual Development Setup
@@ -200,7 +200,7 @@ curl "http://localhost:8004/api/v1/hobbies"
 python -m app.cli create-user kime
 
 # User-specific endpoints with privacy levels
-curl "http://localhost:8004/api/v1/resume/users/pmac?level=ai_safe"
+curl "http://localhost:8004/api/v1/resume/users/username?level=ai_safe"
 curl "http://localhost:8004/api/v1/skills/users/kime?level=business_card"
 ```
 
@@ -215,16 +215,16 @@ GET /api/v1/system/info
 ### Privacy Levels
 ```bash
 # Ultra-minimal business card view
-GET /api/v1/resume/users/pmac?level=business_card
+GET /api/v1/resume/users/username?level=business_card
 
 # Professional networking view
-GET /api/v1/resume/users/pmac?level=professional
+GET /api/v1/resume/users/username?level=professional
 
 # Full public view (respects user privacy settings)
-GET /api/v1/resume/users/pmac?level=public_full
+GET /api/v1/resume/users/username?level=public_full
 
 # AI assistant safe view (no sensitive data)
-GET /api/v1/resume/users/pmac?level=ai_safe
+GET /api/v1/resume/users/username?level=ai_safe
 ```
 
 ### User Management
@@ -232,8 +232,8 @@ GET /api/v1/resume/users/pmac?level=ai_safe
 # Register new user
 POST /auth/register
 {
-  "username": "pmac",
-  "email": "phil@pmac.dev",
+  "username": "your-username",
+  "email": "user@example.com",
   "password": "secure_password"
 }
 
@@ -256,7 +256,7 @@ The system automatically filters sensitive data for public access:
 {
   "name": "Phil McNeely",
   "contact": {
-    "email": "phil@pmac.dev",
+    "email": "user@example.com",
     "phone": "+1-555-123-4567",
     "personal_email": "personal@gmail.com"
   },
@@ -269,7 +269,7 @@ The system automatically filters sensitive data for public access:
 {
   "name": "Phil McNeely",
   "contact": {
-    "email": "phil@pmac.dev"
+    "email": "user@example.com"
   }
 }
 ```
@@ -405,7 +405,7 @@ sudo ./setup-pi.sh
 ```
 
 The remote setup script:
-- ✅ **Creates isolated virtual environment** at `/opt/daemon-pmac/venv/`
+- ✅ **Creates isolated virtual environment** at `/opt/daemon/venv/`
 - ✅ **Installs all dependencies** in the venv
 - ✅ **Sets up systemd service** using the venv Python
 - ✅ **Configures automatic backups** with venv Python
@@ -449,9 +449,9 @@ GET /api/v1/skills
 
 **Multi-User Mode (2+ users):**
 ```bash
-GET /api/v1/resume/users/pmac    # User-specific endpoints
-GET /api/v1/ideas/users/kime
-GET /api/v1/skills/users/pmac
+GET /api/v1/resume/users/username    # User-specific endpoints
+GET /api/v1/ideas/users/username2
+GET /api/v1/skills/users/username
 ```
 
 ### 📊 Core Data Endpoints
@@ -555,7 +555,7 @@ python -m app.cli backup restore backup_20231215_143022.db
 # Check if resume file exists and is valid
 make check-resume
 
-# Import resume from JSON file (auto-detects data/resume_pmac.json)
+# Import resume from JSON file (auto-detects data/resume_username.json)
 make import-resume
 
 # View current resume data
@@ -627,8 +627,8 @@ export DAEMON_URL="https://daemon.pmac.dev"  # or http://YOUR_SERVER_IP:8004
 curl -X POST "$DAEMON_URL/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "pmac",
-    "email": "phil@pmac.dev",
+    "username": "username",
+    "email": "user@example.com",
     "password": "secure_password"
   }'
 

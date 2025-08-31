@@ -1,4 +1,4 @@
-# Daemon-pmac Project Structure
+# Daemon Project Structure
 
 **Example Implementation of [Daniel Miessler's Daemon Project](https://github.com/danielmiessler/Daemon)**
 
@@ -32,7 +32,7 @@ Daemon-pmac/
 ├── Dockerfile                  # Docker container configuration
 ├── docker-compose.yml         # Multi-container setup
 ├── nginx.conf                  # Nginx reverse proxy config
-├── daemon-pmac.service        # Systemd service file
+├── daemon.service        # Systemd service file
 ├── setup-pi.sh               # Raspberry Pi installation script
 ├── setup-ssl.sh              # SSL certificate setup script
 ├── dev.py                     # Development server script

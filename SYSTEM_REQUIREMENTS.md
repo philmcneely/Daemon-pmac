@@ -1,8 +1,8 @@
-# Daemon-pmac: Detailed Requirements Specification
+# Daemon: Detailed Requirements Specification
 
 ## 1. Executive Summary
 
-Daemon-pmac is an **adaptive personal API framework** that seamlessly scales from single-user simplicity to multi-user complexity with comprehensive privacy controls. The system automatically adapts its behavior based on the number of users, providing clean single-user endpoints when appropriate and user-specific multi-user endpoints when needed.
+Daemon is an **adaptive personal API framework** that seamlessly scales from single-user simplicity to multi-user complexity with comprehensive privacy controls. The system automatically adapts its behavior based on the number of users, providing clean single-user endpoints when appropriate and user-specific multi-user endpoints when needed.
 
 **Core Philosophy**: Start simple for personal use, scale automatically to support teams and organizations.
 
@@ -255,10 +255,10 @@ python -m app.cli data import-all
 #### 7.1.2 Multi-User Data Import
 ```bash
 # Import data for specific user
-python -m app.cli data import ideas --user pmac --file data/private/pmac/ideas.json
+python -m app.cli data import ideas --user username --file data/private/username/ideas.json
 
 # Setup new user with data directory
-python -m app.cli user setup pmac --create-dirs --import-data
+python -m app.cli user setup username --create-dirs --import-data
 ```
 
 #### 7.1.3 File Pattern Support
@@ -437,7 +437,7 @@ POST   /mcp/tools/{tool_name}        # Execute specific tool
 
 ## 14. Conclusion
 
-Daemon-pmac represents a comprehensive personal API framework that adapts to user needs while maintaining simplicity and security. The adaptive architecture ensures that single users enjoy a clean, simple experience while multi-user environments receive the full power of user isolation, privacy controls, and administrative capabilities.
+Daemon represents a comprehensive personal API framework that adapts to user needs while maintaining simplicity and security. The adaptive architecture ensures that single users enjoy a clean, simple experience while multi-user environments receive the full power of user isolation, privacy controls, and administrative capabilities.
 
 The system's focus on privacy by design, comprehensive security, and automatic scaling makes it suitable for personal use cases ranging from individual developers to small teams and organizations requiring secure personal data management.
 
@@ -448,4 +448,4 @@ The system's focus on privacy by design, comprehensive security, and automatic s
 4. **Production Ready**: Full deployment, monitoring, and operational capabilities
 5. **Standards Compliant**: RESTful APIs, OpenAPI documentation, MCP integration
 
-This requirements specification serves as the definitive guide for understanding, implementing, and extending the Daemon-pmac system.
+This requirements specification serves as the definitive guide for understanding, implementing, and extending the Daemon system.

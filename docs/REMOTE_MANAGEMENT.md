@@ -8,9 +8,9 @@ Your remote server can be deployed in two ways, and the commands differ:
 
 ### **🖥️ Bare Metal Deployment (Recommended)**
 - **Setup**: Uses `setup-pi.sh` script
-- **Location**: `/opt/daemon-pmac/`
-- **Python**: Uses virtual environment at `/opt/daemon-pmac/venv/`
-- **Commands**: `cd /opt/daemon-pmac && venv/bin/python -m app.cli ...`
+- **Location**: `/opt/daemon/`
+- **Python**: Uses virtual environment at `/opt/daemon/venv/`
+- **Commands**: `cd /opt/daemon && venv/bin/python -m app.cli ...`
 
 ### **🐳 Docker Deployment**
 - **Setup**: Uses Docker Compose
@@ -120,12 +120,12 @@ Host daemon-server
 **For Bare Metal Deployment (using setup-pi.sh):**
 ```bash
 # Connect and run commands (uses virtual environment)
-ssh daemon-server "cd /opt/daemon-pmac && venv/bin/python -m app.cli create-user admin"
-ssh daemon-server "cd /opt/daemon-pmac && venv/bin/python -m app.cli import-all-data"
+ssh daemon-server "cd /opt/daemon && venv/bin/python -m app.cli create-user admin"
+ssh daemon-server "cd /opt/daemon && venv/bin/python -m app.cli import-all-data"
 
 # Interactive session
 ssh daemon-server
-cd /opt/daemon-pmac
+cd /opt/daemon
 source venv/bin/activate
 python -m app.cli create-user kime --admin
 python -m app.cli import-user-data admin --data-dir data/private/admin
@@ -145,20 +145,20 @@ ssh daemon-server "docker exec daemon-container python -m app.cli import-all-dat
 **For Bare Metal Deployment:**
 ```bash
 # Upload user data directories
-scp -r ./data/private/admin/ daemon-server:/opt/daemon-pmac/data/private/admin/
-scp -r ./data/private/kime/ daemon-server:/opt/daemon-pmac/data/private/kime/
+scp -r ./data/private/admin/ daemon-server:/opt/daemon/data/private/admin/
+scp -r ./data/private/kime/ daemon-server:/opt/daemon/data/private/kime/
 
 # Upload and import in one go
 upload_and_import() {
     local username=$1
     local local_dir="./data/private/$username"
-    local remote_dir="/opt/daemon-pmac/data/private/$username"
+    local remote_dir="/opt/daemon/data/private/$username"
 
     # Upload files
     scp -r "$local_dir/" "daemon-server:$remote_dir/"
 
     # Import via SSH (using virtual environment)
-    ssh daemon-server "cd /opt/daemon-pmac && venv/bin/python -m app.cli import-user-data $username"
+    ssh daemon-server "cd /opt/daemon && venv/bin/python -m app.cli import-user-data $username"
 }
 ```
 
@@ -175,10 +175,10 @@ ssh daemon-server "docker exec daemon-container python -m app.cli import-user-da
 **For Bare Metal Deployment:**
 ```bash
 # Sync data directories (more efficient)
-rsync -avz --progress ./data/private/ daemon-server:/opt/daemon-pmac/data/private/
+rsync -avz --progress ./data/private/ daemon-server:/opt/daemon/data/private/
 
 # Sync with deletion (careful!)
-rsync -avz --delete ./data/private/ daemon-server:/opt/daemon-pmac/data/private/
+rsync -avz --delete ./data/private/ daemon-server:/opt/daemon/data/private/
 ```
 
 **For Docker Deployment:**
@@ -195,8 +195,8 @@ If your server runs via Docker:
 #### **Docker Compose Management**
 ```bash
 # Connect to server and manage containers
-ssh daemon-server "cd /opt/daemon-pmac && docker-compose restart"
-ssh daemon-server "cd /opt/daemon-pmac && docker-compose logs -f"
+ssh daemon-server "cd /opt/daemon && docker-compose restart"
+ssh daemon-server "cd /opt/daemon && docker-compose logs -f"
 
 # Execute commands in container
 ssh daemon-server "docker exec daemon-container python -m app.cli create-user admin"
@@ -317,8 +317,8 @@ if [[ "$DEPLOYMENT_TYPE" == "docker" ]]; then
     REMOTE_DATA_DIR="/app/data/private"
     REMOTE_PYTHON_CMD="docker exec daemon-container python"
 else
-    REMOTE_DATA_DIR="/opt/daemon-pmac/data/private"
-    REMOTE_PYTHON_CMD="cd /opt/daemon-pmac && venv/bin/python"
+    REMOTE_DATA_DIR="/opt/daemon/data/private"
+    REMOTE_PYTHON_CMD="cd /opt/daemon && venv/bin/python"
 fi
 
 sync_and_import() {
@@ -427,21 +427,21 @@ echo "$TOKEN" | base64 -d | jq .
 ssh daemon-server "docker exec daemon-container ls -la /app/data/private/"
 
 # For bare metal deployment:
-ssh daemon-server "ls -la /opt/daemon-pmac/data/private/"
+ssh daemon-server "ls -la /opt/daemon/data/private/"
 
 # Verify data format (deployment specific)
 # For Docker deployment:
 ssh daemon-server "docker exec daemon-container python -m json.tool /app/data/private/pmac/resume.json"
 
 # For bare metal deployment:
-ssh daemon-server "cd /opt/daemon-pmac && venv/bin/python -m json.tool data/private/pmac/resume.json"
+ssh daemon-server "cd /opt/daemon && venv/bin/python -m json.tool data/private/username/resume.json"
 
 # Check server logs (deployment specific)
 # For Docker deployment:
 ssh daemon-server "docker logs daemon-container --tail 100"
 
 # For bare metal deployment:
-ssh daemon-server "tail -f /opt/daemon-pmac/logs/daemon.log"
+ssh daemon-server "tail -f /opt/daemon/logs/daemon.log"
 ```
 
 This setup allows you to fully manage your German server from anywhere in the world! 🌍

@@ -46,7 +46,7 @@ This is essential because GitHub CLI output cannot be read directly from VS Code
 
 ### Option 1: Open Workspace File (Recommended)
 ```bash
-code daemon-pmac.code-workspace
+code daemon.code-workspace
 ```
 
 ### Option 2: Regular Folder

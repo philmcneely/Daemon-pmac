@@ -4,9 +4,9 @@
 set -e
 
 # Configuration
-DAEMON_HOST="${DAEMON_HOST:-daemon.pmac.dev}"
+DAEMON_HOST="${DAEMON_HOST:-daemon.example.com}"
 DAEMON_USER="${DAEMON_USER:-daemon}"
-DAEMON_PATH="${DAEMON_PATH:-/opt/daemon-pmac}"
+DAEMON_PATH="${DAEMON_PATH:-/opt/daemon}"
 LOCAL_PATH="${LOCAL_PATH:-$(pwd)}"
 
 # Colors
@@ -157,20 +157,20 @@ restart_service() {
     log_info "Restarting daemon service..."
 
     ssh "$DAEMON_USER@$DAEMON_HOST" "
-        sudo systemctl restart daemon-pmac
+        sudo systemctl restart daemon
     "
 
     # Wait for service to start
     sleep 5
 
     # Check service status
-    local status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon-pmac")
+    local status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon")
 
     if [[ "$status" == "active" ]]; then
         log_success "Service restarted successfully"
     else
         log_error "Service failed to start"
-        ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl status daemon-pmac"
+        ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl status daemon"
         return 1
     fi
 }
@@ -229,7 +229,7 @@ show_logs() {
     log_info "Showing recent logs..."
 
     ssh "$DAEMON_USER@$DAEMON_HOST" "
-        sudo journalctl -u daemon-pmac -n 20 --no-pager
+        sudo journalctl -u daemon -n 20 --no-pager
     "
 }
 
@@ -246,7 +246,7 @@ quick_status() {
     fi
 
     # Check service status
-    local service_status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon-pmac 2>/dev/null || echo 'inactive'")
+    local service_status=$(ssh "$DAEMON_USER@$DAEMON_HOST" "sudo systemctl is-active daemon 2>/dev/null || echo 'inactive'")
     if [[ "$service_status" == "active" ]]; then
         log_success "Service status: ACTIVE"
     else
@@ -310,7 +310,7 @@ Commands:
 Environment Variables:
   DAEMON_HOST     # Remote server hostname (default: daemon.pmac.dev)
   DAEMON_USER     # SSH username (default: daemon)
-  DAEMON_PATH     # Remote installation path (default: /opt/daemon-pmac)
+  DAEMON_PATH     # Remote installation path (default: /opt/daemon)
   LOCAL_PATH      # Local project path (default: current directory)
 
 Examples:

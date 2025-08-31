@@ -21,8 +21,8 @@ Usage:
     # POST /api/v1/ideas
 
     # Multi-user mode (2+ users):
-    # GET /api/v1/resume/users/pmac
-    # POST /api/v1/ideas/users/pmac
+    # GET /api/v1/resume/users/username
+    # POST /api/v1/ideas/users/username
 
 Notes:
     - Automatically detects single vs multi-user mode

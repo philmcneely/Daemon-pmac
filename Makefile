@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "Daemon-pmac Development Commands"
+	@echo "Daemon Development Commands"
 	@echo "================================="
 	@echo ""
 	@echo "Setup & Installation:"

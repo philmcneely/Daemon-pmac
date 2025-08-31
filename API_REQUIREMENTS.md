@@ -251,7 +251,7 @@ A comprehensive personal data management system built with FastAPI, designed for
 - [ ] Data export and backup features
 - [ ] Mobile app integration
 
-*Repository: [github.com/user/daemon-pmac](https://github.com/user/daemon-pmac)*
+*Repository: [github.com/user/daemon](https://github.com/user/daemon)*
 ```
 
 Volunteer Projects sample:
