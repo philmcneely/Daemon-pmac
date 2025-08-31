@@ -493,7 +493,7 @@ jobs:
 
         # Test API only
         echo "📋 Testing API-only deployment..."
-        docker compose up -d daemon-api
+        docker compose up -d api
         sleep 20
         curl -f http://localhost:8004/health || exit 1
         docker compose down
