@@ -512,8 +512,39 @@ jobs:
         echo "📋 Testing production frontend profile..."
         docker compose --profile frontend up -d
         sleep 30
-        curl -f http://localhost:80/ || exit 1
-        curl -k -f https://localhost:443/ || exit 1
+
+        # Debug: Check if containers are running
+        echo "🔍 Checking container status..."
+        docker compose --profile frontend ps
+
+        # Debug: Check if ports are bound
+        echo "🔍 Checking port bindings..."
+        docker compose --profile frontend port daemon-frontend 80 || echo "Port 80 not bound"
+        docker compose --profile frontend port daemon-frontend 443 || echo "Port 443 not bound"
+
+        # Debug: Check nginx logs
+        echo "🔍 Checking nginx logs..."
+        docker compose --profile frontend logs daemon-frontend | tail -20
+
+        # Wait a bit more for nginx to be ready
+        echo "⏳ Waiting for nginx to be ready..."
+        sleep 15
+
+        # Try to connect with better error reporting
+        echo "🌐 Testing HTTP connection..."
+        curl -v --connect-timeout 10 --max-time 30 -f http://localhost:80/ || {
+          echo "❌ HTTP connection failed, checking what's listening on port 80..."
+          netstat -tulpn | grep :80 || echo "Nothing listening on port 80"
+          exit 1
+        }
+
+        echo "🔒 Testing HTTPS connection..."
+        curl -k -v --connect-timeout 10 --max-time 30 -f https://localhost:443/ || {
+          echo "❌ HTTPS connection failed, checking what's listening on port 443..."
+          netstat -tulpn | grep :443 || echo "Nothing listening on port 443"
+          exit 1
+        }
+
         docker compose --profile frontend down
         echo "✅ Production frontend profile works"
 
