@@ -242,7 +242,16 @@ def init_db():
         - Uses Base.metadata.create_all() to create tables
         - Safe to call multiple times (won't recreate existing tables)
         - Should be called before any database operations
+        - Ensures database directory exists before creating tables
     """
+    # Ensure database directory exists for SQLite databases
+    if settings.database_url.startswith("sqlite://"):
+        # Extract database path from URL
+        db_path = settings.database_url.replace("sqlite:///", "")
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+
     Base.metadata.create_all(bind=engine)
 
 
