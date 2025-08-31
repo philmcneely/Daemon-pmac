@@ -1,5 +1,35 @@
 # Changes Log
 
+## Version 0.3.0 (2025-08-31)
+
+### 🧹 Repository Cleanup & Naming Convention
+- **Unified naming convention** across the entire project
+  - Renamed CLI command from `daemon-pmac` to `daemon`
+  - Updated Docker container naming from `daemon-pmac-daemon-*` to clean `daemon-*` prefix
+  - Removed "pmac" references from all documentation and configuration files
+  - Updated service files and paths from `/opt/daemon-pmac` to `/opt/daemon`
+  - Renamed workspace and service files to remove "pmac" suffix
+
+### 🔒 Privacy & Security Improvements
+- **Removed private development files** from public repository
+  - Added Copilot instruction files to `.gitignore`
+  - Removed implementation blueprint documentation from tracking
+  - Cleaned up internal development guidance files
+  - Enhanced repository privacy while maintaining functionality
+
+### 🐛 CI/CD Pipeline Fixes
+- **Fixed Docker Compose service naming** in CI workflows
+  - Updated CI tests to use correct service names (`api` instead of `daemon-api`)
+  - Resolved Docker profile testing failures
+  - Ensured all CI steps pass after naming convention changes
+  - Maintained comprehensive test coverage across all deployment scenarios
+
+### 🏗️ Infrastructure Improvements
+- **Enhanced Docker project structure**
+  - Added project name configuration in `docker-compose.yml`
+  - Improved container naming consistency
+  - Streamlined service definitions and dependencies
+
 ## Version 0.2.2 (2025-08-30)
 
 ### 🎨 Content Formatting & Documentation
