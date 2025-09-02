@@ -28,6 +28,13 @@
             "includeAllSymbols": false
         }
     ],
+    "python.terminal.activateEnvironment": false,
+    "typescript.disableAutomaticTypeAcquisition": true,
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.enablePreviewFromQuickOpen": false,
+    "git.autofetch": false,
+    "extensions.autoUpdate": false,
+    "telemetry.telemetryLevel": "off",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,
     "python.linting.pylintEnabled": false,
@@ -73,7 +80,17 @@
         "venv/**": true,
         "**/__pycache__/**": true,
         "node_modules/**": true,
-        ".pytest_cache/**": true
+        ".pytest_cache/**": true,
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "logs/**": true,
+        "backups/**": true,
+        "gh_temp/**": true,
+        "htmlcov/**": true,
+        ".mypy_cache/**": true,
+        ".coverage": true,
+        "*.log": true
     },
     "search.exclude": {
         "venv/**": true,
