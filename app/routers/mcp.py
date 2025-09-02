@@ -36,6 +36,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import DataEntry, Endpoint, get_db
+from ..privacy import get_privacy_filter
 from ..schemas import (
     MCPJSONRPCRequest,
     MCPToolCallRequest,
@@ -200,8 +201,29 @@ async def call_mcp_tool(
 
             data_entries = query.limit(limit).all()
 
+            # Apply privacy filtering for AI-safe data access
+            privacy_filter = get_privacy_filter(db)
+            filtered_data = []
+
+            for entry in data_entries:
+                # Check visibility in data.meta first - skip private/unlisted items
+                entry_data = entry.data if isinstance(entry.data, dict) else {}
+                entry_visibility = "public"  # default
+
+                if "meta" in entry_data and isinstance(entry_data["meta"], dict):
+                    entry_visibility = entry_data["meta"].get("visibility", "public")
+
+                # Skip private and unlisted items for MCP access
+                if entry_visibility in ["private", "unlisted"]:
+                    continue
+
+                # Apply AI-safe privacy filtering
+                filtered_entry = privacy_filter.filter_data(entry_data, "ai_safe")
+                if filtered_entry:  # Only include if data remains after filtering
+                    filtered_data.append(filtered_entry)
+
             # Format response
-            data = [entry.data for entry in data_entries]
+            data = filtered_data
 
             return {
                 "jsonrpc": "2.0",

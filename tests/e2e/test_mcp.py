@@ -243,3 +243,261 @@ def test_mcp_rest_call(client):
     data = response.json()
     assert "content" in data
     assert isinstance(data["content"], list)
+
+
+def test_mcp_privacy_filtering_private_data(client, auth_headers):
+    """Test that MCP endpoints filter out private data"""
+    # Add private idea data (using content/meta format)
+    private_idea = {
+        "content": "# Secret Project Idea\n\nThis is a private idea with sensitive info: 555-123-4567",
+        "meta": {"visibility": "private", "title": "Secret Project"},
+    }
+
+    public_idea = {
+        "content": "# Public Idea\n\nThis is a safe public idea about technology",
+        "meta": {"visibility": "public", "title": "Public Idea"},
+    }
+
+    # Add both private and public data
+    response1 = client.post("/api/v1/ideas", headers=auth_headers, json=private_idea)
+    assert response1.status_code in [200, 201]  # Allow both create and update
+
+    response2 = client.post("/api/v1/ideas", headers=auth_headers, json=public_idea)
+    assert response2.status_code in [200, 201]  # Allow both create and update
+
+    # Test MCP access - should only get public data and filtered
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_ideas", "arguments": {"limit": 10}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Should only have one entry (the public one)
+    assert content_json["count"] == 1
+
+    # Verify the returned data is filtered
+    idea_data = content_json["data"][0]
+    assert "Public Idea" in idea_data["content"]
+
+    # Verify private data is not present anywhere
+    assert "Secret Project" not in str(content_json)
+    assert "555-123-4567" not in str(content_json)
+    assert "private idea" not in str(content_json)
+
+
+def test_mcp_privacy_filtering_unlisted_data(client, auth_headers):
+    """Test that MCP endpoints filter out unlisted data"""
+    # Add unlisted data
+    unlisted_idea = {
+        "title": "Secret Project",
+        "description": "This should not be visible to AI",
+        "category": "private thoughts",
+        "meta": {"visibility": "unlisted"},
+    }
+
+    public_idea = {
+        "title": "Public Idea",
+        "description": "This is safe for AI consumption",
+        "category": "general",
+        "meta": {"visibility": "public"},
+    }
+
+    # Add both unlisted and public data
+    client.post("/api/v1/ideas", headers=auth_headers, json=unlisted_idea)
+    client.post("/api/v1/ideas", headers=auth_headers, json=public_idea)
+
+    # Test MCP access
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_ideas", "arguments": {"limit": 10}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Should only have one entry (the public one)
+    assert content_json["count"] == 1
+    assert content_json["data"][0]["title"] == "Public Idea"
+
+    # Verify unlisted data is not present
+    assert "Secret Project" not in str(content_json)
+    assert "private thoughts" not in str(content_json)
+
+
+def test_mcp_privacy_filtering_sensitive_fields(client, auth_headers):
+    """Test that MCP endpoints apply AI-safe filtering to remove sensitive fields"""
+    # Add data with sensitive information using content/meta schema
+    contact_data = {
+        "content": """
+# Contact Information
+
+**Name**: Test Person
+**Email**: test@example.com
+**Phone**: 555-0123
+**Address**: 123 Main St
+**LinkedIn**: linkedin.com/in/test
+**Website**: https://test.com
+        """.strip(),
+        "meta": {"visibility": "public"},
+    }
+
+    client.post("/api/v1/contact_info", headers=auth_headers, json=contact_data)
+
+    # Test MCP access
+    response = client.post(
+        "/mcp/tools/call",
+        json={"name": "daemon_contact_info", "arguments": {"limit": 10}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Should have safe fields (verify content shows safe info)
+    assert "Test Person" in content_text
+    assert "test@example.com" in content_text
+    assert "linkedin.com/in/test" in content_text
+    assert "https://test.com" in content_text
+
+    # Should NOT have sensitive fields (AI-safe filtering should remove these)
+    assert "555-0123" not in content_text
+    assert "123 Main St" not in content_text
+
+
+def test_mcp_privacy_filtering_no_meta_defaults_public(client, auth_headers):
+    """Test that data without meta.visibility defaults to public and gets filtered"""
+    # Add data without explicit visibility (should default to public) using ideas schema
+    idea_without_meta = {
+        "content": """
+# Idea Without Meta
+
+This is a test idea with some sensitive info that should be filtered.
+
+Contact: test@example.com
+Phone: 555-9999
+        """.strip()
+        # No meta provided - should default to public
+    }
+
+    client.post("/api/v1/ideas", headers=auth_headers, json=idea_without_meta)
+
+    # Test MCP access
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_ideas", "arguments": {"limit": 10}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Should have the entry (defaults to public)
+    assert content_json["count"] >= 1
+
+    # Find our entry by checking content
+    our_entry = None
+    for entry in content_json["data"]:
+        if "Idea Without Meta" in str(entry):
+            our_entry = entry
+            break
+
+    assert our_entry is not None
+    assert "test@example.com" in str(our_entry)
+
+    # Phone should be filtered out by AI-safe filtering
+    assert "555-9999" not in str(content_json)
+
+
+def test_mcp_privacy_filtering_empty_after_filtering(client, auth_headers):
+    """Test that entries completely filtered out are excluded from results"""
+    # Add data that will be completely filtered out
+    sensitive_only_data = {
+        "content": """
+Phone: 555-0000
+SSN: 000-00-0000
+Address: Secret Location
+        """.strip(),
+        "meta": {"visibility": "public"},  # Public but will be empty after filtering
+    }
+
+    client.post("/api/v1/contact_info", headers=auth_headers, json=sensitive_only_data)
+
+    # Test MCP access
+    response = client.post(
+        "/mcp/tools/call",
+        json={"name": "daemon_contact_info", "arguments": {"limit": 10}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Should have no entries since everything was filtered out
+    assert content_json["count"] == 0
+    assert content_json["data"] == []
+
+
+def test_mcp_privacy_rest_endpoint_filtering(client, auth_headers):
+    """Test that REST-style MCP endpoints also apply privacy filtering"""
+    # Add private data using skills schema
+    private_skill = {
+        "content": """
+# Secret Skill
+
+**Name**: Secret Skill
+**Level**: expert
+**Description**: This should not be visible to AI.
+        """.strip(),
+        "meta": {"visibility": "private"},
+    }
+
+    public_skill = {
+        "content": """
+# Public Skill
+
+**Name**: Public Skill
+**Level**: intermediate
+**Description**: This is a safe public skill.
+        """.strip(),
+        "meta": {"visibility": "public"},
+    }
+
+    client.post("/api/v1/skills", headers=auth_headers, json=private_skill)
+    client.post("/api/v1/skills", headers=auth_headers, json=public_skill)
+
+    # Test REST-style MCP endpoint
+    response = client.post("/mcp/tools/daemon_skills", json={"limit": 10})
+    assert response.status_code == 200
+    data = response.json()
+
+    # Should only have public skill
+    assert len(data["content"]) == 1
+    content_text = data["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    assert content_json["count"] == 1
+    assert "Public Skill" in str(content_json["data"])
+    assert "Secret Skill" not in str(content_json)
+
+
+def test_mcp_privacy_info_tool_not_affected(client):
+    """Test that the info tool is not affected by privacy filtering (shows endpoint info only)"""
+    response = client.post(
+        "/mcp/tools/call", json={"name": "daemon_info", "arguments": {}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    content_text = data["result"]["content"][0]["text"]
+    content_json = json.loads(content_text)
+
+    # Info tool should work normally (doesn't access user data)
+    assert "daemon_version" in content_json
+    assert "available_endpoints" in content_json
+    assert "total_endpoints" in content_json
