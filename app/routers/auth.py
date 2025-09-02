@@ -30,7 +30,7 @@ Notes:
 """
 
 from datetime import datetime, timedelta
-from typing import List, cast
+from typing import List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -173,7 +173,7 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     return UserResponse(
         id=cast(int, new_user.id),
         username=cast(str, new_user.username),
-        full_name=new_user.full_name,
+        full_name=cast(Optional[str], new_user.full_name),
         email=cast(str, new_user.email),
         is_active=cast(bool, new_user.is_active),
         is_admin=cast(bool, new_user.is_admin),
@@ -238,7 +238,7 @@ async def create_user_admin(
     return UserResponse(
         id=cast(int, new_user.id),
         username=cast(str, new_user.username),
-        full_name=new_user.full_name,
+        full_name=cast(Optional[str], new_user.full_name),
         email=cast(str, new_user.email),
         is_active=cast(bool, new_user.is_active),
         is_admin=cast(bool, new_user.is_admin),
@@ -256,7 +256,7 @@ async def list_users(
         UserResponse(
             id=cast(int, user.id),
             username=cast(str, user.username),
-            full_name=user.full_name,
+            full_name=cast(Optional[str], user.full_name),
             email=cast(str, user.email),
             is_active=cast(bool, user.is_active),
             is_admin=cast(bool, user.is_admin),
@@ -283,7 +283,7 @@ async def get_user_by_username(
     return UserResponse(
         id=cast(int, user.id),
         username=cast(str, user.username),
-        full_name=user.full_name,
+        full_name=cast(Optional[str], user.full_name),
         email=cast(str, user.email),
         is_active=cast(bool, user.is_active),
         is_admin=cast(bool, user.is_admin),
