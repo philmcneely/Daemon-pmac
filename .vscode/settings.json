@@ -13,28 +13,30 @@
         "plaintext": false,
         "markdown": false,
         "log": false,
-        "json": false
+        "json": false,
+        "csv": false,
+        "txt": false
     },
     "github.copilot.chat.welcomeMessage": "🤖 CRITICAL COPILOT RULES (MANDATORY):\n\n⚠️ DEVELOPMENT WORKFLOW:\n• ALWAYS update tests when changing functionality\n• ALWAYS run tests and ensure they pass before proceeding\n• ALWAYS update API_REQUIREMENTS.md when changing API behavior\n• ALWAYS update E2E_TEST_CASES_GIVEN_WHEN_THEN.md for new test scenarios\n• ALWAYS update OpenAPI documentation for endpoint changes\n• NEVER move to next task until all tests pass and docs updated\n\n⚠️ COMMAND OUTPUT HANDLING:\n• ALWAYS pipe GitHub CLI (gh) commands to files in gh_temp/ first, then read file\n• ALWAYS pipe curl commands to files in gh_temp/ first, then read file\n• NEVER try to read CLI output directly from terminal\n\n⚠️ FILE MANAGEMENT:\n• NEVER create extraneous files for one-offs in root directory\n• NEVER create duplicate files and leave them around\n• ALWAYS clean up temporary files after use\n• ALWAYS use gh_temp/ directory for temporary files\n\n⚠️ PYTHON PROJECT SPECIFICS:\n• Use SQLite with aiosqlite (NOT PostgreSQL)\n• Use pip with requirements.txt (NOT Poetry)\n• Add detailed headers to .py files, keep .md files clean\n• Follow FastAPI + SQLAlchemy async patterns\n\n⚠️ QUALITY GATES (ALL MUST PASS):\n✅ All existing tests must pass\n✅ New tests must pass\n✅ Documentation updated and accurate\n✅ OpenAPI schema current\n✅ No temporary files in project root",
     "github.copilot.chat.instructions": "CRITICAL: Follow all development workflow rules in README.md. Always pipe gh and curl commands to gh_temp/ files first. Never skip tests or documentation updates. Use SQLite+aiosqlite (NOT PostgreSQL), pip (NOT Poetry). Add headers to .py files only.",
     "python.defaultInterpreterPath": "/Users/philmcneely/git/Daemon-pmac/venv/bin/python",
-    "python.analysis.autoImportCompletions": false,
+    "python.analysis.autoImportCompletions": true,
     "python.analysis.autoSearchPaths": false,
-    "python.analysis.indexing": false,
-    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.indexing": true,
+    "python.analysis.typeCheckingMode": "basic",
     "python.analysis.completeFunctionParens": false,
     "python.analysis.extraPaths": [],
     "python.analysis.packageIndexDepths": [
         {
             "name": "",
-            "depth": 1,
+            "depth": 2,
             "includeAllSymbols": false
         }
     ],
-    "python.languageServer": "None",
-    "python.linting.enabled": false,
+    "python.languageServer": "Pylance",
+    "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": false,
+    "python.linting.flake8Enabled": true,
     "python.linting.mypyEnabled": false,
     "python.linting.banditEnabled": false,
     "python.terminal.activateEnvironment": false,
@@ -42,29 +44,32 @@
     "workbench.editor.enablePreview": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "workbench.startupEditor": "none",
-    "editor.semanticHighlighting.enabled": false,
-    "editor.bracketPairColorization.enabled": false,
+    "editor.semanticHighlighting.enabled": true,
+    "editor.bracketPairColorization.enabled": true,
     "git.autofetch": false,
     "extensions.autoUpdate": false,
     "extensions.autoCheckUpdates": false,
-    "extensions.ignoreRecommendations": true,
+    "extensions.ignoreRecommendations": false,
     "telemetry.telemetryLevel": "off",
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": true,
     "editor.formatOnPaste": false,
-    "files.trimTrailingWhitespace": false,
-    "files.insertFinalNewline": false,
-    "files.trimFinalNewlines": false,
-    "typescript.suggest.enabled": false,
-    "typescript.validate.enable": false,
-    "javascript.suggest.enabled": false,
-    "javascript.validate.enable": false,
-    "html.suggest.html5": false,
-    "css.validate": false,
-    "json.validate.enable": false,
-    "yaml.validate": false,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "typescript.suggest.enabled": true,
+    "typescript.validate.enable": true,
+    "javascript.suggest.enabled": true,
+    "javascript.validate.enable": true,
+    "html.suggest.html5": true,
+    "css.validate": true,
+    "json.validate.enable": true,
+    "yaml.validate": true,
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
-        "editor.formatOnSave": false
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
     },
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
@@ -82,7 +87,11 @@
         "**/*.pyc": true,
         "node_modules/**": true,
         ".pytest_cache/**": true,
-        "*.egg-info/**": true
+        "*.egg-info/**": true,
+        ".mypy_cache/**": true,
+        "htmlcov/**": true,
+        "logs/**": true,
+        "backups/**": true
     },
     "files.watcherExclude": {
         "venv/**": true,
@@ -98,12 +107,19 @@
         "htmlcov/**": true,
         ".mypy_cache/**": true,
         ".coverage": true,
-        "*.log": true
+        "*.log": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true
     },
     "search.exclude": {
         "venv/**": true,
         "**/__pycache__/**": true,
         "node_modules/**": true,
-        ".pytest_cache/**": true
+        ".pytest_cache/**": true,
+        ".mypy_cache/**": true,
+        "htmlcov/**": true,
+        "logs/**": true,
+        "backups/**": true,
+        "gh_temp/**": true
     }
 }
