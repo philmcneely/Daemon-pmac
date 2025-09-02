@@ -124,7 +124,7 @@ jobs:
     - name: Check coverage threshold
       if: matrix.python-version == '3.12'
       run: |
-        COVERAGE=${{ env.COVERAGE_PERCENTAGE }}
+        COVERAGE=${{ steps.coverage.outputs.percentage || '0' }}
         THRESHOLD=40.0
         echo "Current coverage: $COVERAGE%"
         echo "Required threshold: $THRESHOLD%"
