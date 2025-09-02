@@ -68,6 +68,20 @@ class PrivacyFilter:
                 .filter(UserPrivacySettings.user_id == user.id)
                 .first()
             )
+            # Ensure all attributes are loaded if the object exists
+            if self.privacy_settings:
+                # Access attributes to trigger loading from database
+                _ = (
+                    self.privacy_settings.show_contact_info,
+                    self.privacy_settings.show_location,
+                    self.privacy_settings.show_current_company,
+                    self.privacy_settings.show_salary_range,
+                    self.privacy_settings.show_education_details,
+                    self.privacy_settings.show_personal_projects,
+                    self.privacy_settings.business_card_mode,
+                    self.privacy_settings.ai_assistant_access,
+                    self.privacy_settings.custom_privacy_rules,
+                )
 
     def filter_data(
         self,
@@ -204,11 +218,12 @@ class PrivacyFilter:
         filtered_data = dict(data)
 
         # Business card mode override
-        if settings.business_card_mode:
+        if getattr(settings, "business_card_mode", False):
             return self.create_business_card_view(data)
 
         # Contact info filtering
-        if not settings.show_contact_info and "contact" in filtered_data:
+        show_contact = getattr(settings, "show_contact_info", True)
+        if not show_contact and "contact" in filtered_data:
             contact = filtered_data["contact"].copy()
             # Keep only essential business contact
             essential = {}
@@ -226,13 +241,14 @@ class PrivacyFilter:
             filtered_data["contact"] = essential
 
         # Location filtering
-        if not settings.show_location:
+        if not getattr(settings, "show_location", True):
             filtered_data = self._recursive_filter_fields(
                 filtered_data, {"location", "address", "city", "state", "country"}
             )
 
         # Company info filtering
-        if not settings.show_current_company and "experience" in filtered_data:
+        show_current_company = getattr(settings, "show_current_company", True)
+        if not show_current_company and "experience" in filtered_data:
             if (
                 isinstance(filtered_data["experience"], list)
                 and filtered_data["experience"]
@@ -243,13 +259,15 @@ class PrivacyFilter:
                         job.pop("company", None)
 
         # Salary/compensation filtering
-        if not settings.show_salary_range:
+        show_salary_range = getattr(settings, "show_salary_range", True)
+        if not show_salary_range:
             filtered_data = self._recursive_filter_fields(
                 filtered_data, {"salary", "wage", "compensation", "pay", "income"}
             )
 
         # Education details filtering
-        if not settings.show_education_details and "education" in filtered_data:
+        show_education_details = getattr(settings, "show_education_details", True)
+        if not show_education_details and "education" in filtered_data:
             # Keep basic education info but remove sensitive details
             if isinstance(filtered_data["education"], list):
                 for edu in filtered_data["education"]:
@@ -258,10 +276,11 @@ class PrivacyFilter:
                     edu.pop("activities", None)
 
         # Apply custom privacy rules
-        if settings.custom_privacy_rules:
+        custom_rules = getattr(settings, "custom_privacy_rules", None)
+        if custom_rules:
             # Cast SQLAlchemy Column to dict for mypy
-            custom_rules = cast(Dict[str, Any], settings.custom_privacy_rules)
-            filtered_data = self._apply_custom_rules(filtered_data, custom_rules)
+            custom_rules_dict = cast(Dict[str, Any], custom_rules)
+            filtered_data = self._apply_custom_rules(filtered_data, custom_rules_dict)
 
         return self._apply_sensitive_patterns(filtered_data)
 
@@ -275,11 +294,13 @@ class PrivacyFilter:
         filtered_data = dict(data)
 
         # Business card mode override
-        if settings.business_card_mode:
+        business_card_mode = getattr(settings, "business_card_mode", False)
+        if business_card_mode:
             return self.create_business_card_view(data)
 
         # Contact info filtering
-        if not settings.show_contact_info and "contact" in filtered_data:
+        show_contact_info = getattr(settings, "show_contact_info", True)
+        if not show_contact_info and "contact" in filtered_data:
             contact = filtered_data["contact"].copy()
             # Keep only essential business contact
             essential = {}
@@ -297,13 +318,15 @@ class PrivacyFilter:
             filtered_data["contact"] = essential
 
         # Location filtering
-        if not settings.show_location:
+        show_location = getattr(settings, "show_location", True)
+        if not show_location:
             filtered_data = self._recursive_filter_fields(
                 filtered_data, {"location", "address", "city", "state", "country"}
             )
 
         # Company info filtering
-        if not settings.show_current_company and "experience" in filtered_data:
+        show_current_company = getattr(settings, "show_current_company", True)
+        if not show_current_company and "experience" in filtered_data:
             if (
                 isinstance(filtered_data["experience"], list)
                 and filtered_data["experience"]
@@ -314,13 +337,15 @@ class PrivacyFilter:
                         job.pop("company", None)
 
         # Salary/compensation filtering
-        if not settings.show_salary_range:
+        show_salary_range = getattr(settings, "show_salary_range", True)
+        if not show_salary_range:
             filtered_data = self._recursive_filter_fields(
                 filtered_data, {"salary", "wage", "compensation", "pay", "income"}
             )
 
         # Education details filtering
-        if not settings.show_education_details and "education" in filtered_data:
+        show_education_details = getattr(settings, "show_education_details", True)
+        if not show_education_details and "education" in filtered_data:
             if isinstance(filtered_data["education"], list):
                 for edu in filtered_data["education"]:
                     edu.pop("gpa", None)
@@ -328,9 +353,10 @@ class PrivacyFilter:
                     edu.pop("thesis", None)
 
         # Apply custom rules
-        if settings.custom_privacy_rules:
+        custom_privacy_rules = getattr(settings, "custom_privacy_rules", None)
+        if custom_privacy_rules:
             # Cast SQLAlchemy Column to dict for mypy
-            custom_rules = cast(Dict[str, Any], settings.custom_privacy_rules)
+            custom_rules = cast(Dict[str, Any], custom_privacy_rules)
             filtered_data = self._apply_custom_rules(filtered_data, custom_rules)
 
         # Apply base sensitive pattern filtering
