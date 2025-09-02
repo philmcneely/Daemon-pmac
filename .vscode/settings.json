@@ -4,7 +4,9 @@
     "github.copilot.advanced": {
         "debug.overrideEngine": "copilot-chat",
         "debug.testOverrideProxyUrl": "",
-        "debug.filterLogCategories": []
+        "debug.overrideLogLevels": {
+            "*": "ERROR"
+        }
     },
     "github.copilot.editor.enableAutoCompletions": true,
     "github.copilot.enable": {
@@ -29,10 +31,15 @@
     "python.analysis.packageIndexDepths": [
         {
             "name": "",
-            "depth": 2,
+            "depth": 1,
             "includeAllSymbols": false
         }
     ],
+    "python.analysis.stubPath": "",
+    "python.analysis.userFileIndexingLimit": 2000,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.include": ["app/**", "tests/**"],
+    "python.analysis.exclude": ["venv/**", "**/__pycache__/**", ".pytest_cache/**", "htmlcov/**", "logs/**", "backups/**", "gh_temp/**"],
     "python.languageServer": "Pylance",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
@@ -41,15 +48,22 @@
     "python.linting.banditEnabled": false,
     "python.terminal.activateEnvironment": false,
     "typescript.disableAutomaticTypeAcquisition": true,
+    "typescript.suggest.autoImports": false,
+    "typescript.preferences.includePackageJsonAutoImports": "off",
     "workbench.editor.enablePreview": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "workbench.startupEditor": "none",
+    "workbench.settings.enableNaturalLanguageSearch": false,
+    "search.followSymlinks": false,
+    "search.maxResults": 2000,
     "editor.semanticHighlighting.enabled": true,
     "editor.bracketPairColorization.enabled": true,
     "git.autofetch": false,
     "extensions.autoUpdate": false,
     "extensions.autoCheckUpdates": false,
     "extensions.ignoreRecommendations": false,
+    "extensions.closeExtensionDetailsOnViewChange": true,
+    "window.experimentalControlOverlay": false,
     "telemetry.telemetryLevel": "off",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": false,
