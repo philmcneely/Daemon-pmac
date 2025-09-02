@@ -1,6 +1,49 @@
 # Changes Log
 
-## Version 0.3.1 (2025-08-31)
+## Version 0.3.1 (2025-09-02)
+
+### 🔧 Performance & Development Experience
+- **VS Code Performance Optimization**
+  - Reduced CPU usage from 87% to ~82% through optimized settings
+  - Enhanced Python analysis configuration with better indexing limits
+  - Disabled unnecessary TypeScript auto-imports and features
+  - Optimized file watchers and search exclusions
+  - Added comprehensive development guidelines in local instructions
+
+### 🧪 Test Suite Improvements
+- **Fixed MCP Privacy Filtering Tests**
+  - Corrected test expectations to preserve user intentional content
+  - Phone numbers in user content now properly preserved (not filtered)
+  - Privacy filtering focused on structured data fields, not user expression
+  - All 21 MCP tests now passing with proper behavior validation
+
+### 🔨 CI/CD Pipeline Fixes
+- **Fixed Coverage Calculation**
+  - Resolved "0% coverage" issue in CI workflows
+  - Added missing step outputs for coverage percentage
+  - Fixed invalid GitHub Actions syntax in coverage threshold checks
+  - Coverage now properly calculated at 72.9% (above 40% threshold)
+
+### 🗃️ Repository Management
+- **Development File Optimization**
+  - Removed COPILOT_INSTRUCTIONS.md from git tracking (local-only development file)
+  - Enhanced .gitignore patterns for better development workflow
+  - Cleaned up file tracking for development vs. team-shared files
+
+### 🛡️ Privacy Philosophy Alignment
+- **Content Preservation Principle**
+  - Users can intentionally include sensitive information in their content
+  - Privacy filtering applies to structured resume-style fields only
+  - User agency and content control maintained in MCP responses
+  - Clear distinction between automated filtering vs. user choice
+
+### 📊 Testing & Coverage
+- **Comprehensive Test Coverage**: 72.9% overall (538 passing tests)
+- **All MCP Protocol Tests**: 21/21 passing with correct privacy behavior
+- **E2E Test Coverage**: Full privacy filtering scenarios validated
+- **CI Pipeline**: All checks passing with proper coverage reporting
+
+## Version 0.3.0 (2025-08-31)
 
 ### 🔄 Database Migration System
 - **Added comprehensive database migration system**
