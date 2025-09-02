@@ -21,42 +21,40 @@
     "python.analysis.autoImportCompletions": false,
     "python.analysis.autoSearchPaths": false,
     "python.analysis.indexing": false,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.completeFunctionParens": false,
+    "python.analysis.extraPaths": [],
     "python.analysis.packageIndexDepths": [
         {
             "name": "",
-            "depth": 2,
+            "depth": 1,
             "includeAllSymbols": false
         }
     ],
+    "python.languageServer": "None",
+    "python.linting.enabled": false,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.linting.banditEnabled": false,
     "python.terminal.activateEnvironment": false,
     "typescript.disableAutomaticTypeAcquisition": true,
     "workbench.editor.enablePreview": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
+    "workbench.startupEditor": "none",
+    "editor.semanticHighlighting.enabled": false,
+    "editor.bracketPairColorization.enabled": false,
     "git.autofetch": false,
     "extensions.autoUpdate": false,
     "telemetry.telemetryLevel": "off",
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.mypyEnabled": true,
-    "python.linting.banditEnabled": true,
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": "explicit"
-    },
-    "python.sortImports.args": [
-        "--profile=black"
-    ],
-    "files.trimTrailingWhitespace": true,
-    "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true,
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false,
+    "files.trimTrailingWhitespace": false,
+    "files.insertFinalNewline": false,
+    "files.trimFinalNewlines": false,
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-        }
+        "editor.formatOnSave": false
     },
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
