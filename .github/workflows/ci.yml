@@ -58,6 +58,7 @@ jobs:
         python -m pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html --tb=short
 
     - name: Generate coverage badge and summary
+      id: coverage
       if: matrix.python-version == '3.12'
       run: |
         # Extract coverage percentage
@@ -69,6 +70,7 @@ jobs:
         print(f'{line_rate * 100:.1f}')
         ")
         echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
+        echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
         echo "Coverage: $COVERAGE%"
 
         # Create coverage summary
@@ -124,7 +126,10 @@ jobs:
     - name: Check coverage threshold
       if: matrix.python-version == '3.12'
       run: |
-        COVERAGE=${{ steps.coverage.outputs.percentage || '0' }}
+        COVERAGE=${{ steps.coverage.outputs.percentage }}
+        if [ -z "$COVERAGE" ]; then
+          COVERAGE="0"
+        fi
         THRESHOLD=40.0
         echo "Current coverage: $COVERAGE%"
         echo "Required threshold: $THRESHOLD%"
