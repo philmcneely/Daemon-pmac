@@ -207,7 +207,9 @@ async def call_mcp_tool(
 
             for entry in data_entries:
                 # Check visibility in data.meta first - skip private/unlisted items
-                entry_data = entry.data if isinstance(entry.data, dict) else {}
+                entry_data: Dict[str, Any] = (
+                    entry.data if isinstance(entry.data, dict) else {}
+                )
                 entry_visibility = "public"  # default
 
                 if "meta" in entry_data and isinstance(entry_data["meta"], dict):
