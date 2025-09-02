@@ -329,7 +329,7 @@ def test_mcp_privacy_filtering_unlisted_data(client, auth_headers):
 
 
 def test_mcp_privacy_filtering_sensitive_fields(client, auth_headers):
-    """Test that MCP endpoints apply AI-safe filtering to remove sensitive fields"""
+    """Test that MCP endpoints preserve user content while respecting visibility settings"""
     # Add data with sensitive information using content/meta schema
     contact_data = {
         "content": """
@@ -364,13 +364,13 @@ def test_mcp_privacy_filtering_sensitive_fields(client, auth_headers):
     assert "linkedin.com/in/test" in content_text
     assert "https://test.com" in content_text
 
-    # Should NOT have sensitive fields (AI-safe filtering should remove these)
-    assert "555-0123" not in content_text
-    assert "123 Main St" not in content_text
+    # Phone numbers and addresses in user content should be preserved (user intentionally included them)
+    assert "555-0123" in content_text
+    assert "123 Main St" in content_text
 
 
 def test_mcp_privacy_filtering_no_meta_defaults_public(client, auth_headers):
-    """Test that data without meta.visibility defaults to public and gets filtered"""
+    """Test that data without meta.visibility defaults to public and preserves user content"""
     # Add data without explicit visibility (should default to public) using ideas schema
     idea_without_meta = {
         "content": """
@@ -409,23 +409,23 @@ Phone: 555-9999
     assert our_entry is not None
     assert "test@example.com" in str(our_entry)
 
-    # Phone should be filtered out by AI-safe filtering
-    assert "555-9999" not in str(content_json)
+    # Phone numbers in user content should be preserved (user intentionally included them)
+    assert "555-9999" in str(content_json)
 
 
-def test_mcp_privacy_filtering_empty_after_filtering(client, auth_headers):
-    """Test that entries completely filtered out are excluded from results"""
-    # Add data that will be completely filtered out
-    sensitive_only_data = {
+def test_mcp_privacy_filtering_private_data_excluded(client, auth_headers):
+    """Test that entries with private visibility are excluded from MCP results"""
+    # Add data with private visibility (should be completely filtered out)
+    private_data = {
         "content": """
-Phone: 555-0000
-SSN: 000-00-0000
-Address: Secret Location
+# Private Contact Info
+
+This is private information that should not be visible to AI assistants.
         """.strip(),
-        "meta": {"visibility": "public"},  # Public but will be empty after filtering
+        "meta": {"visibility": "private"},  # Private - should be excluded
     }
 
-    client.post("/api/v1/contact_info", headers=auth_headers, json=sensitive_only_data)
+    client.post("/api/v1/contact_info", headers=auth_headers, json=private_data)
 
     # Test MCP access
     response = client.post(
@@ -438,7 +438,7 @@ Address: Secret Location
     content_text = data["result"]["content"][0]["text"]
     content_json = json.loads(content_text)
 
-    # Should have no entries since everything was filtered out
+    # Should have no entries since private data is excluded from MCP responses
     assert content_json["count"] == 0
     assert content_json["data"] == []
 
