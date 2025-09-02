@@ -1,6 +1,6 @@
 # Changes Log
 
-## Version 0.3.1 (2025-09-02)
+## Version 0.3.2 (2025-09-02)
 
 ### 🔧 Performance & Development Experience
 - **VS Code Performance Optimization**

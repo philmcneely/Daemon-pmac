@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # App metadata
     app_name: str = "Daemon"
-    version: str = "0.3.1"
+    version: str = "0.3.2"
     description: str = "Personal API Framework"
 
     # Security
