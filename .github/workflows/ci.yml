@@ -253,7 +253,7 @@ jobs:
 
     # Test 1: Build API container
     - name: Build API container
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64
@@ -264,7 +264,7 @@ jobs:
 
     # Test 2: Build frontend development container
     - name: Build frontend development container
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: frontend/Dockerfile.dev
@@ -276,7 +276,7 @@ jobs:
 
     # Test 3: Build frontend production container
     - name: Build frontend production container
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: frontend/Dockerfile
@@ -612,7 +612,7 @@ jobs:
 
     - name: Build and push API image
       if: steps.docker_login.outcome == 'success'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -624,7 +624,7 @@ jobs:
 
     - name: Build and push frontend image
       if: steps.docker_login.outcome == 'success'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: frontend/Dockerfile
@@ -637,7 +637,7 @@ jobs:
 
     - name: Build Docker image (no push)
       if: steps.docker_login.outcome != 'success'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64  # Single platform for speed
