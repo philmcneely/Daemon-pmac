@@ -39,12 +39,13 @@ import re
 import shutil
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import psutil
 from sqlalchemy.orm import Session
 
 from .config import settings
+from .database import User
 from .schemas import BackupResponse
 
 # Setup logging
@@ -83,7 +84,7 @@ def create_backup() -> BackupResponse:
     )
 
 
-def cleanup_old_backups():
+def cleanup_old_backups() -> Dict[str, Union[int, str, None]]:
     """Remove old backup files based on configured retention policy.
 
     Scans the backup directory and removes backup files that exceed the
@@ -128,7 +129,7 @@ def cleanup_old_backups():
         return {"deleted_count": 0, "error": str(e)}
 
 
-def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> List[str]:
+def validate_json_schema(data: Dict[str, Any], schema: Any) -> List[str]:
     """Basic JSON schema validation"""
     errors = []
 
@@ -190,9 +191,11 @@ def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> List[s
     return errors
 
 
-def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -> str:
+def export_endpoint_data(
+    db_session: Session, endpoint_name: str, format: str = "json"
+) -> str:
     """Export endpoint data to various formats"""
-    from .database import DataEntry, Endpoint
+    from app.database import DataEntry, Endpoint
 
     # Find endpoint
     endpoint = (
@@ -200,7 +203,6 @@ def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -
         .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
         .first()
     )
-
     if not endpoint:
         raise ValueError(f"Endpoint '{endpoint_name}' not found")
 
@@ -210,7 +212,6 @@ def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -
         .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active == True)
         .all()
     )
-
     data = [entry.data for entry in data_entries]
 
     if format.lower() == "json":
@@ -225,7 +226,6 @@ def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -
             indent=2,
             default=str,
         )
-
     elif format.lower() == "csv":
         import csv
         import io
@@ -234,18 +234,13 @@ def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -
             return ""
 
         output = io.StringIO()
-
-        # Get all unique keys from all entries
         all_keys = set()
         for entry in data:
             all_keys.update(entry.keys())
-
         fieldnames = sorted(all_keys)
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
-
         for entry in data:
-            # Convert complex objects to JSON strings
             row = {}
             for key in fieldnames:
                 value = entry.get(key, "")
@@ -253,20 +248,18 @@ def export_endpoint_data(db_session, endpoint_name: str, format: str = "json") -
                     value = json.dumps(value)
                 row[key] = value
             writer.writerow(row)
-
         return output.getvalue()
-
     else:
         raise ValueError(f"Unsupported export format: {format}")
 
 
 def import_endpoint_data(
-    db_session,
+    db_session: Session,
     endpoint_name: str,
     data_content: str,
     format: str = "json",
     user_id: Optional[int] = None,
-) -> Dict[str, Any]:
+) -> Any:
     """Import data into an endpoint"""
     from .database import DataEntry, Endpoint
 
@@ -276,12 +269,11 @@ def import_endpoint_data(
         .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
         .first()
     )
-
     if not endpoint:
         raise ValueError(f"Endpoint '{endpoint_name}' not found")
 
     imported_count = 0
-    errors = []
+    errors: List[Dict[str, Any]] = []
 
     try:
         if format.lower() == "json":
@@ -302,7 +294,13 @@ def import_endpoint_data(
             for i, item_data in enumerate(data_list):
                 try:
                     # Validate against endpoint schema
-                    schema_errors = validate_json_schema(item_data, endpoint.schema)
+                    schema_dict_json: Any = endpoint.schema
+                    if hasattr(schema_dict_json, "type"):
+                        try:
+                            schema_dict_json = json.loads(schema_dict_json.type.python_type)  # type: ignore
+                        except Exception:
+                            schema_dict_json = {}
+                    schema_errors = validate_json_schema(item_data, schema_dict_json)
                     if schema_errors:
                         errors.append(
                             {"index": i, "data": item_data, "errors": schema_errors}
@@ -311,11 +309,12 @@ def import_endpoint_data(
 
                     # Create data entry
                     data_entry = DataEntry(
-                        endpoint_id=endpoint.id, data=item_data, created_by_id=user_id
+                        endpoint_id=endpoint.id,
+                        data=item_data,
+                        created_by_id=user_id,
                     )
                     db_session.add(data_entry)
                     imported_count += 1
-
                 except Exception as e:
                     errors.append({"index": i, "data": item_data, "error": str(e)})
 
@@ -332,16 +331,22 @@ def import_endpoint_data(
                     for key, value in row.items():
                         if value == "":
                             processed_row[key] = None
-                        elif value.startswith(("[", "{")):  # Try to parse JSON
+                        elif isinstance(value, str) and value.startswith(("[", "{")):
                             try:
                                 processed_row[key] = json.loads(value)
-                            except:
+                            except Exception:
                                 processed_row[key] = value
                         else:
                             processed_row[key] = value
 
                     # Validate against endpoint schema
-                    schema_errors = validate_json_schema(processed_row, endpoint.schema)
+                    schema_dict_csv: Any = endpoint.schema
+                    if hasattr(schema_dict_csv, "type"):
+                        try:
+                            schema_dict_csv = json.loads(schema_dict_csv.type.python_type)  # type: ignore
+                        except Exception:
+                            schema_dict_csv = {}
+                    schema_errors = validate_json_schema(processed_row, schema_dict_csv)
                     if schema_errors:
                         errors.append(
                             {"index": i, "data": processed_row, "errors": schema_errors}
@@ -356,7 +361,6 @@ def import_endpoint_data(
                     )
                     db_session.add(data_entry)
                     imported_count += 1
-
                 except Exception as e:
                     errors.append({"index": i, "data": row, "error": str(e)})
 
@@ -365,7 +369,6 @@ def import_endpoint_data(
 
         # Commit successful imports
         db_session.commit()
-
         return {
             "imported_count": imported_count,
             "error_count": len(errors),
@@ -377,7 +380,7 @@ def import_endpoint_data(
         raise ValueError(f"Import failed: {str(e)}")
 
 
-def get_system_metrics() -> Dict[str, Any]:
+def get_system_metrics() -> Any:
     """Get basic system metrics"""
     import psutil
 
@@ -421,7 +424,10 @@ def get_system_metrics() -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting system metrics: {e}")
-        return {"timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}
+        return {"timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}  # type: ignore
+
+    # Fallback return to satisfy type checkers (unreachable)
+    return {}
 
 
 def health_check() -> Dict[str, Any]:
@@ -545,25 +551,22 @@ def is_single_user_mode(db: Session) -> bool:
     - "single": Force single-user mode
     - "multi": Force multi-user mode
     """
-    from .config import settings
-    from .database import User
-
     if settings.multi_user_mode == "single":
         return True
     elif settings.multi_user_mode == "multi":
         return False
-    else:  # "auto" mode
+    else:
         user_count = db.query(User).filter(User.is_active == True).count()
         return user_count <= 1
 
 
-def get_single_user(db: Session) -> Optional[Any]:
+def get_single_user(db: Session) -> Any:
     """
     Get the single user if system is in single-user mode,
     or the preferred user (admin) in multi-user mode.
     Returns None if there are no users.
     """
-    from .database import User
+    from app.database import User
 
     # Check if there are any users
     user_count = db.query(User).filter(User.is_active == True).count()
@@ -818,7 +821,7 @@ def sanitize_data_entry(data: Any) -> Any:
 
 
 def get_backup_files_to_delete(
-    backup_files: List[Union[str, Tuple[str, float]]], retention_days: int = 30
+    backup_files: Sequence[Union[str, Tuple[str, float]]], retention_days: int = 30
 ) -> List[str]:
     """Get list of backup files that should be deleted based on retention policy"""
     from datetime import datetime, timedelta
