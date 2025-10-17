@@ -29,13 +29,21 @@ Notes:
     - Health check endpoint available at /health
 """
 
+import os
+import sys
+
+# Ensure the project root is in the Python path for absolute imports
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)  # pragma: no cover
+
 import asyncio
 import logging
-import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Any, cast
+from functools import lru_cache
+from typing import Any, List, cast
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,21 +52,25 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from .auth import add_security_headers, check_ip_access
-from .config import settings
-from .database import SessionLocal, create_default_endpoints, init_db
-
-# Import routers
-from .routers import admin, api, auth, mcp
-from .schemas import HealthResponse
-from .utils import cleanup_old_backups, create_backup, get_uptime, health_check
+from app.auth import add_security_headers, check_ip_access
+from app.config import settings
+from app.database import SessionLocal, create_default_endpoints, init_db
+from app.routers import admin, api, auth, mcp
+from app.schemas import HealthResponse
+from app.utils import cleanup_old_backups, create_backup, get_uptime, health_check
 
 # Setup logging
-logging.basicConfig(
-    level=getattr(logging, settings.logging_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+log_handler = logging.StreamHandler()
+log_formatter = logging.Formatter(
+    fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
+log_handler.setFormatter(log_formatter)
+
 logger = logging.getLogger(__name__)
+logger.setLevel(getattr(logging, settings.logging_level.upper()))
+if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+    logger.addHandler(log_handler)
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -384,6 +396,7 @@ if settings.mcp_enabled:
     app.include_router(mcp.router)
 
 
+@lru_cache(maxsize=1)
 def get_available_endpoints():
     """Retrieve list of active endpoint names from database.
 
@@ -437,7 +450,7 @@ def custom_openapi():
     )
 
     # Get available endpoints dynamically
-    available_endpoints = get_available_endpoints()
+    available_endpoints = cast(List[str], get_available_endpoints())
 
     # Enhance the schema with dynamic endpoint examples
     openapi_schema["info"]["x-logo"] = {

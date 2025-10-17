@@ -48,6 +48,7 @@ from ..auth import (
     get_current_admin_user,
     get_password_hash,
     get_user_from_api_key,
+    rate_limit,
 )
 from ..database import AuditLog, DataEntry, Endpoint, User, UserPrivacySettings, get_db
 from ..schemas import (
@@ -240,14 +241,18 @@ async def list_endpoints(
     active_only: bool = Query(
         True, description="Only return active (non-deleted) endpoints"
     ),
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    size: int = Query(50, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
 ):
-    """List all available endpoints"""
+    """List all available endpoints with pagination"""
     query = db.query(Endpoint)
     if active_only:
         query = query.filter(Endpoint.is_active == True)
 
-    endpoints = query.all()
+    # Apply pagination
+    offset = (page - 1) * size
+    endpoints = query.offset(offset).limit(size).all()
     return endpoints
 
 

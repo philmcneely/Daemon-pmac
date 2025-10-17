@@ -425,7 +425,7 @@ def import_endpoint_data(
         raise ValueError(f"Import failed: {str(e)}")
 
 
-def get_system_metrics() -> Any:  # type: ignore
+def get_system_metrics() -> Dict[str, Any]:  # type: ignore
     """Get basic system metrics"""
     import psutil
 
@@ -930,7 +930,7 @@ def is_sensitive_field(field_name: str) -> bool:
     return any(sensitive in field_lower for sensitive in sensitive_fields)
 
 
-def get_client_identifier(request) -> str:
+def get_client_identifier(request: Any) -> str:
     """Get a unique identifier for the client making the request"""
     # Try to get real IP from headers (for proxied requests)
     forwarded_for = getattr(request.headers, "x-forwarded-for", None)

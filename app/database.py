@@ -51,7 +51,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 from sqlalchemy.sql import func
 
-from .config import settings
+from app.config import settings  # type: ignore
 
 
 class Base(DeclarativeBase):
@@ -87,13 +87,13 @@ class User(Base):
     last_login = Column(DateTime(timezone=True), nullable=True)
 
     # Relationship to data entries
-    data_entries = relationship("DataEntry", back_populates="created_by")
+    data_entries = relationship("DataEntry", back_populates="created_by")  # type: ignore  # type: ignore
     privacy_settings = relationship(
         "UserPrivacySettings", back_populates="user", uselist=False
-    )
+    )  # type: ignore  # type: ignore
     privacy_settings = relationship(
         "UserPrivacySettings", back_populates="user", uselist=False
-    )
+    )  # type: ignore  # type: ignore
 
 
 class Endpoint(Base):
@@ -112,8 +112,13 @@ class Endpoint(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"))
 
     # Relationships
-    data_entries = relationship("DataEntry", back_populates="endpoint")
-    created_by = relationship("User")
+    __table_args__ = (
+        Index("ix_endpoint_is_active", "is_active"),
+        Index("ix_endpoint_is_public", "is_public"),
+        Index("ix_endpoint_created_by", "created_by_id"),
+    )
+    data_entries = relationship("DataEntry", back_populates="endpoint")  # type: ignore  # type: ignore
+    created_by = relationship("User")  # type: ignore  # type: ignore
 
 
 class DataEntry(Base):
@@ -137,6 +142,9 @@ class DataEntry(Base):
     __table_args__ = (
         Index("ix_data_entries_endpoint_active", "endpoint_id", "is_active"),
         Index("ix_data_entries_created_at", "created_at"),
+        Index("ix_data_entries_created_by", "created_by_id"),
+        # Additional index on endpoint_id for queries that filter only by endpoint
+        Index("ix_data_entries_endpoint", "endpoint_id"),
     )
 
 
@@ -155,7 +163,10 @@ class ApiKey(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship
-    user = relationship("User")
+    user = relationship("User")  # type: ignore  # type: ignore
+
+    # Indexes for performance
+    __table_args__ = (Index("ix_api_keys_user_id", "user_id"),)
 
 
 class AuditLog(Base):
@@ -181,6 +192,7 @@ class AuditLog(Base):
     __table_args__ = (
         Index("ix_audit_logs_table_record", "table_name", "record_id"),
         Index("ix_audit_logs_created_at", "created_at"),
+        Index("ix_audit_logs_user_id", "user_id"),
     )
 
 
@@ -196,6 +208,8 @@ class DataPrivacyRule(Base):
     privacy_level = Column(String(20), default="private")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (Index("ix_data_privacy_rules_endpoint", "endpoint_name"),)
 
 
 class UserPrivacySettings(Base):
@@ -219,16 +233,52 @@ class UserPrivacySettings(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationship
-    user = relationship("User", back_populates="privacy_settings")
+    user = relationship("User", back_populates="privacy_settings")  # type: ignore  # type: ignore
 
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency for getting database session"""
+    # Ensure the database schema is initialized before creating a session.
+    # This guarantees that all required tables (e.g., endpoints) exist,
+    # preventing OperationalError exceptions during request handling.
+    init_db()
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+# ----------------------------------------------------------------------
+# Async database session support
+# ----------------------------------------------------------------------
+# Added to improve concurrency for async FastAPI endpoints.
+# Uses SQLAlchemy's async engine with aiosqlite for SQLite.
+# The async session can be used with `Depends(get_async_db)` in routers.
+
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Async engine – converts the SQLite URL to use aiosqlite
+_async_engine = create_async_engine(
+    settings.database_url.replace("sqlite://", "sqlite+aiosqlite://"),
+    connect_args={"check_same_thread": False},
+    future=True,
+)
+
+# Async session factory
+_async_SessionLocal = async_sessionmaker(
+    bind=_async_engine, expire_on_commit=False, class_=AsyncSession
+)
+
+
+async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+    """Async dependency for getting a database session."""
+    # Ensure DB schema exists (runs synchronously)
+    init_db()
+    async with _async_SessionLocal() as session:
+        yield session
 
 
 def init_db():

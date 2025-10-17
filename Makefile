@@ -250,6 +250,16 @@ quick-test:
 full-check: format lint typecheck test
 	@echo "✓ Full quality check completed"
 
+# Security audit using pip-audit
+security-audit:
+	@echo "Running security audit with pip-audit..."
+	pip-audit
+
+# Version bump using version_tracker script
+version-bump:
+	@echo "Bumping version..."
+	python scripts/version_tracker.py bump
+
 reset-dev: clean db-reset
 	python -m app.cli db init
 	@echo "✓ Development environment reset"

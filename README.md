@@ -59,6 +59,27 @@ python -m app.cli create-user your-username
 python dev.py
 ```
 
+## CLI Commands
+
+The `app.cli` module provides several useful commands for managing the system:
+
+```bash
+# Create a new user (admin)
+python -m app.cli create-user alice
+
+# List all users
+python -m app.cli user list
+
+# Create a new endpoint
+python -m app.cli endpoint create projects "Project descriptions"
+
+# Import data for a user
+python -m app.cli import-user-data alice /path/to/data.json
+
+# Run a database backup
+python -m app.cli backup create
+```
+
 ### Development Setup
 
 For development work, use the automated setup script:

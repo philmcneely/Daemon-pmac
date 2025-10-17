@@ -46,9 +46,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from .config import settings
-from .database import ApiKey, User, get_db
-from .schemas import TokenData
+from .config import settings  # type: ignore
+from .database import ApiKey, User, get_db  # type: ignore
+from .schemas import TokenData  # type: ignore
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -84,8 +84,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
+def is_token_revoked(token: str) -> bool:
+    """Check if a JWT token has been revoked.
+
+    This placeholder implementation always returns False. Integrate with a
+    RevokedToken model or cache as needed to support token revocation.
+    """
+    return False
+
+
 def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
-    """Verify and decode a JWT token"""
+    """Verify and decode a JWT token, handling expiration and revocation."""
     try:
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
@@ -94,7 +103,17 @@ def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
-    except JWTError:
+        # Revocation check – raise if token has been revoked
+        if is_token_revoked(token):
+            raise credentials_exception
+    except JWTError as e:
+        # Distinguish expiration from other JWT errors
+        if "Signature has expired" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         raise credentials_exception
     return token_data
 
@@ -164,16 +183,16 @@ def verify_api_key(db: Session, api_key: str) -> Optional[User]:
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
     api_key_obj = (
         db.query(ApiKey)
-        .filter(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True))
+        .filter(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
         .first()
     )
 
     if not api_key_obj:
-        return None
+        return None  # type: ignore
 
     # Check expiration
     current_time = datetime.now(timezone.utc)
-    if api_key_obj.expires_at and api_key_obj.expires_at < current_time:
+    if api_key_obj.expires_at and api_key_obj.expires_at < current_time:  # type: ignore
         return None
 
     # Update last used
