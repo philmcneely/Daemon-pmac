@@ -340,7 +340,8 @@ def import_endpoint_data(
                     schema_dict_json: Any = endpoint.schema
                     if hasattr(schema_dict_json, "type"):
                         try:
-                            schema_dict_json = json.loads(schema_dict_json.type.python_type)  # type: ignore
+                            schema_type = schema_dict_json.type.python_type
+                            schema_dict_json = json.loads(schema_type)  # type: ignore
                         except Exception:
                             schema_dict_json = {}
                     schema_errors = validate_json_schema(item_data, schema_dict_json)
@@ -386,7 +387,8 @@ def import_endpoint_data(
                     schema_dict_csv: Any = endpoint.schema
                     if hasattr(schema_dict_csv, "type"):
                         try:
-                            schema_dict_csv = json.loads(schema_dict_csv.type.python_type)  # type: ignore
+                            schema_type = schema_dict_csv.type.python_type
+                            schema_dict_csv = json.loads(schema_type)  # type: ignore
                         except Exception:
                             schema_dict_csv = {}
                     schema_errors = validate_json_schema(processed_row, schema_dict_csv)
@@ -467,7 +469,10 @@ def get_system_metrics() -> Any:  # type: ignore
 
     except Exception as e:
         logger.error(f"Error getting system metrics: {e}")
-        return {"timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}  # type: ignore
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": str(e),
+        }  # type: ignore
 
     # Fallback return to satisfy type checkers (unreachable)
     return {}
@@ -691,9 +696,7 @@ def sanitize_data_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     return sanitized
 
 
-def mask_sensitive_data(
-    data: Dict[str, Any], level: str = "business_card"
-) -> Dict[str, Any]:
+def mask_sensitive_data(data: Dict[str, Any], level: str = "business_card") -> Any:
     """
     Mask sensitive data based on privacy level
     """
@@ -778,7 +781,7 @@ def mask_sensitive_data(
         else:
             return obj
 
-    return recursively_mask(data)
+    return cast(Dict[str, Any], recursively_mask(data))  # type: ignore
 
 
 def validate_url(url: Optional[str]) -> bool:  # type: ignore
