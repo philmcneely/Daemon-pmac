@@ -43,7 +43,9 @@ Below is a consolidated checklist of the enhancements that have been discussed (
 - [x] Add a Makefile target for `make lint`, `make test`, `make format`, `make security-audit`.
 - [x] Add automated security scanning (Bandit) to CI pipeline.
 - [x] Enable Dependabot for automatic dependency updates.
+- [x] Add Kubernetes deployment manifests and CI integration (helm charts, k8s manifests, and GitHub Actions workflow for k8s deployment).
 - [x] Remove the empty `{}` placeholder at the root of the repository.
+- [x] Remove unused placeholder `mcp.py` file.
 - [x] Consolidate duplicate utility functions.
 
 ## ✅ Frontend (if applicable)
