@@ -1,4 +1,5 @@
 """
+# mypy: ignore-errors
 Module: tests.unit.test_admin
 Description: Unit tests for admin functionality including user management,
              system administration, and endpoint management
@@ -31,9 +32,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth import get_current_admin_user
-from app.database import get_db
-from app.main import app
+from app.auth import get_current_admin_user  # type: ignore
+from app.database import get_db  # type: ignore
+from app.main import app  # type: ignore
 
 
 class TestAdminUnauthorized:
@@ -175,7 +176,7 @@ class TestAdminValidationErrors:
         mock_get_db.return_value = mock_db
 
         # Invalid data - missing required fields
-        invalid_data = {}
+        invalid_data: dict = {}
 
         response = unit_client.post("/admin/api-keys", json=invalid_data)
         assert response.status_code == 403
@@ -196,7 +197,7 @@ class TestAdminValidationErrors:
         mock_get_db.return_value = mock_db
 
         # Invalid JSON structure
-        invalid_data = {"invalid": None, "nested": {"invalid": None}}
+        invalid_data: dict = {"invalid": None, "nested": {"invalid": None}}
 
         response = unit_client.put("/admin/config", json=invalid_data)
         # This endpoint returns 404 since it doesn't exist

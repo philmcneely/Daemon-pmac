@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 Unit tests for User model full_name functionality
 """
@@ -5,15 +6,15 @@ Unit tests for User model full_name functionality
 import pytest
 from sqlalchemy.orm import Session
 
-from app.auth import get_password_hash
-from app.database import User, get_db
-from app.schemas import UserCreate, UserResponse
+from app.auth import get_password_hash  # type: ignore
+from app.database import User, get_db  # type: ignore
+from app.schemas import UserCreate, UserResponse  # type: ignore
 
 
 def test_user_model_with_full_name():
     """Test that User model accepts and stores full_name"""
     # Create user with full_name
-    user = User(
+    user = User(  # type: ignore
         username="test_user",
         full_name="Test User",
         email="test@example.com",
@@ -30,7 +31,7 @@ def test_user_model_with_full_name():
 def test_user_model_without_full_name():
     """Test that User model works without full_name (None value)"""
     # Create user without full_name
-    user = User(
+    user = User(  # type: ignore
         username="test_user2",
         email="test2@example.com",
         hashed_password=get_password_hash("password123"),
@@ -65,6 +66,7 @@ def test_user_create_schema_without_full_name():
         email="schema2@example.com",
         password="password123",
         is_admin=False,
+        full_name=None,  # type: ignore
     )
 
     assert user_data.username == "schema_test2"

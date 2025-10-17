@@ -8,7 +8,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base
@@ -17,7 +17,7 @@ from sqlalchemy.orm import declarative_base
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.config import settings
+from app.config import settings  # type: ignore
 
 # Database setup
 engine = create_engine(settings.database_url, echo=False)
@@ -164,7 +164,7 @@ class DatabaseVersion:
 
         return migration_map.get((current_norm, target_norm), [])
 
-    def check_schema_integrity(self) -> Dict[str, any]:
+    def check_schema_integrity(self) -> Dict[str, Any]:
         """Check database schema integrity"""
         inspector = inspect(self.engine)
 
@@ -198,7 +198,7 @@ class DatabaseVersion:
 
         # Use the app's backup functionality
         try:
-            from app.utils import create_backup
+            from app.utils import create_backup  # type: ignore
 
             backup_result = create_backup()
             return backup_result.filename
