@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: daemon-pmac
+  labels:
+    app: daemon-pmac
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: daemon-pmac
+  template:
+    metadata:
+      labels:
+        app: daemon-pmac
+    spec:
+      containers:
+        - name: daemon-pmac
+          image: ghcr.io/philmcneely/daemon-pmac:latest
+          ports:
+            - containerPort: 8004
+          envFrom:
+            - secretRef:
+                name: daemon-pmac-secrets
+          env:
+            - name: SETTINGS_MODULE
+              value: "app.config"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 15
+            periodSeconds: 20

@@ -38,8 +38,19 @@
     "python.analysis.stubPath": "",
     "python.analysis.userFileIndexingLimit": 2000,
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.include": ["app/**", "tests/**"],
-    "python.analysis.exclude": ["venv/**", "**/__pycache__/**", ".pytest_cache/**", "htmlcov/**", "logs/**", "backups/**", "gh_temp/**"],
+    "python.analysis.include": [
+        "app/**",
+        "tests/**"
+    ],
+    "python.analysis.exclude": [
+        "venv/**",
+        "**/__pycache__/**",
+        ".pytest_cache/**",
+        "htmlcov/**",
+        "logs/**",
+        "backups/**",
+        "gh_temp/**"
+    ],
     "python.languageServer": "Pylance",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
@@ -135,5 +146,6 @@
         "logs/**": true,
         "backups/**": true,
         "gh_temp/**": true
-    }
+    },
+    "makefile.configureOnOpen": false
 }

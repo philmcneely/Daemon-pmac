@@ -1,14 +1,14 @@
 """
 Module: auth
 Description: Authentication and security utilities for JWT tokens, password hashing,
-             and user verification
+             and user verification.
 
 Author: pmac
 Created: 2025-08-28
 Modified: 2025-08-28
 
 Dependencies:
-- fastapi: 0.104.1+ - Web framework for API routes and dependencies
+- fastapi: 0.1041+ - Web framework for API routes and dependencies
 - python-jose: 3.5.0+ - JWT token creation, verification, and decoding
 - passlib: 1.7.4+ - Password hashing with bcrypt algorithm
 - sqlalchemy: 2.0+ - Database ORM for user and API key models
@@ -38,7 +38,7 @@ import ipaddress
 import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from typing import Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -50,25 +50,47 @@ from .config import settings  # type: ignore
 from .database import ApiKey, User, get_db  # type: ignore
 from .schemas import TokenData  # type: ignore
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ----------------------------------------------------------------------
+# Password hashing – CryptContext can be overridden for testing
+# ----------------------------------------------------------------------
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+def get_pwd_context() -> CryptContext:
+    """Dependency to retrieve the current CryptContext (injectable)."""
+    return _pwd_context
+
+
+def set_pwd_context(ctx: CryptContext) -> None:
+    """Override the password hashing context (used in tests)."""
+    global _pwd_context
+    _pwd_context = ctx
+
+
+def verify_password(
+    plain_password: str,
+    hashed_password: str,
+    pwd_context: Optional[CryptContext] = None,
+) -> bool:
+    """Verify a password against its hash, allowing injection of CryptContext."""
+    ctx = pwd_context or get_pwd_context()
+    return ctx.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str, pwd_context: Optional[CryptContext] = None) -> str:
+    """Hash a password, allowing injection of CryptContext."""
+    ctx = pwd_context or get_pwd_context()
+    return ctx.hash(password)
+
+
+# ----------------------------------------------------------------------
 # JWT token handling
+# ----------------------------------------------------------------------
 security = HTTPBearer()
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    """Hash a password"""
-    return pwd_context.hash(password)
-
-
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token"""
+    """Create a JWT access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -76,7 +98,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.access_token_expire_minutes
         )
-
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.secret_key, algorithm=settings.algorithm
@@ -84,13 +105,36 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def is_token_revoked(token: str) -> bool:
-    """Check if a JWT token has been revoked.
+# ----------------------------------------------------------------------
+# Token revocation hook – can be overridden in tests or runtime
+# ----------------------------------------------------------------------
 
-    This placeholder implementation always returns False. Integrate with a
-    RevokedToken model or cache as needed to support token revocation.
-    """
+
+def _default_revocation_checker(token: str) -> bool:
+    """Default revocation checker – always returns False."""
     return False
+
+
+_revocation_checker_func: Callable[[str], bool] = _default_revocation_checker
+
+
+def get_revocation_checker() -> Callable[[str], bool]:
+    """Dependency to retrieve the current revocation checker (injectable)."""
+    return _revocation_checker_func
+
+
+def set_token_revocation_checker(func: Callable[[str], bool]) -> None:
+    """Override the token revocation checker (used in tests)."""
+    global _revocation_checker_func
+    _revocation_checker_func = func
+
+
+def is_token_revoked(token: str) -> bool:
+    """
+    Check if a JWT token is revoked using the injectable revocation checker.
+    """
+    checker = get_revocation_checker()
+    return checker(token)
 
 
 def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
@@ -103,11 +147,9 @@ def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
-        # Revocation check – raise if token has been revoked
         if is_token_revoked(token):
             raise credentials_exception
     except JWTError as e:
-        # Distinguish expiration from other JWT errors
         if "Signature has expired" in str(e):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -119,7 +161,7 @@ def verify_token(token: str, credentials_exception: HTTPException) -> TokenData:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Union[User, bool]:
-    """Authenticate a user with username and password"""
+    """Authenticate a user with username and password."""
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return False
@@ -132,28 +174,26 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
-    """Get the current authenticated user"""
+    """Get the current authenticated user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
     token_data = verify_token(credentials.credentials, credentials_exception)
     user = db.query(User).filter(User.username == token_data.username).first()
     if user is None:
         raise credentials_exception
-
-    # Update last login
     setattr(user, "last_login", datetime.now(timezone.utc))
     db.commit()
-
     return user
 
 
-def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
-    """Get the current active user"""
-    if not current_user.is_active:
+def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Get the current active user."""
+    if not getattr(current_user, "is_active", False):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
@@ -161,8 +201,8 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
 def get_current_admin_user(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
-    """Get the current admin user"""
-    if not current_user.is_admin:
+    """Get the current admin user."""
+    if not getattr(current_user, "is_admin", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",
@@ -170,62 +210,58 @@ def get_current_admin_user(
     return current_user
 
 
+# ----------------------------------------------------------------------
 # API Key authentication
+# ----------------------------------------------------------------------
 def generate_api_key() -> tuple[str, str]:
-    """Generate a new API key and its hash"""
+    """Generate a new API key and its hash."""
     key = f"daemon_{secrets.token_urlsafe(32)}"
     key_hash = hashlib.sha256(key.encode()).hexdigest()
     return key, key_hash
 
 
 def verify_api_key(db: Session, api_key: str) -> Optional[User]:
-    """Verify an API key and return the associated user"""
+    """Verify an API key and return the associated user."""
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
     api_key_obj = (
         db.query(ApiKey)
         .filter(ApiKey.key_hash == key_hash, ApiKey.is_active == True)
         .first()
     )
-
     if not api_key_obj:
         return None  # type: ignore
-
-    # Check expiration
     current_time = datetime.now(timezone.utc)
     if api_key_obj.expires_at and api_key_obj.expires_at < current_time:  # type: ignore
         return None
-
-    # Update last used
     setattr(api_key_obj, "last_used", datetime.now(timezone.utc))
     db.commit()
-
     return api_key_obj.user
 
 
 def get_user_from_api_key(
     request: Request, db: Session = Depends(get_db)
 ) -> Optional[User]:
-    """Get user from API key in headers"""
+    """Get user from API key in headers."""
     api_key = request.headers.get("X-API-Key")
     if not api_key:
         return None
-
     return verify_api_key(db, api_key)
 
 
+# ----------------------------------------------------------------------
 # IP-based access control
+# ----------------------------------------------------------------------
 def is_ip_allowed(ip_address: str) -> bool:
-    """Check if an IP address is allowed"""
+    """Check if an IP address is allowed."""
     if not settings.allowed_ips:
-        return True  # No restrictions if list is empty
-
+        return True
     try:
         client_ip = ipaddress.ip_address(ip_address)
         for allowed in settings.allowed_ips:
-            if "/" in allowed:  # CIDR notation
+            if "/" in allowed:
                 if client_ip in ipaddress.ip_network(allowed, strict=False):
                     return True
-            else:  # Single IP
+            else:
                 if client_ip == ipaddress.ip_address(allowed):
                     return True
         return False
@@ -234,22 +270,7 @@ def is_ip_allowed(ip_address: str) -> bool:
 
 
 def check_ip_access(request: Request):
-    """Validate client IP address against allowed IP list.
-
-    Checks if the requesting client's IP address is in the allowed IP list.
-    Raises HTTP 403 Forbidden if IP access is denied.
-
-    Args:
-        request (Request): FastAPI request object containing client information.
-
-    Raises:
-        HTTPException: 403 Forbidden if IP is not allowed or cannot be determined.
-
-    Note:
-        - Uses request.client.host to extract client IP
-        - Relies on is_ip_allowed() function for IP validation
-        - Part of security middleware chain
-    """
+    """Validate client IP address against allowed IP list."""
     client_ip = request.client.host if request.client else None
     if not client_ip or not is_ip_allowed(client_ip):
         raise HTTPException(
@@ -258,26 +279,11 @@ def check_ip_access(request: Request):
         )
 
 
+# ----------------------------------------------------------------------
 # Security headers middleware
+# ----------------------------------------------------------------------
 def add_security_headers(response):
-    """Add comprehensive security headers to HTTP responses.
-
-    Applies a standard set of security headers to protect against common
-    web vulnerabilities including XSS, clickjacking, and content sniffing.
-
-    Args:
-        response: FastAPI response object to modify.
-
-    Returns:
-        Response: The modified response object with security headers added.
-
-    Note:
-        - Prevents MIME type sniffing with X-Content-Type-Options
-        - Blocks iframe embedding with X-Frame-Options
-        - Enables XSS protection with X-XSS-Protection
-        - Enforces HTTPS with Strict-Transport-Security
-        - Sets Content Security Policy to 'self' only
-    """
+    """Add comprehensive security headers to HTTP responses."""
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -289,17 +295,17 @@ def add_security_headers(response):
     return response
 
 
+# ----------------------------------------------------------------------
 # Rate limiting decorator
+# ----------------------------------------------------------------------
 def rate_limit(
     max_requests: Optional[int] = None, window_seconds: Optional[int] = None
 ):
-    """Rate limiting decorator"""
+    """Rate limiting decorator."""
 
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # This is a simple in-memory rate limiter
-            # For production, use Redis or similar
             return await func(*args, **kwargs)
 
         return wrapper
@@ -307,16 +313,19 @@ def rate_limit(
     return decorator
 
 
+# ----------------------------------------------------------------------
 # Input sanitization
+# ----------------------------------------------------------------------
 def sanitize_input(data: dict) -> dict:
-    """Sanitize input data to prevent XSS and injection attacks"""
+    """Sanitize input data to prevent XSS and injection attacks."""
     sanitized = {}
     for key, value in data.items():
         if isinstance(value, str):
             # Basic HTML/script tag removal
             value = value.replace("<script>", "").replace("</script>", "")
-            value = value.replace("<", "&lt;").replace(">", "&gt;")
-            # Remove SQL injection patterns
+            # Escape angle brackets
+            value = value.replace("<", "<").replace(">", ">")
+            # Remove dangerous SQL patterns
             dangerous_patterns = [
                 "DROP",
                 "DELETE",

@@ -34,8 +34,10 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import DataEntry, Endpoint, create_default_endpoints, get_db
+from app.main import (
+    settings,  # Updated import to ensure settings can be patched via app.main in tests
+)
 from app.privacy import get_privacy_filter
 from app.schemas import (
     MCPJSONRPCRequest,

@@ -10,26 +10,8 @@ Modified: 2025-08-28
 
 Dependencies:
 - sqlalchemy: 2.0+ - Database operations for backups
-- psutil: 5.9.0+ - System monitoring and resource usage
+- psutil: 5.9.0+ - System monitoring for health checks
 - datetime: 3.9+ - Timestamp and date operations
-
-Usage:
-    from app.utils import create_backup, get_system_health, clean_old_backups
-
-    # Create database backup
-    backup_path = create_backup(db_session)
-
-    # Get system health metrics
-    health_data = get_system_health()
-
-    # Clean old backup files
-    clean_old_backups(max_age_days=30)
-
-Notes:
-    - Automatic backup rotation and cleanup
-    - System resource monitoring for health checks
-    - Safe file operations with proper error handling
-    - Configurable backup retention policies
 """
 
 import html
@@ -50,19 +32,27 @@ from app.database import User  # type: ignore
 from .config import settings  # type: ignore
 from .schemas import BackupResponse  # type: ignore
 
+# Exported symbols
+__all__ = [
+    "mask_sensitive_data",
+    "sanitize_data_dict",
+    "sanitize_input",
+    "is_sensitive_field",
+    "validate_url",
+    "get_backup_files_to_delete",
+    "sanitize_data_entry",
+    "validate_endpoint_name",
+    "get_client_identifier",
+    "should_rate_limit",
+]
+
 # Setup logging
 logging.basicConfig(level=getattr(logging, settings.logging_level.upper()))
 
 
-# Structured logging helper
 def get_structured_logger(name: str) -> logging.LoggerAdapter[Any]:  # type: ignore
     """
     Return a logger configured to emit JSON‑formatted log records.
-
-    Uses ``python‑json‑logger`` if available; otherwise falls back to the
-    standard ``logging`` formatter.  The logger inherits the global log level
-    from ``settings.logging_level`` and includes a ``service`` field with the
-    application name for easier aggregation in log aggregation tools.
     """
     try:
         from pythonjsonlogger import jsonlogger  # type: ignore
@@ -75,38 +65,50 @@ def get_structured_logger(name: str) -> logging.LoggerAdapter[Any]:  # type: ign
         json_handler.setFormatter(json_formatter)
         structured_logger = logging.getLogger(name)
         structured_logger.setLevel(getattr(logging, settings.logging_level.upper()))
-        # Avoid duplicate handlers if called multiple times
         if not any(
             isinstance(h, logging.StreamHandler) for h in structured_logger.handlers
         ):
             structured_logger.addHandler(json_handler)
-        # Add a static field for service name
         structured_logger = logging.LoggerAdapter(
             structured_logger, {"service": settings.app_name}
         )
         return structured_logger
     except Exception:
-        # Fallback to the regular logger if jsonlogger is not installed
         fallback_logger = logging.getLogger(name)
         fallback_logger.setLevel(getattr(logging, settings.logging_level.upper()))
-        # Wrap fallback logger in LoggerAdapter for consistent return type
         return logging.LoggerAdapter(fallback_logger, {})
 
 
-logger = get_structured_logger(__name__)  # type: ignore  # noqa: E501
+logger = get_structured_logger(__name__)  # type: ignore
+
+
+def _reescape_quotes_in_code_blocks(text: str) -> str:
+    """Replace double quotes with HTML entity only inside markdown code fences."""
+
+    def replace(match):
+        block = match.group(0)
+        # Preserve the code fence markers
+        if block.startswith("```") and block.endswith("```"):
+            # Extract the content inside the code fence
+            content = block[3:-3]
+            # Replace double quotes with HTML entities
+            content = content.replace('"', '"')
+            # Reconstruct the code fence with preserved markers
+            return f"```{content}```"
+        else:
+            # This shouldn't happen, but just in case
+            return block.replace('"', '"')
+
+    return re.sub(r"```.*?```", replace, text, flags=re.DOTALL)
 
 
 def create_backup() -> BackupResponse:
-    """Create a backup of the database"""
-    # Ensure backup directory exists
+    """Create a backup of the database."""
     os.makedirs(settings.backup_dir, exist_ok=True)
-
-    # Generate backup filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_filename = f"daemon_backup_{timestamp}.db"
     backup_path = os.path.join(settings.backup_dir, backup_filename)
 
-    # Get source database path
     db_path = settings.database_url.replace("sqlite:///", "")
     if db_path.startswith("./"):
         db_path = db_path[2:]
@@ -114,12 +116,8 @@ def create_backup() -> BackupResponse:
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
-    # Create backup
     shutil.copy2(db_path, backup_path)
-
-    # Get file size
     backup_size = os.path.getsize(backup_path)
-
     logger.info(f"Backup created: {backup_filename} ({backup_size} bytes)")
 
     return BackupResponse(
@@ -128,23 +126,7 @@ def create_backup() -> BackupResponse:
 
 
 def cleanup_old_backups() -> Dict[str, Union[int, str, None]]:
-    """Remove old backup files based on configured retention policy.
-
-    Scans the backup directory and removes backup files that exceed the
-    retention policy limits. Keeps only the most recent backups as specified
-    in application settings.
-
-    Returns:
-        Dict[str, Union[int, str, None]]: Dictionary containing:
-            - deleted_count: Number of backup files removed
-            - error: Error message if operation failed, None if successful
-
-    Note:
-        - Only runs when backup functionality is enabled
-        - Respects settings.backup_retention_count for file limits
-        - Preserves most recent backups based on file timestamps
-        - Returns early if backup directory doesn't exist
-    """
+    """Remove old backup files based on retention policy."""
     if not settings.backup_enabled or not os.path.exists(settings.backup_dir):
         return {"deleted_count": 0, "error": None}
 
@@ -156,26 +138,22 @@ def cleanup_old_backups() -> Dict[str, Union[int, str, None]]:
             if filename.endswith(".db"):
                 filepath = os.path.join(settings.backup_dir, filename)
                 file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
-
                 if file_time < cutoff_date:
                     os.unlink(filepath)
                     deleted_count += 1
                     logger.info(f"Deleted old backup: {filename}")
 
-        if deleted_count > 0:
+        if deleted_count:
             logger.info(f"Cleaned up {deleted_count} old backup files")
-
         return {"deleted_count": deleted_count, "error": None}
-
     except Exception as e:
         logger.error(f"Error cleaning up backups: {e}")
         return {"deleted_count": 0, "error": str(e)}
 
 
 def validate_json_schema(data: Dict[str, Any], schema: Any) -> List[str]:
-    """Basic JSON schema validation"""
+    """Basic JSON schema validation."""
     errors = []
-
     for field_name, field_schema in schema.items():
         field_type = field_schema.get("type")
         required = field_schema.get("required", False)
@@ -211,17 +189,15 @@ def validate_json_schema(data: Dict[str, Any], schema: Any) -> List[str]:
         if field_type == "string" and isinstance(value, str):
             if "min_length" in field_schema and len(value) < field_schema["min_length"]:
                 errors.append(
-                    f"Field '{field_name}' must be at least "
-                    f"{field_schema['min_length']} characters"
+                    f"Field '{field_name}' must be at least {field_schema['min_length']} characters"
                 )
             if "max_length" in field_schema and len(value) > field_schema["max_length"]:
                 errors.append(
-                    f"Field '{field_name}' must be at most "
-                    f"{field_schema['max_length']} characters"
+                    f"Field '{field_name}' must be at most {field_schema['max_length']} characters"
                 )
 
         # Number range validation
-        if field_type in ["integer", "number"] and isinstance(value, (int, float)):
+        if field_type in ("integer", "number") and isinstance(value, (int, float)):
             if "minimum" in field_schema and value < field_schema["minimum"]:
                 errors.append(
                     f"Field '{field_name}' must be at least {field_schema['minimum']}"
@@ -230,17 +206,15 @@ def validate_json_schema(data: Dict[str, Any], schema: Any) -> List[str]:
                 errors.append(
                     f"Field '{field_name}' must be at most {field_schema['maximum']}"
                 )
-
     return errors
 
 
 def export_endpoint_data(
     db_session: Session, endpoint_name: str, format: str = "json"
 ) -> str:
-    """Export endpoint data to various formats"""
+    """Export endpoint data to JSON or CSV."""
     from .database import DataEntry, Endpoint  # type: ignore
 
-    # Find endpoint
     endpoint = (
         db_session.query(Endpoint)
         .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
@@ -249,7 +223,6 @@ def export_endpoint_data(
     if not endpoint:
         raise ValueError(f"Endpoint '{endpoint_name}' not found")
 
-    # Get data
     data_entries = (
         db_session.query(DataEntry)
         .filter(DataEntry.endpoint_id == endpoint.id, DataEntry.is_active == True)
@@ -303,10 +276,9 @@ def import_endpoint_data(
     format: str = "json",
     user_id: Optional[int] = None,
 ) -> Any:  # type: ignore
-    """Import data into an endpoint"""
+    """Import data into an endpoint."""
     from .database import DataEntry, Endpoint  # type: ignore
 
-    # Find endpoint
     endpoint = (
         db_session.query(Endpoint)
         .filter(Endpoint.name == endpoint_name, Endpoint.is_active == True)
@@ -322,7 +294,6 @@ def import_endpoint_data(
         if format.lower() == "json":
             import_data = json.loads(data_content)
 
-            # Handle both single objects and arrays
             if isinstance(import_data, dict):
                 if "data" in import_data and isinstance(import_data["data"], list):
                     data_list = import_data["data"]
@@ -333,10 +304,8 @@ def import_endpoint_data(
             else:
                 raise ValueError("Invalid JSON structure")
 
-            # Import each item
             for i, item_data in enumerate(data_list):
                 try:
-                    # Validate against endpoint schema
                     schema_dict_json: Any = endpoint.schema
                     if hasattr(schema_dict_json, "type"):
                         try:
@@ -351,7 +320,6 @@ def import_endpoint_data(
                         )
                         continue
 
-                    # Create data entry
                     data_entry = DataEntry(
                         endpoint_id=endpoint.id,
                         data=item_data,
@@ -370,7 +338,6 @@ def import_endpoint_data(
 
             for i, row in enumerate(csv_reader):
                 try:
-                    # Convert string values back to appropriate types
                     processed_row: Dict[str, Any] = {}
                     for key, value in row.items():
                         if value == "":
@@ -383,7 +350,6 @@ def import_endpoint_data(
                         else:
                             processed_row[key] = value
 
-                    # Validate against endpoint schema
                     schema_dict_csv: Any = endpoint.schema
                     if hasattr(schema_dict_csv, "type"):
                         try:
@@ -398,7 +364,6 @@ def import_endpoint_data(
                         )
                         continue
 
-                    # Create data entry
                     data_entry = DataEntry(
                         endpoint_id=endpoint.id,
                         data=processed_row,
@@ -412,7 +377,6 @@ def import_endpoint_data(
         else:
             raise ValueError(f"Unsupported import format: {format}")
 
-        # Commit successful imports
         db_session.commit()
         return {
             "imported_count": imported_count,
@@ -426,27 +390,19 @@ def import_endpoint_data(
 
 
 def get_system_metrics() -> Dict[str, Any]:  # type: ignore
-    """Get basic system metrics"""
-    import psutil
-
+    """Collect basic system metrics."""
     try:
-        # Memory usage
         memory = psutil.virtual_memory()
-
-        # CPU usage
         cpu_percent = psutil.cpu_percent(interval=1)
-
-        # Disk usage
         disk = psutil.disk_usage(".")
 
-        # Database size
         db_path = settings.database_url.replace("sqlite:///", "")
         if db_path.startswith("./"):
             db_path = db_path[2:]
 
         db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
 
-        return {  # type: ignore
+        return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "memory": {
                 "total": memory.total,
@@ -465,21 +421,14 @@ def get_system_metrics() -> Dict[str, Any]:  # type: ignore
                 "size_bytes": db_size,
                 "size_mb": round(db_size / (1024 * 1024), 2),
             },
-        }  # type: ignore
-
+        }
     except Exception as e:
         logger.error(f"Error getting system metrics: {e}")
-        return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "error": str(e),
-        }  # type: ignore
-
-    # Fallback return to satisfy type checkers (unreachable)
-    return {}
+        return {"timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}
 
 
 def health_check() -> Dict[str, Any]:
-    """Perform a health check of the system"""
+    """Perform a health check of the system."""
     from .database import engine  # type: ignore
 
     health: Dict[str, Any] = {
@@ -488,7 +437,6 @@ def health_check() -> Dict[str, Any]:
         "checks": {},
     }
 
-    # Database connectivity
     try:
         from sqlalchemy import text
 
@@ -502,7 +450,6 @@ def health_check() -> Dict[str, Any]:
         health["status"] = "unhealthy"
         health["checks"]["database"] = {"status": "unhealthy", "message": str(e)}
 
-    # Backup directory
     try:
         if settings.backup_enabled:
             if os.path.exists(settings.backup_dir) and os.access(
@@ -527,21 +474,20 @@ def health_check() -> Dict[str, Any]:
         health["status"] = "degraded"
         health["checks"]["backup_dir"] = {"status": "unhealthy", "message": str(e)}
 
-    # Disk space
     try:
         disk = psutil.disk_usage(".")
         free_percent = (disk.free / disk.total) * 100
-        if free_percent < 10:
-            health["status"] = "degraded"
-            health["checks"]["disk_space"] = {
-                "status": "warning",
-                "message": f"Low disk space: {free_percent:.1f}% free",
-            }
-        elif free_percent < 5:
+        if free_percent < 5:
             health["status"] = "unhealthy"
             health["checks"]["disk_space"] = {
                 "status": "critical",
                 "message": f"Critical disk space: {free_percent:.1f}% free",
+            }
+        elif free_percent < 10:
+            health["status"] = "degraded"
+            health["checks"]["disk_space"] = {
+                "status": "warning",
+                "message": f"Low disk space: {free_percent:.1f}% free",
             }
         else:
             health["checks"]["disk_space"] = {
@@ -554,17 +500,16 @@ def health_check() -> Dict[str, Any]:
     return health
 
 
-# Application startup time tracking
 _startup_time = datetime.now(timezone.utc)
 
 
 def get_uptime() -> float:
-    """Get application uptime in seconds"""
+    """Return application uptime in seconds."""
     return (datetime.now(timezone.utc) - _startup_time).total_seconds()
 
 
 def format_bytes(bytes_value: int) -> str:
-    """Format bytes into human readable format"""
+    """Human-readable byte formatting."""
     value: float = float(bytes_value)
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if value < 1024.0:
@@ -574,116 +519,191 @@ def format_bytes(bytes_value: int) -> str:
 
 
 def sanitize_filename(filename: str) -> str:
-    """Sanitize a filename for safe filesystem operations"""
-    import re
-
-    # Remove or replace unsafe characters
+    """Sanitize a filename for safe filesystem usage."""
     filename = re.sub(r'[<>:"/\\|?*]', "_", filename)
     filename = re.sub(r"\s+", "_", filename)
     filename = filename.strip(".")
-
-    # Limit length
     if len(filename) > 255:
         filename = filename[:255]
-
     return filename
 
 
 def is_single_user_mode(db: Session) -> bool:
-    """
-    Check if the system is running in single-user mode.
-    Returns True if there's only one active user in the system.
-
-    Modes:
-    - "auto": Automatically detect based on user count (default)
-    - "single": Force single-user mode
-    - "multi": Force multi-user mode
-    """
+    """Determine if the system is in single-user mode."""
     if settings.multi_user_mode == "single":
         return True
-    elif settings.multi_user_mode == "multi":
+    if settings.multi_user_mode == "multi":
         return False
-    else:
-        user_count = db.query(User).filter(User.is_active == True).count()
-        return user_count <= 1
+    return db.query(User).filter(User.is_active == True).count() <= 1
 
 
 def get_single_user(db: Session) -> Any:
-    """
-    Get the single user if system is in single-user mode,
-    or the preferred user (admin) in multi-user mode.
-    Returns None if there are no users.
-    """
+    """Return the single user or preferred admin user."""
     from .database import User  # type: ignore
 
-    # Check if there are any users
-    user_count = db.query(User).filter(User.is_active == True).count()
-    if user_count == 0:
+    count = db.query(User).filter(User.is_active == True).count()
+    if count == 0:
         return None
-    elif user_count == 1:
+    if count == 1:
         return db.query(User).filter(User.is_active == True).first()
-    else:
-        # Multiple users - prefer admin user
-        admin_user = (
-            db.query(User).filter(User.is_active == True, User.is_admin == True).first()
-        )
-        if admin_user:
-            return admin_user
-        # If no admin, return first active user
-        return db.query(User).filter(User.is_active == True).first()
+    admin_user = (
+        db.query(User).filter(User.is_active == True, User.is_admin == True).first()
+    )
+    return admin_user or db.query(User).filter(User.is_active == True).first()
 
 
-def sanitize_input(value: Any) -> Any:
-    """
-    Sanitize input to prevent XSS and other injection attacks
-    """
+def _sanitize_input_impl(value: Any) -> Any:
+    """Sanitize input while preserving HTML entities like \"\"."""
     if isinstance(value, str):
-        # Check for URLs and validate them to prevent SSRF
-        url_pattern = (
-            r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s]+"  # More comprehensive URL pattern
+        # Prevent path traversal attempts
+        if any(
+            pattern in value for pattern in ["../", "..\\", "%2e%2e%2f", "%2e%2e\\"]
+        ):
+            value = re.sub(r"\.\.[/\\]", "", value, flags=re.IGNORECASE)
+            value = re.sub(r"%2e%2e[/\\]", "", value, flags=re.IGNORECASE)
+
+        # Prevent command injection attempts
+        dangerous_patterns = [
+            r";\s*[a-zA-Z_][a-zA-Z0-9_]*",
+            r"\$\{.*?\}",
+            r"\$\((.*?)\)",
+            r"\{\{.*?\}\}",
+        ]
+        for pattern in dangerous_patterns:
+            value = re.sub(pattern, "", value, flags=re.IGNORECASE)
+
+        # Handle backticks separately to preserve code fences
+        # Remove standalone backticks but not those in code fences (``` or `.*?`)
+        # Only remove backticks that are not part of inline code or code fences
+        # This pattern is more complex to avoid removing backticks in inline code
+        # Remove single backticks that are not part of inline code patterns
+        # This is a simple approach: remove backticks that are not preceded by a non-whitespace character
+        # and not followed by a non-whitespace character
+        # This will remove standalone backticks but preserve inline code
+        value = re.sub(
+            r"(?<=\s)`(?=\s)", "", value
+        )  # Remove backticks surrounded by whitespace
+        value = re.sub(
+            r"^`(?=\s)", "", value
+        )  # Remove backtick at start of string followed by whitespace
+        value = re.sub(
+            r"(?<=\s)`$", "", value
+        )  # Remove backtick at end of string preceded by whitespace
+
+        # Prevent SQL injection attempts
+        # Note: SQL injection should be prevented at the database level with parameterized queries
+        # This is a basic check to prevent obvious attempts in user-facing content
+        sql_patterns = [
+            r'[\'"]\s*(OR|AND)\s*[\'"]',
+            r"--\s*$",
+            r"/\*.*?\*/",
+        ]
+        for pattern in sql_patterns:
+            value = re.sub(pattern, "", value, flags=re.IGNORECASE)
+
+        # Prevent XSS attempts
+        xss_patterns = [
+            r"<script.*?>.*?</script>",
+            r"javascript:",
+            r"on\w+\s*=",
+            r"<iframe.*?>.*?</iframe>",
+            r"<object.*?>.*?</object>",
+            r"<embed.*?>.*?</embed>",
+            r"<\?xml.*?\?>",
+        ]
+        for pattern in xss_patterns:
+            value = re.sub(pattern, "", value, flags=re.IGNORECASE)
+
+        # Remove XML entity declarations
+        value = re.sub(
+            r"<!\[CDATA\[.*?\]\]>", "", value, flags=re.DOTALL | re.IGNORECASE
         )
-        if re.search(url_pattern, value):
-            # Extract URLs and validate them
-            urls = re.findall(url_pattern, value)
-            for url in urls:
-                if not validate_url(url):
-                    # If URL validation fails, replace the URL
-                    value = value.replace(url, "[URL_REMOVED]")
+        value = re.sub(r"<!ENTITY.*?>", "", value, flags=re.IGNORECASE)
+        value = re.sub(r"<!DOCTYPE.*?>", "", value, flags=re.IGNORECASE)
 
-        # HTML escape special characters
-        value = html.escape(value)
+        # Validate URLs
+        url_pattern = r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s]+"
+        for url in re.findall(url_pattern, value):
+            if not validate_url(url):
+                value = value.replace(url, "[URL_REMOVED]")
 
-        # Remove or escape dangerous patterns
         # Remove javascript: protocol
         value = re.sub(r"javascript:", "", value, flags=re.IGNORECASE)
 
-        # Remove script tags
+        # Strip <script> tags (allowed elsewhere)
         value = re.sub(
-            r"<script[^>]*>.*?</script>", "", value, flags=re.IGNORECASE | re.DOTALL
+            r"<script.*?</script>", "", value, flags=re.DOTALL | re.IGNORECASE
         )
 
-        # Remove dangerous HTML attributes
-        value = re.sub(r"on\w+\s*=", "", value, flags=re.IGNORECASE)
+        # Process HTML entities: unescape outside code fences, keep code fences unchanged
+        def process_entities(text: str) -> str:
+            # Split on markdown code fences and process each segment.
+            parts = re.split(r"(```.*?```)", text, flags=re.DOTALL)
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    # Outside code fences: Remove HTML tags first, then unescape HTML entities
+                    # Remove HTML tags
+                    part = re.sub(r"<[^>]*>", "", part)
+                    # Unescape HTML entities
+                    part = html.unescape(part)
+                    parts[i] = part
+                else:
+                    # Inside code fences: unescape then re‑escape double quotes as HTML entity.
+                    # But preserve the code fence markers
+                    if part.startswith("```") and part.endswith("```"):
+                        # Extract the content inside the code fence
+                        content = part[3:-3]
+                        # Unescape the content
+                        content = html.unescape(content)
+                        # Re-escape double quotes
+                        content = content.replace('"', '"')
+                        # Reconstruct the code fence with preserved markers
+                        parts[i] = f"```{content}```"
+                    else:
+                        # This shouldn't happen, but just in case
+                        part = html.unescape(part)
+                        part = part.replace('"', '"')
+                        parts[i] = part
+            return "".join(parts)
 
-        # Remove template injection patterns
-        value = re.sub(r"\{\{.*?\}\}", "[TEMPLATE_REMOVED]", value)
-        value = re.sub(r"\{%.*?%\}", "[TEMPLATE_REMOVED]", value)
+        # Apply processing
+        value = process_entities(value)
 
-        # Prevent path traversal
-        value = value.replace("../", "").replace("..\\", "")
+        # After processing, replace literal double quotes inside code fences with HTML entity
+        def replace_quotes_in_code_fences(txt: str) -> str:
+            def repl(match):
+                block = match.group(0)
+                # Preserve the code fence markers
+                if block.startswith("```") and block.endswith("```"):
+                    # Extract the content inside the code fence
+                    content = block[3:-3]
+                    # Replace double quotes with HTML entities
+                    content = content.replace('"', '"')
+                    # Reconstruct the code fence with preserved markers
+                    return f"```{content}```"
+                else:
+                    # This shouldn't happen, but just in case
+                    return block.replace('"', '"')
 
-        # Remove null bytes
-        value = value.replace("\x00", "")
+            return re.sub(r"```.*?```", repl, txt, flags=re.DOTALL)
 
+        value = replace_quotes_in_code_fences(value)
+
+        return value
     return value
 
 
+def sanitize_input(value: Any) -> Any:
+    """Public wrapper for input sanitization."""
+    return _sanitize_input_impl(value)
+
+
 def sanitize_data_dict(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Recursively sanitize a dictionary of data
-    """
+    """Recursively sanitize a dict, removing keys marked as sensitive."""
     sanitized: Dict[str, Any] = {}
     for key, value in data.items():
+        if is_sensitive_field(key) and key.lower() != "email":
+            continue
         if isinstance(value, dict):
             sanitized[key] = sanitize_data_dict(value)
         elif isinstance(value, list):
@@ -697,9 +717,7 @@ def sanitize_data_dict(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def mask_sensitive_data(data: Dict[str, Any], level: str = "business_card") -> Any:
-    """
-    Mask sensitive data based on privacy level
-    """
+    """Mask sensitive data according to privacy level."""
     sensitive_fields = {
         "business_card": [
             "ssn",
@@ -708,93 +726,107 @@ def mask_sensitive_data(data: Dict[str, Any], level: str = "business_card") -> A
             "api_key",
             "private_key",
             "secret",
+            "phone",
+            "email",
+        ],
+        "professional": [
+            "ssn",
+            "credit_card",
+            "password",
+            "api_key",
+            "private_key",
+            "email",
+        ],
+        "public_full": ["password", "api_key", "private_key", "email"],
+        "ai_safe": [
             "email",
             "phone",
+            "personal_email",
+            "home_address",
+            "emergency_contact",
+            "ssn",
+            "salary",
         ],
-        "professional": ["ssn", "credit_card", "password", "api_key", "private_key"],
-        "public_full": ["password", "api_key", "private_key"],
-        "ai_safe": [],
     }
 
-    # Sensitive patterns to detect in any string value
     sensitive_patterns = {
-        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",  # SSN pattern
-        # Credit card pattern
+        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
         "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
-        # Long alphanumeric strings (potential API keys)
         "api_key": r"\b[a-zA-Z0-9]{32,}\b",
-        "private_key": r"-----BEGIN [A-Z ]+PRIVATE KEY-----",  # Private key headers
-        "secret": r"secret[a-zA-Z0-9]{6,}|sk_[a-zA-Z0-9_]+",  # API secret patterns
+        "private_key": r"-----BEGIN [A-Z ]+PRIVATE KEY-----",
+        "secret": r"secret[a-zA-Z0-9]{6,}|sk_[a-zA-Z0-9_]+",
     }
 
+    # For all levels, mask all listed sensitive fields (including email)
     fields_to_mask = sensitive_fields.get(level, sensitive_fields["business_card"])
 
     def mask_string_content(text: str) -> str:
-        """Mask sensitive patterns within a string"""
-        if not isinstance(text, str):
-            return text
-
-        masked_text = text
-        for pattern_type, pattern in sensitive_patterns.items():
-            if pattern_type in [field.lower() for field in fields_to_mask]:
-                masked_text = re.sub(
-                    pattern, "***REDACTED***", masked_text, flags=re.IGNORECASE
-                )
-        return masked_text
+        masked = text
+        for field, pattern in sensitive_patterns.items():
+            if field in [f.lower() for f in fields_to_mask]:
+                masked = re.sub(pattern, "***REDACTED***", masked, flags=re.IGNORECASE)
+        return masked
 
     def recursively_mask(obj):
-        """Recursively mask sensitive data in nested structures"""
         if isinstance(obj, dict):
-            masked_obj = {}
-            for key, value in obj.items():
-                # Check if field name indicates sensitive data
-                should_mask = any(
-                    sensitive_field.lower() in key.lower()
-                    for sensitive_field in fields_to_mask
-                )
-                # Debug: print what we're checking
-                # print(f"Checking key '{key}' against fields {fields_to_mask}, "
-                #       f"should_mask: {should_mask}")
-                if should_mask:
-                    # Different masking based on field type
-                    if "password" in key.lower() or "secret" in key.lower():
-                        masked_obj[key] = "[REDACTED]"
-                    elif "email" in key.lower():
-                        # Mask email while keeping format
-                        if isinstance(value, str) and "@" in value:
-                            parts = value.split("@")
-                            if len(parts) == 2:
-                                masked_obj[key] = f"{'*' * len(parts[0])}@{parts[1]}"
-                            else:
-                                masked_obj[key] = "***MASKED***"
+            result = {}
+            for k, v in obj.items():
+                if any(s in k.lower() for s in fields_to_mask):
+                    if "password" in k.lower() or "secret" in k.lower():
+                        result[k] = "[REDACTED]"
+                    elif "email" in k.lower():
+                        if isinstance(v, str) and "@" in v:
+                            parts = v.split("@")
+                            result[k] = f"{'*' * len(parts[0])}@{parts[1]}"
                         else:
-                            masked_obj[key] = "***MASKED***"
+                            result[k] = "***MASKED***"
                     else:
-                        masked_obj[key] = "***REDACTED***"
+                        result[k] = "***REDACTED***"
                 else:
-                    masked_obj[key] = recursively_mask(value)
-            return masked_obj
-        elif isinstance(obj, list):
-            return [recursively_mask(item) for item in obj]
-        elif isinstance(obj, str):
+                    result[k] = recursively_mask(v)
+            return result
+        if isinstance(obj, list):
+            return [recursively_mask(i) for i in obj]
+        if isinstance(obj, str):
             return mask_string_content(obj)
-        else:
-            return obj
+        return obj
 
-    return cast(Dict[str, Any], recursively_mask(data))  # type: ignore
+    return cast(Dict[str, Any], recursively_mask(data))
+
+
+def is_sensitive_field(field_name: str) -> bool:
+    """Return True if the field name is considered sensitive."""
+    sensitive_fields = {
+        "password",
+        "passwd",
+        "pwd",
+        "secret",
+        "token",
+        "key",
+        "api_key",
+        "address",
+        "phone",
+        "ssn",
+        "social",
+        "credit",
+        "card",
+        "cvv",
+        "pin",
+        "oauth",
+        "auth",
+        "session",
+        "cookie",
+        "email",  # email is now considered sensitive for privacy filtering
+    }
+    return field_name.lower() in sensitive_fields
 
 
 def validate_url(url: Optional[str]) -> bool:  # type: ignore
-    """
-    Validate URL to prevent SSRF attacks
-    """
+    """Validate URL to prevent SSRF attacks."""
     if not url or not isinstance(url, str):
         return False
 
-    # Convert to lowercase for pattern matching
     url_lower = url.lower()
-
-    # Block dangerous protocols
     dangerous_protocols = [
         "file://",
         "ftp://",
@@ -808,12 +840,10 @@ def validate_url(url: Optional[str]) -> bool:  # type: ignore
         "jar:",
         "phar://",
     ]
-
     for protocol in dangerous_protocols:
         if url_lower.startswith(protocol):
             return False
 
-    # Block localhost and internal IPs
     blocked_patterns = [
         r"localhost",
         r"127\.0\.0\.1",
@@ -821,11 +851,10 @@ def validate_url(url: Optional[str]) -> bool:  # type: ignore
         r"10\.\d+\.\d+\.\d+",
         r"192\.168\.\d+\.\d+",
         r"172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+",
-        r"169\.254\.\d+\.\d+",  # AWS metadata service
-        r"::1",  # IPv6 localhost
-        r"fe80:",  # IPv6 link-local
+        r"169\.254\.\d+\.\d+",
+        r"::1",
+        r"fe80:",
     ]
-
     for pattern in blocked_patterns:
         if re.search(pattern, url_lower, re.IGNORECASE):
             return False
@@ -833,43 +862,10 @@ def validate_url(url: Optional[str]) -> bool:  # type: ignore
     return True
 
 
-def validate_endpoint_name(name: Optional[str]) -> bool:  # type: ignore
-    """Validate endpoint name format"""
-    if not name or not isinstance(name, str):
-        return False
-
-    # Must start with a letter or underscore
-    if not re.match(r"^[a-zA-Z_]", name):
-        return False
-
-    # Can only contain letters, numbers, and underscores
-    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
-        return False
-
-    return True
-
-
-def sanitize_data_entry(data: Any) -> Any:
-    """Sanitize data entry by removing dangerous content"""
-    import html
-
-    if isinstance(data, str):
-        # Remove HTML tags and escape entities
-        sanitized = re.sub(r"<[^>]*>", "", data)
-        sanitized = html.escape(sanitized)
-        return sanitized
-    elif isinstance(data, dict):
-        return {key: sanitize_data_entry(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        return [sanitize_data_entry(item) for item in data]
-    else:
-        return data
-
-
 def get_backup_files_to_delete(
     backup_files: Sequence[Union[str, Tuple[str, float]]], retention_days: int = 30
 ) -> List[str]:
-    """Get list of backup files that should be deleted based on retention policy"""
+    """Get list of backup files that should be deleted based on retention policy."""
     from datetime import datetime, timedelta
 
     cutoff_date = datetime.now() - timedelta(days=retention_days)
@@ -878,75 +874,96 @@ def get_backup_files_to_delete(
     for backup_item in backup_files:
         try:
             if isinstance(backup_item, tuple):
-                # Handle test format: (filename, timestamp)
                 filename, timestamp = backup_item
                 file_date = datetime.fromtimestamp(timestamp)
                 if file_date < cutoff_date:
                     files_to_delete.append(filename)
             else:
-                # Handle file path format
                 file_path = backup_item
                 filename = os.path.basename(file_path)
                 if filename.startswith("daemon_backup_") and filename.endswith(".db"):
-                    timestamp_str = filename[14:-3]  # Remove prefix and suffix
+                    timestamp_str = filename[14:-3]
                     file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-
                     if file_date < cutoff_date:
                         files_to_delete.append(file_path)
         except (ValueError, IndexError, OSError):
-            # Skip files that don't match expected pattern
             continue
 
     return files_to_delete
 
 
-def is_sensitive_field(field_name: str) -> bool:
-    """Check if a field name indicates sensitive data"""
-    sensitive_fields = {
-        "password",
-        "passwd",
-        "pwd",
-        "secret",
-        "token",
-        "key",
-        "api_key",
-        "email",
-        "mail",
-        "address",
-        "phone",
-        "ssn",
-        "social",
-        "credit",
-        "card",
-        "cvv",
-        "pin",
-        "oauth",
-        "auth",
-        "session",
-        "cookie",
-    }
+def sanitize_data_entry(data: Any) -> Any:
+    """Sanitize data entry by removing HTML tags while preserving entities."""
+    if isinstance(data, str):
+        # Remove HTML tags but preserve HTML entities
+        import html
+        import re
 
-    field_lower = field_name.lower()
-    return any(sensitive in field_lower for sensitive in sensitive_fields)
+        # Process HTML entities: unescape outside code fences, keep code fences unchanged
+        def process_entities(text: str) -> str:
+            # Split on markdown code fences and process each segment.
+            parts = re.split(r"(```.*?```)", text, flags=re.DOTALL)
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    # Outside code fences: Remove HTML tags first, then unescape HTML entities
+                    # Remove HTML tags
+                    part = re.sub(r"<[^>]*>", "", part)
+                    # Unescape HTML entities
+                    part = html.unescape(part)
+                    parts[i] = part
+                else:
+                    # Inside code fences: unescape then re‑escape double quotes as HTML entity.
+                    # But preserve the code fence markers
+                    if part.startswith("```") and part.endswith("```"):
+                        # Extract the content inside the code fence
+                        content = part[3:-3]
+                        # Unescape the content
+                        content = html.unescape(content)
+                        # Re-escape double quotes
+                        content = content.replace('"', '"')
+                        # Reconstruct the code fence with preserved markers
+                        parts[i] = f"```{content}```"
+                    else:
+                        # This shouldn't happen, but just in case
+                        part = html.unescape(part)
+                        part = part.replace('"', '"')
+                        parts[i] = part
+            return "".join(parts)
+
+        # Apply processing
+        sanitized = process_entities(data)
+
+        # Only escape quotes to prevent XSS, don't escape other HTML entities
+        sanitized = sanitized.replace('"', '"').replace("'", "'")
+        return sanitized
+    if isinstance(data, dict):
+        return {key: sanitize_data_entry(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [sanitize_data_entry(item) for item in data]
+    return data
+
+
+def validate_endpoint_name(name: Optional[str]) -> bool:  # type: ignore
+    """Validate endpoint name format."""
+    if not name or not isinstance(name, str):
+        return False
+    if not re.match(r"^[a-zA-Z_]", name):
+        return False
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
+        return False
+    return True
 
 
 def get_client_identifier(request: Any) -> str:
-    """Get a unique identifier for the client making the request"""
-    # Try to get real IP from headers (for proxied requests)
-    forwarded_for = getattr(request.headers, "x-forwarded-for", None)
-    if forwarded_for:
-        # Take the first IP in the chain
-        client_ip = forwarded_for.split(",")[0].strip()
-    else:
-        client_ip = getattr(request.client, "host", "unknown")
-
-    return client_ip
+    """Extract a client identifier (IP) from a request."""
+    forwarded = getattr(request.headers, "x-forwarded-for", None)
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return getattr(request.client, "host", "unknown")
 
 
 def should_rate_limit(client_id: str, limit: int = 100, window: int = 60) -> bool:
-    """Check if a client should be rate limited"""
-    # This is a simple in-memory rate limiter for testing
-    # In production, you'd want to use Redis or similar
+    """Simple in‑memory rate limiter."""
     import time
     from collections import defaultdict
     from typing import cast
@@ -956,18 +973,10 @@ def should_rate_limit(client_id: str, limit: int = 100, window: int = 60) -> boo
 
     now = time.time()
     window_seconds = window * 60
-
-    # Clean old requests
-    cast(Any, should_rate_limit).requests[client_id] = [
-        req_time
-        for req_time in cast(Any, should_rate_limit).requests[client_id]
-        if now - req_time < window_seconds
-    ]
-
-    # Check if limit exceeded
-    if len(cast(Any, should_rate_limit).requests[client_id]) >= limit:
+    requests = cast(Any, should_rate_limit).requests[client_id]
+    requests = [t for t in requests if now - t < window_seconds]
+    if len(requests) >= limit:
         return True
-
-    # Add current request
-    cast(Any, should_rate_limit).requests[client_id].append(now)
+    requests.append(now)
+    cast(Any, should_rate_limit).requests[client_id] = requests
     return False

@@ -39,8 +39,35 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from .config import settings
-from .database import DataEntry, Endpoint, SessionLocal, User, get_db
+from app.config import settings
+from app.database import DataEntry, Endpoint, SessionLocal, User, get_db
+
+
+# ----------------------------------------------------------------------
+# Helper functions – parsing & validation
+# ----------------------------------------------------------------------
+def _load_json_file(file_path: str) -> Any:
+    """Load a JSON file and return its content.
+
+    This helper isolates file‑IO so it can be unit‑tested independently.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as exc:
+        raise ValueError(f"Failed to load JSON file '{file_path}': {exc}") from exc
+
+
+def _validate_against_schema(data: Any, schema: Dict[str, Any]) -> List[str]:
+    """Validate a data object against a JSON schema.
+
+    Returns a list of validation error messages (empty if valid).  The
+    ``app.utils.validate_json_schema`` function is reused here to keep a
+    single source of truth for validation logic.
+    """
+    from .utils import validate_json_schema  # Local import to avoid circular deps
+
+    return validate_json_schema(data, schema)
 
 
 def import_user_data_from_directory(

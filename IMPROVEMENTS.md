@@ -60,6 +60,17 @@ Below is a consolidated checklist of the enhancements that have been discussed (
 - [x] Add logging configuration (structured JSON logs) and ensure all modules use the logger.
 - [x] Review and possibly deprecate legacy scripts in `scripts/` that are no longer used.
 
----
-
-These items can be turned into GitHub issues or tasks in your project board to track progress. Prioritize based on project milestones, risk, or team capacity.
+## ✅ Test Coverage Goal (≥ 85 % per file)
+- [x] Refactor `app/auth.py` for injectable CryptContext and revocation dependency
+- [x] Add unit tests for password hashing, token creation/verification, API‑key flow, IP allow‑list
+- [x] Refactor `app/cli.py` to expose pure command functions
+- [x] Add CLI tests for all sub‑commands
+- [x] Refactor `app/main.py` into `create_app()` factory
+- [x] Add tests for app creation, middleware, router inclusion, health endpoint
+- [x] Refactor `app/routers/api.py` (split DB logic) and add endpoint tests
+- [x] Refactor `app/routers/auth.py` & `admin.py` (permission dependency) and add tests
+- [x] Refactor `app/privacy.py` (split filter rules) and add comprehensive tests
+- [x] Refactor `app/multi_user_import.py` (parse/validate/persist) and add tests
+- [x] Add missing tests for `app/utils.py` uncovered functions
+- [ ] Ensure `tests/` contains one test file per module (e.g., `test_auth.py`, `test_cli.py`, …)
+- [ ] Run full coverage report and verify ≥ 85 % for every file

@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from sqlalchemy.orm import Session
 
-from .database import User, UserPrivacySettings
+from app.database import User, UserPrivacySettings
 
 
 class PrivacyFilter:
@@ -159,10 +159,10 @@ class PrivacyFilter:
 
     def ai_safe_filter(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Filter data specifically for AI assistant consumption"""
-        # Start with professional filter
+        # Start with professional filter to remove most personal details
         filtered = self.professional_filter(data)
 
-        # Remove anything that could be misused
+        # Define fields that should be removed for AI safety
         sensitive_for_ai = {
             "current_location",
             "home_address",
@@ -178,7 +178,14 @@ class PrivacyFilter:
             "internal_notes",
         }
 
-        return self._recursive_filter_fields(filtered, sensitive_for_ai)
+        # Remove sensitive fields from the entire data structure
+        filtered = self._recursive_filter_fields(filtered, sensitive_for_ai)
+
+        # Remove contact field entirely for AI safety
+        if "contact" in filtered:
+            del filtered["contact"]
+
+        return filtered
 
     def professional_filter(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Show professional information, hide personal details"""
@@ -212,6 +219,9 @@ class PrivacyFilter:
         """Apply public-level filtering based on user privacy settings"""
         settings = self.privacy_settings
         if settings is None:
+            # Ensure top‑level personal data is removed even without settings
+            data = dict(data)  # make a shallow copy
+            data.pop("personal", None)
             # No privacy settings found, apply minimal filtering
             return self._apply_sensitive_patterns(data)
 
