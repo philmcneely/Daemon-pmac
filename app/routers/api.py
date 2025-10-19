@@ -1057,7 +1057,7 @@ async def get_endpoint_data(
         not current_user and not is_single_user_mode(db)
     )
 
-    items = []
+    items: List[PersonalItemResponse] = []
     for entry in data_entries:
         # Skip entries with no data to avoid None subscript errors
         if not isinstance(entry.data, dict):

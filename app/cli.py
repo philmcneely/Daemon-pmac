@@ -873,5 +873,10 @@ def import_user_data_cli(username: str, data_dir: str, replace: bool):
         db.close()
 
 
+# Add the multi-user import commands to the CLI group
+cli.add_command(create_user)
+cli.add_command(import_all_data)
+cli.add_command(import_user_data_cli)
+
 if __name__ == "__main__":
     cli()
