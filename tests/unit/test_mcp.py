@@ -246,3 +246,158 @@ class TestMCPToolCall:
         assert "daemon_active" in tool_names
         assert "daemon_inactive" not in tool_names
         assert "daemon_info" in tool_names
+
+
+class TestMCPRESTEndpoints:
+    """Test MCP REST-style endpoints"""
+
+    @patch("app.routers.mcp.settings")
+    def test_get_tools_rest_success(self, mock_settings, unit_client):
+        """Test successful REST tools listing"""
+        mock_settings.mcp_enabled = True
+
+        response = unit_client.get("/mcp/tools")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "tools" in data
+        assert isinstance(data["tools"], list)
+
+    @patch("app.routers.mcp.settings")
+    def test_get_tools_rest_mcp_disabled(self, mock_settings, unit_client):
+        """Test REST tools listing when MCP is disabled"""
+        mock_settings.mcp_enabled = False
+
+        response = unit_client.get("/mcp/tools")
+
+        assert response.status_code == 404
+
+    @patch("app.routers.mcp.settings")
+    def test_call_tool_rest_success(self, mock_settings, unit_client):
+        """Test successful REST tool call"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post("/mcp/tools/daemon_info", json={"arguments": {}})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "content" in data
+        assert data["is_error"] is False
+
+    @patch("app.routers.mcp.settings")
+    def test_call_tool_rest_mcp_disabled(self, mock_settings, unit_client):
+        """Test REST tool call when MCP is disabled"""
+        mock_settings.mcp_enabled = False
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post("/mcp/tools/daemon_info", json={"arguments": {}})
+
+        assert response.status_code == 404
+
+    @patch("app.routers.mcp.settings")
+    def test_call_tool_rest_error_response(self, mock_settings, unit_client):
+        """Test REST tool call with error response"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        # Test with invalid tool name that will trigger error path
+        response = unit_client.post("/mcp/tools/invalid_tool", json={"arguments": {}})
+
+        # Should get an error response
+        assert response.status_code == 400
+
+
+class TestMCPErrorHandling:
+    """Test MCP error handling paths"""
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_missing_parameters(self, mock_settings, unit_client):
+        """Test MCP tool call with missing parameters"""
+        mock_settings.mcp_enabled = True
+
+        response = unit_client.post("/mcp/tools/call", json={"invalid": "data"})
+
+        assert response.status_code == 400
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_missing_tool_name(self, mock_settings, unit_client):
+        """Test MCP tool call with missing tool name"""
+        mock_settings.mcp_enabled = True
+
+        response = unit_client.post("/mcp/tools/call", json={"arguments": {}})
+
+        assert response.status_code == 400
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_invalid_limit(self, mock_settings, unit_client):
+        """Test MCP tool call with invalid limit parameter"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post(
+            "/mcp/tools/call",
+            json={"name": "daemon_info", "arguments": {"limit": "invalid"}},
+        )
+
+        assert response.status_code == 200  # Should handle gracefully
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_nonexistent_endpoint(self, mock_settings, unit_client):
+        """Test MCP tool call with nonexistent endpoint"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post(
+            "/mcp/tools/call", json={"name": "daemon_nonexistent", "arguments": {}}
+        )
+
+        assert response.status_code == 200  # Should return empty result
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_mcp_prefix_nonexistent(self, mock_settings, unit_client):
+        """Test MCP tool call with mcp_ prefix for nonexistent endpoint"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post(
+            "/mcp/tools/call", json={"name": "mcp_nonexistent", "arguments": {}}
+        )
+
+        assert (
+            response.status_code == 200
+        )  # Should return empty result with error message
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_no_prefix_nonexistent(self, mock_settings, unit_client):
+        """Test MCP tool call with no prefix for nonexistent endpoint"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post(
+            "/mcp/tools/call", json={"name": "nonexistent", "arguments": {}}
+        )
+
+        assert response.status_code == 200  # Should return error response
+
+    @patch("app.routers.mcp.settings")
+    def test_call_mcp_tool_jsonrpc_format(self, mock_settings, unit_client):
+        """Test MCP tool call with proper JSON-RPC format"""
+        mock_settings.mcp_enabled = True
+        mock_settings.mcp_tools_prefix = "daemon_"
+
+        response = unit_client.post(
+            "/mcp/tools/call",
+            json={
+                "jsonrpc": "2.0",
+                "method": "call",
+                "params": {"name": "daemon_info", "arguments": {}},
+                "id": "test-123",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["jsonrpc"] == "2.0"
+        assert data["id"] == "test-123"
+        assert "result" in data
