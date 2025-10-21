@@ -188,11 +188,11 @@ async def security_middleware(request: Request, call_next):
 # ----------------------------------------------------------------------
 # Router inclusion
 # ----------------------------------------------------------------------
-app.include_router(auth.router)
-app.include_router(api.router)
-app.include_router(admin.router)
+app.include_router(auth.router)  # type: ignore[has-type]
+app.include_router(api.router)  # type: ignore[has-type]
+app.include_router(admin.router)  # type: ignore[has-type]
 if settings.mcp_enabled:
-    app.include_router(mcp.router)
+    app.include_router(mcp.router)  # type: ignore[has-type]
 
 
 # ----------------------------------------------------------------------
@@ -207,7 +207,7 @@ def get_available_endpoints() -> List[str]:
         db = SessionLocal()
         try:
             eps = db.query(Endpoint).filter(Endpoint.is_active).all()
-            return [e.name for e in eps]
+            return [str(e.name) for e in eps]  # Ensure string type
         finally:
             db.close()
     except Exception:
@@ -223,7 +223,7 @@ def get_available_endpoints() -> List[str]:
         ]
 
 
-def custom_openapi():
+def custom_openapi() -> dict[str, Any]:
     """Generate OpenAPI schema with dynamic examples."""
     if app.openapi_schema:
         return app.openapi_schema
@@ -233,7 +233,7 @@ def custom_openapi():
         title=app.title,
         version=app.version,
         description=app.description,
-        routes=app.routes,
+        routes=app.routes,  # type: ignore[has-type]
     )
     endpoints = cast(List[str], get_available_endpoints())
     schema["info"]["x-logo"] = {
